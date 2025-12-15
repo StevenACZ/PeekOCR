@@ -55,10 +55,8 @@ build/
 *.dSYM.zip
 *.dSYM
 
-# Claude/AI notes
-claude.md
-.claude/
-CLAUDE.md
+# AI Agent Config (keep private)
+AGENTS.md
 
 # Gemini/AI
 .gemini/
