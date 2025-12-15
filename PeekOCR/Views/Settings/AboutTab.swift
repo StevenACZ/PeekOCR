@@ -35,15 +35,16 @@ struct AboutTab: View {
             }
             
             // Description
-            Text("Captura texto desde cualquier parte de tu pantalla con un atajo de teclado. Detecta automáticamente códigos QR y traduce texto al instante.")
+            Text("Captura texto desde cualquier parte de tu pantalla con un atajo de teclado. Detecta automáticamente códigos QR.")
                 .font(.body)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.horizontal, 32)
             
-            // Features
+            // Features - Centered
             FeaturesList()
+                .frame(maxWidth: .infinity)
             
             Spacer()
             
@@ -66,13 +67,12 @@ struct AboutTab: View {
 
 private struct FeaturesList: View {
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .center, spacing: 8) {
             FeatureRow(icon: "doc.text.viewfinder", text: "OCR preciso con Vision")
             FeatureRow(icon: "qrcode", text: "Detección de códigos QR")
             FeatureRow(icon: "camera.viewfinder", text: "Captura de pantalla")
             FeatureRow(icon: "keyboard", text: "Atajos personalizables")
         }
-        .padding(.horizontal, 48)
     }
 }
 
@@ -92,8 +92,6 @@ private struct FeatureRow: View {
             Text(text)
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            
-            Spacer()
         }
     }
 }

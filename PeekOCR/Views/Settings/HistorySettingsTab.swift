@@ -125,6 +125,8 @@ private struct HistoryItemDetailRow: View {
             return .blue
         case .qrCode:
             return .purple
+        case .screenshot:
+            return .green
         }
     }
     
@@ -134,6 +136,8 @@ private struct HistoryItemDetailRow: View {
             return "Texto"
         case .qrCode:
             return "QR"
+        case .screenshot:
+            return "Captura"
         }
     }
 }

@@ -118,38 +118,29 @@ struct ScreenshotSettingsTab: View {
             
             // Scale Section
             Section {
-                Toggle("Reducir tamaño de imagen", isOn: Binding(
-                    get: { settings.imageScale < 1.0 },
-                    set: { enabled in
-                        settings.imageScale = enabled ? 0.5 : 1.0
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text("Tamaño de imagen")
+                        Spacer()
+                        Text("\(Int(settings.imageScale * 100))%")
+                            .font(.system(.body, design: .monospaced))
+                            .foregroundStyle(.blue)
                     }
-                ))
-                
-                if settings.imageScale < 1.0 {
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            Text("Tamaño")
-                            Spacer()
-                            Text("\(Int(settings.imageScale * 100))%")
-                                .font(.system(.body, design: .monospaced))
-                                .foregroundStyle(.blue)
-                        }
-                        
-                        Slider(value: $settings.imageScale, in: 0.1...0.9, step: 0.1)
-                        
-                        HStack {
-                            Text("10%")
-                                .font(.caption2)
-                                .foregroundStyle(.tertiary)
-                            Spacer()
-                            Text("50%")
-                                .font(.caption2)
-                                .foregroundStyle(.tertiary)
-                            Spacer()
-                            Text("90%")
-                                .font(.caption2)
-                                .foregroundStyle(.tertiary)
-                        }
+                    
+                    Slider(value: $settings.imageScale, in: 0.1...1.0, step: 0.1)
+                    
+                    HStack {
+                        Text("10%")
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                        Spacer()
+                        Text("50%")
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                        Spacer()
+                        Text("100%")
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
                     }
                 }
             } header: {

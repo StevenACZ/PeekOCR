@@ -50,6 +50,8 @@ struct CaptureItem: Identifiable, Codable, Equatable {
             return "doc.text"
         case .qrCode:
             return "qrcode"
+        case .screenshot:
+            return "camera.viewfinder"
         }
     }
 }
@@ -59,4 +61,5 @@ struct CaptureItem: Identifiable, Codable, Equatable {
 enum CaptureType: String, Codable {
     case text
     case qrCode
+    case screenshot
 }

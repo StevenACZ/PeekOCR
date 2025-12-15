@@ -100,14 +100,14 @@ final class CaptureCoordinator: ObservableObject {
         
         let displayText: String
         if let url = savedURL {
-            displayText = "📷 " + url.lastPathComponent
+            displayText = url.lastPathComponent
         } else {
-            displayText = "📷 Captura copiada al portapapeles"
+            displayText = "Captura copiada al portapapeles"
         }
         
         let item = CaptureItem(
             text: displayText,
-            captureType: .text
+            captureType: .screenshot
         )
         historyManager.addItem(item)
     }

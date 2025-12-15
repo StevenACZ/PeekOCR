@@ -229,6 +229,8 @@ private struct HistoryItemRow: View {
             return .blue
         case .qrCode:
             return .purple
+        case .screenshot:
+            return .green
         }
     }
 }
