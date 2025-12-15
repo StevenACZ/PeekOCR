@@ -16,9 +16,11 @@ final class HotKeyManager {
     
     private var captureHotKeyRef: EventHotKeyRef?
     private var translateHotKeyRef: EventHotKeyRef?
+    private var screenshotHotKeyRef: EventHotKeyRef?
     
     private let captureHotKeyID = EventHotKeyID(signature: OSType(0x504B4F43), id: 1) // "PKOC"
     private let translateHotKeyID = EventHotKeyID(signature: OSType(0x504B4F43), id: 2) // "PKOC"
+    private let screenshotHotKeyID = EventHotKeyID(signature: OSType(0x504B4F43), id: 3) // "PKOC"
     
     private var eventHandler: EventHandlerRef?
     
@@ -40,6 +42,9 @@ final class HotKeyManager {
         
         // Register translate hotkey (Control + Shift + Space by default)
         registerTranslateHotKey()
+        
+        // Register screenshot hotkey (Cmd + Shift + 4 by default)
+        registerScreenshotHotKey()
     }
     
     func unregisterHotKeys() {
@@ -52,12 +57,18 @@ final class HotKeyManager {
             UnregisterEventHotKey(translateRef)
             translateHotKeyRef = nil
         }
+        
+        if let screenshotRef = screenshotHotKeyRef {
+            UnregisterEventHotKey(screenshotRef)
+            screenshotHotKeyRef = nil
+        }
     }
     
     func reregisterHotKeys() {
         unregisterHotKeys()
         registerCaptureHotKey()
         registerTranslateHotKey()
+        registerScreenshotHotKey()
     }
     
     // MARK: - Private Methods
@@ -85,11 +96,14 @@ final class HotKeyManager {
             DispatchQueue.main.async {
                 switch hotKeyID.id {
                 case 1:
-                    // Capture hotkey pressed
-                    CaptureCoordinator.shared.startCapture(withTranslation: false)
+                    // Capture hotkey pressed (OCR)
+                    CaptureCoordinator.shared.startCapture(mode: .ocr)
                 case 2:
                     // Translate hotkey pressed
-                    CaptureCoordinator.shared.startCapture(withTranslation: true)
+                    CaptureCoordinator.shared.startCapture(mode: .translate)
+                case 3:
+                    // Screenshot hotkey pressed
+                    CaptureCoordinator.shared.startCapture(mode: .screenshot)
                 default:
                     break
                 }
@@ -133,6 +147,20 @@ final class HotKeyManager {
             GetApplicationEventTarget(),
             0,
             &translateHotKeyRef
+        )
+    }
+    
+    private func registerScreenshotHotKey() {
+        let settings = AppSettings.shared
+        var hotKeyID = screenshotHotKeyID
+        
+        RegisterEventHotKey(
+            settings.screenshotHotKeyCode,
+            settings.screenshotHotKeyModifiers,
+            hotKeyID,
+            GetApplicationEventTarget(),
+            0,
+            &screenshotHotKeyRef
         )
     }
 }

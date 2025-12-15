@@ -57,6 +57,7 @@ build/
 
 # AI Agent Config (keep private)
 AGENTS.md
+PEEKOCR_SPEC.md
 
 # Gemini/AI
 .gemini/

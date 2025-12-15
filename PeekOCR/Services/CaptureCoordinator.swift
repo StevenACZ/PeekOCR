@@ -9,7 +9,14 @@ import AppKit
 import SwiftUI
 import Combine
 
-/// Coordinates the capture flow: overlay → capture → OCR → clipboard
+/// Capture mode enumeration
+enum CaptureMode {
+    case ocr
+    case translate
+    case screenshot
+}
+
+/// Coordinates the capture flow: overlay → capture → process → clipboard/save
 final class CaptureCoordinator: ObservableObject {
     static let shared = CaptureCoordinator()
     
@@ -17,13 +24,14 @@ final class CaptureCoordinator: ObservableObject {
     
     @Published private(set) var isCapturing = false
     private var overlayWindows: [CaptureOverlayWindow] = []
-    private var shouldTranslate = false
+    private var currentMode: CaptureMode = .ocr
     
     // MARK: - Services
     
     private let screenCaptureService = ScreenCaptureService.shared
     private let ocrService = OCRService.shared
     private let pasteboardService = PasteboardService.shared
+    private let screenshotService = ScreenshotService.shared
     private let historyManager = HistoryManager.shared
     private let settings = AppSettings.shared
     
@@ -34,14 +42,19 @@ final class CaptureCoordinator: ObservableObject {
     // MARK: - Public Methods
     
     /// Start the capture flow
-    /// - Parameter withTranslation: Whether to translate the captured text
-    func startCapture(withTranslation: Bool) {
+    /// - Parameter mode: The capture mode (OCR, translate, or screenshot)
+    func startCapture(mode: CaptureMode) {
         guard !isCapturing else { return }
         
-        shouldTranslate = withTranslation
+        currentMode = mode
         isCapturing = true
         
         showOverlay()
+    }
+    
+    /// Legacy method for backward compatibility
+    func startCapture(withTranslation: Bool) {
+        startCapture(mode: withTranslation ? .translate : .ocr)
     }
     
     /// Cancel the current capture
@@ -62,20 +75,14 @@ final class CaptureCoordinator: ObservableObject {
                 return
             }
             
-            // Process with OCR
-            let result = await ocrService.processImage(image)
-            
-            switch result {
-            case .text(let text):
-                await handleTextResult(text)
-            case .qrCode(let content):
-                await handleQRResult(content)
-            case .empty:
-                // Nothing found
-                break
-            case .error:
-                // Handle error silently
-                break
+            // Process based on mode
+            switch currentMode {
+            case .ocr:
+                await processOCR(image: image)
+            case .translate:
+                await processTranslate(image: image)
+            case .screenshot:
+                await processScreenshot(image: image)
             }
             
             isCapturing = false
@@ -103,27 +110,76 @@ final class CaptureCoordinator: ObservableObject {
         overlayWindows.removeAll()
     }
     
-    private func handleTextResult(_ text: String) async {
-        var finalText = text
+    // MARK: - OCR Processing
+    
+    private func processOCR(image: CGImage) async {
+        let result = await ocrService.processImage(image)
         
-        // Translate if needed
-        if shouldTranslate {
-            finalText = await TranslationService.shared.translate(
+        switch result {
+        case .text(let text):
+            await handleTextResult(text, translated: false)
+        case .qrCode(let content):
+            await handleQRResult(content)
+        case .empty, .error:
+            break
+        }
+    }
+    
+    // MARK: - Translation Processing
+    
+    private func processTranslate(image: CGImage) async {
+        let result = await ocrService.processImage(image)
+        
+        switch result {
+        case .text(let text):
+            let translatedText = await TranslationService.shared.translate(
                 text: text,
                 from: settings.sourceLanguage,
                 to: settings.targetLanguage
             )
+            await handleTextResult(translatedText, translated: true, originalText: text)
+        case .qrCode(let content):
+            await handleQRResult(content)
+        case .empty, .error:
+            break
+        }
+    }
+    
+    // MARK: - Screenshot Processing
+    
+    private func processScreenshot(image: CGImage) async {
+        // Process and save the screenshot
+        let savedURL = await screenshotService.processScreenshot(image)
+        
+        // Optionally add to history (as a note that screenshot was taken)
+        let displayText: String
+        if let url = savedURL {
+            displayText = "📷 " + url.lastPathComponent
+        } else {
+            displayText = "📷 Captura copiada al portapapeles"
         }
         
+        let item = CaptureItem(
+            text: displayText,
+            captureType: .text,
+            wasTranslated: false,
+            originalText: nil
+        )
+        historyManager.addItem(item)
+    }
+    
+    // MARK: - Result Handlers
+    
+    private func handleTextResult(_ text: String, translated: Bool, originalText: String? = nil) async {
         // Copy to clipboard
-        pasteboardService.copy(finalText)
+        pasteboardService.copy(text)
         
         // Add to history
         let item = CaptureItem(
-            text: finalText,
+            text: text,
             captureType: .text,
-            wasTranslated: shouldTranslate,
-            originalText: shouldTranslate ? text : nil
+            wasTranslated: translated,
+            originalText: originalText
         )
         historyManager.addItem(item)
     }

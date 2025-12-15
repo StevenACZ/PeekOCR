@@ -23,6 +23,11 @@ struct SettingsView: View {
                     Label("Atajos", systemImage: "keyboard")
                 }
             
+            ScreenshotSettingsTab()
+                .tabItem {
+                    Label("Capturas", systemImage: "camera.viewfinder")
+                }
+            
             TranslationSettingsTab()
                 .tabItem {
                     Label("Traducción", systemImage: "globe")
@@ -38,7 +43,7 @@ struct SettingsView: View {
                     Label("Acerca de", systemImage: "info.circle")
                 }
         }
-        .frame(width: 480, height: 320)
+        .frame(width: 520, height: 400)
     }
 }
 

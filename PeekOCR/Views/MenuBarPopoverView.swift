@@ -66,10 +66,10 @@ private struct QuickActionsSection: View {
         VStack(spacing: 4) {
             ActionButton(
                 title: "Capturar Texto",
-                icon: "camera.viewfinder",
+                icon: "doc.text.viewfinder",
                 shortcut: settings.captureHotKeyDisplayString()
             ) {
-                CaptureCoordinator.shared.startCapture(withTranslation: false)
+                CaptureCoordinator.shared.startCapture(mode: .ocr)
             }
             
             ActionButton(
@@ -77,7 +77,15 @@ private struct QuickActionsSection: View {
                 icon: "globe",
                 shortcut: settings.translateHotKeyDisplayString()
             ) {
-                CaptureCoordinator.shared.startCapture(withTranslation: true)
+                CaptureCoordinator.shared.startCapture(mode: .translate)
+            }
+            
+            ActionButton(
+                title: "Captura de Pantalla",
+                icon: "camera.viewfinder",
+                shortcut: settings.screenshotHotKeyDisplayString()
+            ) {
+                CaptureCoordinator.shared.startCapture(mode: .screenshot)
             }
         }
         .padding(.vertical, 8)

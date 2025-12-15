@@ -18,7 +18,7 @@ struct ShortcutsSettingsTab: View {
                 ShortcutRecorderRow(
                     title: "Capturar Texto",
                     description: "Activa la selección de pantalla para OCR",
-                    icon: "camera.viewfinder",
+                    icon: "doc.text.viewfinder",
                     currentShortcut: settings.captureHotKeyDisplayString(),
                     onRecord: { modifiers, keyCode in
                         settings.captureHotKeyModifiers = modifiers
@@ -35,6 +35,18 @@ struct ShortcutsSettingsTab: View {
                     onRecord: { modifiers, keyCode in
                         settings.translateHotKeyModifiers = modifiers
                         settings.translateHotKeyCode = keyCode
+                        HotKeyManager.shared.reregisterHotKeys()
+                    }
+                )
+                
+                ShortcutRecorderRow(
+                    title: "Captura de Pantalla",
+                    description: "Captura una imagen del área seleccionada",
+                    icon: "camera.viewfinder",
+                    currentShortcut: settings.screenshotHotKeyDisplayString(),
+                    onRecord: { modifiers, keyCode in
+                        settings.screenshotHotKeyModifiers = modifiers
+                        settings.screenshotHotKeyCode = keyCode
                         HotKeyManager.shared.reregisterHotKeys()
                     }
                 )
@@ -61,6 +73,8 @@ struct ShortcutsSettingsTab: View {
         settings.captureHotKeyCode = AppSettings.Defaults.captureKeyCode
         settings.translateHotKeyModifiers = AppSettings.Defaults.translateModifiers
         settings.translateHotKeyCode = AppSettings.Defaults.translateKeyCode
+        settings.screenshotHotKeyModifiers = AppSettings.Defaults.screenshotModifiers
+        settings.screenshotHotKeyCode = AppSettings.Defaults.screenshotKeyCode
         HotKeyManager.shared.reregisterHotKeys()
     }
 }
