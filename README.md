@@ -26,7 +26,6 @@ PeekOCR es una app para Mac que vive en tu barra de menú. Con un simple atajo d
 | --------------------------- | ---------------------------------------------------- |
 | 📸 **Captura de Texto**     | Selecciona cualquier área y extrae el texto          |
 | 🔗 **Códigos QR**           | Detecta y copia el contenido de códigos QR           |
-| 🌐 **Traducción**           | Traduce el texto capturado al instante               |
 | 📷 **Capturas de Pantalla** | Guarda imágenes con formato y calidad personalizable |
 | 📋 **Historial**            | Accede a tus últimas 6 capturas                      |
 | ⌨️ **Atajos**               | Personaliza los atajos de teclado                    |
@@ -46,11 +45,10 @@ PeekOCR es una app para Mac que vive en tu barra de menú. Con un simple atajo d
 
 ### Atajos de Teclado
 
-| Acción                  | Atajo                               |
-| ----------------------- | ----------------------------------- |
-| **Capturar texto**      | `⇧ Space` (Shift + Espacio)         |
-| **Capturar + Traducir** | `⌃⇧ Space` (Ctrl + Shift + Espacio) |
-| **Captura de pantalla** | `⌘⇧ 4` (Cmd + Shift + 4)            |
+| Acción                  | Atajo                       |
+| ----------------------- | --------------------------- |
+| **Capturar texto**      | `⇧ Space` (Shift + Espacio) |
+| **Captura de pantalla** | `⌘⇧ 4` (Cmd + Shift + 4)    |
 
 ### Pasos
 
@@ -70,14 +68,6 @@ PeekOCR necesita dos permisos para funcionar:
 | **Accesibilidad**   | Atajos de teclado globales   |
 
 > 💡 La app te guiará para activar estos permisos la primera vez
-
----
-
-## 🌍 Idiomas Soportados
-
-Para la traducción automática:
-
-🇺🇸 English • 🇪🇸 Español • 🇫🇷 Français • 🇩🇪 Deutsch • 🇧🇷 Português • 🇮🇹 Italiano
 
 ---
 
