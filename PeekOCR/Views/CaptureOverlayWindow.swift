@@ -42,7 +42,7 @@ final class CaptureOverlayWindow: NSWindow {
         ignoresMouseEvents = false
         acceptsMouseMovedEvents = true
         isReleasedWhenClosed = false
-        collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+        collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
         
         // Create and set the overlay view
         let view = CaptureOverlayView(frame: frame, coordinator: coordinator)
@@ -52,9 +52,16 @@ final class CaptureOverlayWindow: NSWindow {
         // Make window key and front
         makeFirstResponder(view)
         
-        // Ensure window is ready for mouse events immediately
+        // Order front first
         orderFrontRegardless()
-        makeKey()
+        
+        // Use a small delay to ensure window is fully ready for events
+        // This prevents the "first click not registering" issue
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
+            self?.makeKey()
+            self?.makeMain()
+            NSApp.activate(ignoringOtherApps: true)
+        }
     }
     
     // MARK: - Overrides

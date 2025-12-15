@@ -29,6 +29,7 @@ final class CaptureCoordinator: ObservableObject {
     // MARK: - Services
     
     private let screenCaptureService = ScreenCaptureService.shared
+    private let nativeScreenCapture = NativeScreenCaptureService.shared
     private let ocrService = OCRService.shared
     private let pasteboardService = PasteboardService.shared
     private let screenshotService = ScreenshotService.shared
@@ -49,7 +50,16 @@ final class CaptureCoordinator: ObservableObject {
         currentMode = mode
         isCapturing = true
         
-        showOverlay()
+        // For screenshot mode, use native macOS screencapture
+        // This provides a better user experience with no double-click issues
+        if mode == .screenshot {
+            Task { @MainActor in
+                await captureWithNativeScreenshot()
+            }
+        } else {
+            // For OCR and translate modes, use custom overlay
+            showOverlay()
+        }
     }
     
     /// Legacy method for backward compatibility
@@ -108,6 +118,21 @@ final class CaptureCoordinator: ObservableObject {
             window.close()
         }
         overlayWindows.removeAll()
+    }
+    
+    /// Use native macOS screencapture for screenshot mode
+    /// This provides better UX and Retina resolution captures
+    private func captureWithNativeScreenshot() async {
+        // Use native screencapture command
+        guard let image = await nativeScreenCapture.captureInteractive() else {
+            // User cancelled or capture failed
+            isCapturing = false
+            return
+        }
+        
+        // Process the screenshot
+        await processScreenshot(image: image)
+        isCapturing = false
     }
     
     // MARK: - OCR Processing

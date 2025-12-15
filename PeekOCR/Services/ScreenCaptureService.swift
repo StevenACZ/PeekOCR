@@ -29,11 +29,12 @@ final class ScreenCaptureService {
         }
         
         // Use CGWindowListCreateImage for direct capture
+        // Using .bestResolution to capture at Retina resolution for better quality
         let image = CGWindowListCreateImage(
             rect,
             .optionOnScreenBelowWindow,
             kCGNullWindowID,
-            [.boundsIgnoreFraming, .nominalResolution]
+            [.boundsIgnoreFraming, .bestResolution]
         )
         
         return image
@@ -51,7 +52,7 @@ final class ScreenCaptureService {
                 bounds,
                 .optionOnScreenBelowWindow,
                 kCGNullWindowID,
-                [.boundsIgnoreFraming, .nominalResolution]
+                [.boundsIgnoreFraming, .bestResolution]
             ) {
                 captures[displayID] = image
             }
