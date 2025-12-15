@@ -16,19 +16,18 @@ enum CaptureMode {
     case screenshot
 }
 
-/// Coordinates the capture flow: overlay → capture → process → clipboard/save
+/// Coordinates the capture flow: native capture → process → clipboard/save
+/// Uses macOS native screencapture for all capture modes
 final class CaptureCoordinator: ObservableObject {
     static let shared = CaptureCoordinator()
     
     // MARK: - Properties
     
     @Published private(set) var isCapturing = false
-    private var overlayWindows: [CaptureOverlayWindow] = []
     private var currentMode: CaptureMode = .ocr
     
     // MARK: - Services
     
-    private let screenCaptureService = ScreenCaptureService.shared
     private let nativeScreenCapture = NativeScreenCaptureService.shared
     private let ocrService = OCRService.shared
     private let pasteboardService = PasteboardService.shared
@@ -50,15 +49,10 @@ final class CaptureCoordinator: ObservableObject {
         currentMode = mode
         isCapturing = true
         
-        // For screenshot mode, use native macOS screencapture
+        // Use native macOS screencapture for all modes
         // This provides a better user experience with no double-click issues
-        if mode == .screenshot {
-            Task { @MainActor in
-                await captureWithNativeScreenshot()
-            }
-        } else {
-            // For OCR and translate modes, use custom overlay
-            showOverlay()
+        Task { @MainActor in
+            await captureWithNativeScreenshot()
         }
     }
     
@@ -69,58 +63,12 @@ final class CaptureCoordinator: ObservableObject {
     
     /// Cancel the current capture
     func cancelCapture() {
-        hideOverlay()
         isCapturing = false
-    }
-    
-    /// Process a captured region
-    /// - Parameter rect: The screen region to process
-    func processRegion(_ rect: CGRect) {
-        Task { @MainActor in
-            hideOverlay()
-            
-            // Capture the screen region
-            guard let image = await screenCaptureService.captureRegion(rect) else {
-                isCapturing = false
-                return
-            }
-            
-            // Process based on mode
-            switch currentMode {
-            case .ocr:
-                await processOCR(image: image)
-            case .translate:
-                await processTranslate(image: image)
-            case .screenshot:
-                await processScreenshot(image: image)
-            }
-            
-            isCapturing = false
-        }
     }
     
     // MARK: - Private Methods
     
-    private func showOverlay() {
-        // Create overlay windows for each screen
-        for screen in NSScreen.screens {
-            let window = CaptureOverlayWindow(screen: screen, coordinator: self)
-            overlayWindows.append(window)
-            window.makeKeyAndOrderFront(nil)
-        }
-        
-        // Make the app active
-        NSApp.activate(ignoringOtherApps: true)
-    }
-    
-    private func hideOverlay() {
-        for window in overlayWindows {
-            window.close()
-        }
-        overlayWindows.removeAll()
-    }
-    
-    /// Use native macOS screencapture for screenshot mode
+    /// Use native macOS screencapture for all capture modes
     /// This provides better UX and Retina resolution captures
     private func captureWithNativeScreenshot() async {
         // Use native screencapture command
@@ -130,8 +78,16 @@ final class CaptureCoordinator: ObservableObject {
             return
         }
         
-        // Process the screenshot
-        await processScreenshot(image: image)
+        // Process based on mode
+        switch currentMode {
+        case .ocr:
+            await processOCR(image: image)
+        case .translate:
+            await processTranslate(image: image)
+        case .screenshot:
+            await processScreenshot(image: image)
+        }
+        
         isCapturing = false
     }
     
