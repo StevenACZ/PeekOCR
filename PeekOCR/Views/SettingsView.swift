@@ -28,11 +28,6 @@ struct SettingsView: View {
                     Label("Capturas", systemImage: "camera.viewfinder")
                 }
             
-            TranslationSettingsTab()
-                .tabItem {
-                    Label("Traducción", systemImage: "globe")
-                }
-            
             HistorySettingsTab()
                 .tabItem {
                     Label("Historial", systemImage: "clock")

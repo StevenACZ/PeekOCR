@@ -28,18 +28,6 @@ struct ShortcutsSettingsTab: View {
                 )
                 
                 ShortcutRecorderRow(
-                    title: "Capturar y Traducir",
-                    description: "Captura texto y lo traduce automáticamente",
-                    icon: "globe",
-                    currentShortcut: settings.translateHotKeyDisplayString(),
-                    onRecord: { modifiers, keyCode in
-                        settings.translateHotKeyModifiers = modifiers
-                        settings.translateHotKeyCode = keyCode
-                        HotKeyManager.shared.reregisterHotKeys()
-                    }
-                )
-                
-                ShortcutRecorderRow(
                     title: "Captura de Pantalla",
                     description: "Captura una imagen del área seleccionada",
                     icon: "camera.viewfinder",
@@ -71,8 +59,6 @@ struct ShortcutsSettingsTab: View {
     private func restoreDefaults() {
         settings.captureHotKeyModifiers = AppSettings.Defaults.captureModifiers
         settings.captureHotKeyCode = AppSettings.Defaults.captureKeyCode
-        settings.translateHotKeyModifiers = AppSettings.Defaults.translateModifiers
-        settings.translateHotKeyCode = AppSettings.Defaults.translateKeyCode
         settings.screenshotHotKeyModifiers = AppSettings.Defaults.screenshotModifiers
         settings.screenshotHotKeyCode = AppSettings.Defaults.screenshotKeyCode
         HotKeyManager.shared.reregisterHotKeys()

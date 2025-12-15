@@ -73,14 +73,6 @@ private struct QuickActionsSection: View {
             }
             
             ActionButton(
-                title: "Traducir Texto",
-                icon: "globe",
-                shortcut: settings.translateHotKeyDisplayString()
-            ) {
-                CaptureCoordinator.shared.startCapture(mode: .translate)
-            }
-            
-            ActionButton(
                 title: "Captura de Pantalla",
                 icon: "camera.viewfinder",
                 shortcut: settings.screenshotHotKeyDisplayString()
@@ -234,7 +226,7 @@ private struct HistoryItemRow: View {
     private var iconColor: Color {
         switch item.captureType {
         case .text:
-            return item.wasTranslated ? .orange : .blue
+            return .blue
         case .qrCode:
             return .purple
         }

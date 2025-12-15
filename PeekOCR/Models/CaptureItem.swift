@@ -13,8 +13,6 @@ struct CaptureItem: Identifiable, Codable, Equatable {
     let text: String
     let captureType: CaptureType
     let timestamp: Date
-    let wasTranslated: Bool
-    let originalText: String?
     
     // MARK: - Initialization
     
@@ -22,16 +20,12 @@ struct CaptureItem: Identifiable, Codable, Equatable {
         id: UUID = UUID(),
         text: String,
         captureType: CaptureType = .text,
-        timestamp: Date = Date(),
-        wasTranslated: Bool = false,
-        originalText: String? = nil
+        timestamp: Date = Date()
     ) {
         self.id = id
         self.text = text
         self.captureType = captureType
         self.timestamp = timestamp
-        self.wasTranslated = wasTranslated
-        self.originalText = originalText
     }
     
     // MARK: - Computed Properties
@@ -53,7 +47,7 @@ struct CaptureItem: Identifiable, Codable, Equatable {
     var icon: String {
         switch captureType {
         case .text:
-            return wasTranslated ? "globe" : "doc.text"
+            return "doc.text"
         case .qrCode:
             return "qrcode"
         }

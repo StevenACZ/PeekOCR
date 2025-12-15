@@ -122,7 +122,7 @@ private struct HistoryItemDetailRow: View {
     private var iconColor: Color {
         switch item.captureType {
         case .text:
-            return item.wasTranslated ? .orange : .blue
+            return .blue
         case .qrCode:
             return .purple
         }
@@ -131,7 +131,7 @@ private struct HistoryItemDetailRow: View {
     private var typeLabel: String {
         switch item.captureType {
         case .text:
-            return item.wasTranslated ? "Traducido" : "Texto"
+            return "Texto"
         case .qrCode:
             return "QR"
         }

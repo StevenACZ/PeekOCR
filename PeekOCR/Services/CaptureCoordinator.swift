@@ -12,7 +12,6 @@ import Combine
 /// Capture mode enumeration
 enum CaptureMode {
     case ocr
-    case translate
     case screenshot
 }
 
@@ -33,7 +32,6 @@ final class CaptureCoordinator: ObservableObject {
     private let pasteboardService = PasteboardService.shared
     private let screenshotService = ScreenshotService.shared
     private let historyManager = HistoryManager.shared
-    private let settings = AppSettings.shared
     
     // MARK: - Initialization
     
@@ -42,7 +40,7 @@ final class CaptureCoordinator: ObservableObject {
     // MARK: - Public Methods
     
     /// Start the capture flow
-    /// - Parameter mode: The capture mode (OCR, translate, or screenshot)
+    /// - Parameter mode: The capture mode (OCR or screenshot)
     func startCapture(mode: CaptureMode) {
         guard !isCapturing else { return }
         
@@ -50,15 +48,9 @@ final class CaptureCoordinator: ObservableObject {
         isCapturing = true
         
         // Use native macOS screencapture for all modes
-        // This provides a better user experience with no double-click issues
         Task { @MainActor in
             await captureWithNativeScreenshot()
         }
-    }
-    
-    /// Legacy method for backward compatibility
-    func startCapture(withTranslation: Bool) {
-        startCapture(mode: withTranslation ? .translate : .ocr)
     }
     
     /// Cancel the current capture
@@ -69,11 +61,8 @@ final class CaptureCoordinator: ObservableObject {
     // MARK: - Private Methods
     
     /// Use native macOS screencapture for all capture modes
-    /// This provides better UX and Retina resolution captures
     private func captureWithNativeScreenshot() async {
-        // Use native screencapture command
         guard let image = await nativeScreenCapture.captureInteractive() else {
-            // User cancelled or capture failed
             isCapturing = false
             return
         }
@@ -82,8 +71,6 @@ final class CaptureCoordinator: ObservableObject {
         switch currentMode {
         case .ocr:
             await processOCR(image: image)
-        case .translate:
-            await processTranslate(image: image)
         case .screenshot:
             await processScreenshot(image: image)
         }
@@ -98,27 +85,7 @@ final class CaptureCoordinator: ObservableObject {
         
         switch result {
         case .text(let text):
-            await handleTextResult(text, translated: false)
-        case .qrCode(let content):
-            await handleQRResult(content)
-        case .empty, .error:
-            break
-        }
-    }
-    
-    // MARK: - Translation Processing
-    
-    private func processTranslate(image: CGImage) async {
-        let result = await ocrService.processImage(image)
-        
-        switch result {
-        case .text(let text):
-            let translatedText = await TranslationService.shared.translate(
-                text: text,
-                from: settings.sourceLanguage,
-                to: settings.targetLanguage
-            )
-            await handleTextResult(translatedText, translated: true, originalText: text)
+            await handleTextResult(text)
         case .qrCode(let content):
             await handleQRResult(content)
         case .empty, .error:
@@ -129,10 +96,8 @@ final class CaptureCoordinator: ObservableObject {
     // MARK: - Screenshot Processing
     
     private func processScreenshot(image: CGImage) async {
-        // Process and save the screenshot
         let savedURL = await screenshotService.processScreenshot(image)
         
-        // Optionally add to history (as a note that screenshot was taken)
         let displayText: String
         if let url = savedURL {
             displayText = "📷 " + url.lastPathComponent
@@ -142,34 +107,26 @@ final class CaptureCoordinator: ObservableObject {
         
         let item = CaptureItem(
             text: displayText,
-            captureType: .text,
-            wasTranslated: false,
-            originalText: nil
+            captureType: .text
         )
         historyManager.addItem(item)
     }
     
     // MARK: - Result Handlers
     
-    private func handleTextResult(_ text: String, translated: Bool, originalText: String? = nil) async {
-        // Copy to clipboard
+    private func handleTextResult(_ text: String) async {
         pasteboardService.copy(text)
         
-        // Add to history
         let item = CaptureItem(
             text: text,
-            captureType: .text,
-            wasTranslated: translated,
-            originalText: originalText
+            captureType: .text
         )
         historyManager.addItem(item)
     }
     
     private func handleQRResult(_ content: String) async {
-        // Copy to clipboard
         pasteboardService.copy(content)
         
-        // Add to history
         let item = CaptureItem(
             text: content,
             captureType: .qrCode

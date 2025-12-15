@@ -67,9 +67,9 @@ struct AboutTab: View {
 private struct FeaturesList: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            FeatureRow(icon: "camera.viewfinder", text: "OCR preciso con Vision")
+            FeatureRow(icon: "doc.text.viewfinder", text: "OCR preciso con Vision")
             FeatureRow(icon: "qrcode", text: "Detección de códigos QR")
-            FeatureRow(icon: "globe", text: "Traducción offline")
+            FeatureRow(icon: "camera.viewfinder", text: "Captura de pantalla")
             FeatureRow(icon: "keyboard", text: "Atajos personalizables")
         }
         .padding(.horizontal, 48)
