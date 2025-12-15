@@ -10,9 +10,22 @@
 		B0D251B42EEF870D006F4EAA /* PeekOCR.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PeekOCR.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		B0D251C82EEF8800006F4EAA /* Exceptions for "PeekOCR" folder in "Copy Bundle Resources" phase from "PeekOCR" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = B0D251B32EEF870D006F4EAA /* PeekOCR */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		B0D251B62EEF870D006F4EAA /* PeekOCR */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				B0D251C82EEF8800006F4EAA /* Exceptions for "PeekOCR" folder in "Copy Bundle Resources" phase from "PeekOCR" target */,
+			);
 			path = PeekOCR;
 			sourceTree = "<group>";
 		};

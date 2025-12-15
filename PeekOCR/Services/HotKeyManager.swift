@@ -110,7 +110,7 @@ final class HotKeyManager {
     
     private func registerCaptureHotKey() {
         let settings = AppSettings.shared
-        var hotKeyID = captureHotKeyID
+        let hotKeyID = captureHotKeyID
         
         RegisterEventHotKey(
             settings.captureHotKeyCode,
@@ -124,7 +124,7 @@ final class HotKeyManager {
     
     private func registerScreenshotHotKey() {
         let settings = AppSettings.shared
-        var hotKeyID = screenshotHotKeyID
+        let hotKeyID = screenshotHotKeyID
         
         RegisterEventHotKey(
             settings.screenshotHotKeyCode,
