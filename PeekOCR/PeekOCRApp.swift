@@ -9,9 +9,13 @@ import SwiftUI
 
 @main
 struct PeekOCRApp: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    
     var body: some Scene {
-        WindowGroup {
-            ContentView()
+        // Settings window accessible from menu
+        Settings {
+            SettingsView()
+                .environmentObject(appDelegate.appState)
         }
     }
 }
