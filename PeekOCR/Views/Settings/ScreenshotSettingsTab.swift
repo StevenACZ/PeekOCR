@@ -118,40 +118,52 @@ struct ScreenshotSettingsTab: View {
             
             // Scale Section
             Section {
-                VStack(alignment: .leading) {
-                    HStack {
-                        Text("Escala")
-                        Spacer()
-                        Text("\(Int(settings.imageScale * 100))%")
-                            .foregroundStyle(.secondary)
+                Toggle("Reducir tamaño de imagen", isOn: Binding(
+                    get: { settings.imageScale < 1.0 },
+                    set: { enabled in
+                        settings.imageScale = enabled ? 0.5 : 1.0
                     }
-                    
-                    Slider(value: $settings.imageScale, in: 0.25...1.0, step: 0.25)
-                    
-                    HStack {
-                        Text("25%")
-                            .font(.caption2)
-                            .foregroundStyle(.tertiary)
-                        Spacer()
-                        Text("50%")
-                            .font(.caption2)
-                            .foregroundStyle(.tertiary)
-                        Spacer()
-                        Text("75%")
-                            .font(.caption2)
-                            .foregroundStyle(.tertiary)
-                        Spacer()
-                        Text("100%")
-                            .font(.caption2)
-                            .foregroundStyle(.tertiary)
+                ))
+                
+                if settings.imageScale < 1.0 {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text("Tamaño")
+                            Spacer()
+                            Text("\(Int(settings.imageScale * 100))%")
+                                .font(.system(.body, design: .monospaced))
+                                .foregroundStyle(.blue)
+                        }
+                        
+                        Slider(value: $settings.imageScale, in: 0.1...0.9, step: 0.1)
+                        
+                        HStack {
+                            Text("10%")
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
+                            Spacer()
+                            Text("50%")
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
+                            Spacer()
+                            Text("90%")
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
+                        }
                     }
                 }
             } header: {
-                Text("Reducción de Escala")
+                Text("Tamaño de Imagen")
             } footer: {
-                Text("Reduce el tamaño de la imagen para archivos más ligeros.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                if settings.imageScale < 1.0 {
+                    Text("La imagen se reducirá al \(Int(settings.imageScale * 100))% de su tamaño original.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text("La imagen se guardará a tamaño completo (máxima calidad).")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
         }
         .formStyle(.grouped)

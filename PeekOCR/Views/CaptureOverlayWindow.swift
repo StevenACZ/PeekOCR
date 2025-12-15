@@ -42,6 +42,7 @@ final class CaptureOverlayWindow: NSWindow {
         ignoresMouseEvents = false
         acceptsMouseMovedEvents = true
         isReleasedWhenClosed = false
+        collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         
         // Create and set the overlay view
         let view = CaptureOverlayView(frame: frame, coordinator: coordinator)
@@ -50,6 +51,10 @@ final class CaptureOverlayWindow: NSWindow {
         
         // Make window key and front
         makeFirstResponder(view)
+        
+        // Ensure window is ready for mouse events immediately
+        orderFrontRegardless()
+        makeKey()
     }
     
     // MARK: - Overrides
@@ -87,10 +92,13 @@ final class CaptureOverlayView: NSView {
         self.coordinator = coordinator
         super.init(frame: frame)
         
+        // Setup for immediate mouse interaction
+        wantsLayer = true
+        
         // Setup tracking area for mouse moved events
         let trackingArea = NSTrackingArea(
             rect: bounds,
-            options: [.activeAlways, .mouseMoved, .mouseEnteredAndExited],
+            options: [.activeAlways, .mouseMoved, .mouseEnteredAndExited, .inVisibleRect],
             owner: self,
             userInfo: nil
         )
@@ -99,6 +107,12 @@ final class CaptureOverlayView: NSView {
     
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+    
+    override var acceptsFirstResponder: Bool { true }
+    
+    override func becomeFirstResponder() -> Bool {
+        return true
     }
     
     // MARK: - Drawing
@@ -134,6 +148,9 @@ final class CaptureOverlayView: NSView {
         
         // Draw instructions
         drawInstructions()
+        
+        // Draw crosshair cursor hint
+        drawCrosshairHint()
     }
     
     private func drawDimensionLabel(for rect: NSRect) {
@@ -162,7 +179,7 @@ final class CaptureOverlayView: NSView {
     }
     
     private func drawInstructions() {
-        let instructions = "Dibuja un rectángulo para capturar • ESC para cancelar"
+        let instructions = "Arrastra para seleccionar • ESC para cancelar"
         
         let attributes: [NSAttributedString.Key: Any] = [
             .font: NSFont.systemFont(ofSize: 14, weight: .medium),
@@ -190,6 +207,36 @@ final class CaptureOverlayView: NSView {
         string.draw(at: point)
     }
     
+    private func drawCrosshairHint() {
+        // Don't draw if already selecting
+        guard !isSelecting else { return }
+        
+        // Get current mouse location
+        guard let window = window else { return }
+        let mouseLocation = window.mouseLocationOutsideOfEventStream
+        let localPoint = convert(mouseLocation, from: nil)
+        
+        // Only draw if mouse is in bounds
+        guard bounds.contains(localPoint) else { return }
+        
+        // Draw crosshair lines
+        let lineColor = NSColor.white.withAlphaComponent(0.5)
+        lineColor.setStroke()
+        
+        let path = NSBezierPath()
+        path.lineWidth = 1
+        
+        // Vertical line
+        path.move(to: NSPoint(x: localPoint.x, y: 0))
+        path.line(to: NSPoint(x: localPoint.x, y: bounds.height))
+        
+        // Horizontal line
+        path.move(to: NSPoint(x: 0, y: localPoint.y))
+        path.line(to: NSPoint(x: bounds.width, y: localPoint.y))
+        
+        path.stroke()
+    }
+    
     // MARK: - Mouse Events
     
     override func mouseDown(with event: NSEvent) {
@@ -204,6 +251,11 @@ final class CaptureOverlayView: NSView {
         guard isSelecting else { return }
         let point = convert(event.locationInWindow, from: nil)
         selectionEnd = point
+        needsDisplay = true
+    }
+    
+    override func mouseMoved(with event: NSEvent) {
+        // Redraw to update crosshair position
         needsDisplay = true
     }
     

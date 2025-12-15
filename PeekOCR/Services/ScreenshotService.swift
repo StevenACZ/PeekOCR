@@ -7,6 +7,7 @@
 
 import AppKit
 import UniformTypeIdentifiers
+import CoreGraphics
 
 /// Service for saving and processing screenshots
 final class ScreenshotService {
@@ -25,8 +26,13 @@ final class ScreenshotService {
     /// - Returns: URL where the image was saved, or nil if not saved to file
     @discardableResult
     func processScreenshot(_ image: CGImage) async -> URL? {
-        // Apply scale if needed
-        let processedImage = scaleImage(image, scale: settings.imageScale)
+        // Apply scale if needed (only if less than 100%)
+        let processedImage: CGImage
+        if settings.imageScale < 1.0 {
+            processedImage = scaleImage(image, scale: settings.imageScale)
+        } else {
+            processedImage = image
+        }
         
         // Copy to clipboard if enabled
         if settings.copyToClipboard {
@@ -42,17 +48,18 @@ final class ScreenshotService {
         return savedURL
     }
     
-    /// Copy image to clipboard
+    /// Copy image to clipboard with maximum quality
     /// - Parameter image: The image to copy
     func copyImageToClipboard(_ image: CGImage) {
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
         
-        let nsImage = NSImage(cgImage: image, size: NSSize(width: image.width, height: image.height))
+        // Create high-quality NSImage
+        let nsImage = createHighQualityNSImage(from: image)
         pasteboard.writeObjects([nsImage])
     }
     
-    /// Save image to file
+    /// Save image to file with maximum quality
     /// - Parameter image: The image to save
     /// - Returns: URL where the image was saved
     func saveImageToFile(_ image: CGImage) -> URL? {
@@ -80,30 +87,46 @@ final class ScreenshotService {
     
     // MARK: - Private Methods
     
-    /// Scale the image by the given factor
+    /// Create high quality NSImage from CGImage
+    private func createHighQualityNSImage(from cgImage: CGImage) -> NSImage {
+        let size = NSSize(width: cgImage.width, height: cgImage.height)
+        let nsImage = NSImage(size: size)
+        
+        nsImage.addRepresentation(NSBitmapImageRep(cgImage: cgImage))
+        
+        return nsImage
+    }
+    
+    /// Scale the image by the given factor with high quality
     private func scaleImage(_ image: CGImage, scale: Double) -> CGImage {
-        guard scale < 1.0 else { return image }
+        guard scale < 1.0, scale > 0 else { return image }
         
         let newWidth = Int(Double(image.width) * scale)
         let newHeight = Int(Double(image.height) * scale)
         
         guard newWidth > 0, newHeight > 0 else { return image }
         
-        let colorSpace = image.colorSpace ?? CGColorSpace(name: CGColorSpace.sRGB)!
+        // Use high quality scaling with proper color space
+        let colorSpace = CGColorSpace(name: CGColorSpace.sRGB) ?? image.colorSpace ?? CGColorSpaceCreateDeviceRGB()
         
+        // Create context with proper settings for high quality
         guard let context = CGContext(
             data: nil,
             width: newWidth,
             height: newHeight,
-            bitsPerComponent: image.bitsPerComponent,
+            bitsPerComponent: 8,
             bytesPerRow: 0,
             space: colorSpace,
-            bitmapInfo: image.bitmapInfo.rawValue
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
         ) else {
             return image
         }
         
+        // Set high quality interpolation
         context.interpolationQuality = .high
+        context.setShouldAntialias(true)
+        
+        // Draw with high quality
         context.draw(image, in: CGRect(x: 0, y: 0, width: newWidth, height: newHeight))
         
         return context.makeImage() ?? image
@@ -118,39 +141,67 @@ final class ScreenshotService {
         return "PeekOCR_\(timestamp).\(settings.imageFormat.fileExtension)"
     }
     
-    /// Convert CGImage to Data in the specified format
+    /// Convert CGImage to Data in the specified format with maximum quality
     private func getImageData(from image: CGImage, format: ImageFormat) -> Data? {
-        let nsImage = NSImage(cgImage: image, size: NSSize(width: image.width, height: image.height))
-        
-        guard let tiffData = nsImage.tiffRepresentation,
-              let bitmapRep = NSBitmapImageRep(data: tiffData) else {
-            return nil
-        }
+        // Create bitmap representation directly from CGImage for best quality
+        let bitmapRep = NSBitmapImageRep(cgImage: image)
+        bitmapRep.size = NSSize(width: image.width, height: image.height)
         
         switch format {
         case .png:
-            return bitmapRep.representation(using: .png, properties: [:])
+            // PNG is lossless - maximum quality
+            return bitmapRep.representation(using: .png, properties: [
+                .interlaced: false
+            ])
             
         case .jpg:
-            return bitmapRep.representation(
-                using: .jpeg,
-                properties: [.compressionFactor: settings.imageQuality]
-            )
+            // JPG with user-defined quality
+            return bitmapRep.representation(using: .jpeg, properties: [
+                .compressionFactor: settings.imageQuality,
+                .progressive: false
+            ])
             
         case .tiff:
-            return bitmapRep.representation(using: .tiff, properties: [:])
+            // TIFF is lossless
+            return bitmapRep.representation(using: .tiff, properties: [
+                .compressionMethod: NSBitmapImageRep.TIFFCompression.none
+            ])
             
         case .heic:
-            // HEIC requires macOS 10.13+ and specific handling
-            if #available(macOS 10.13, *) {
-                return bitmapRep.representation(
-                    using: .jpeg2000,
-                    properties: [.compressionFactor: settings.imageQuality]
-                )
+            // Use ImageIO for proper HEIC encoding
+            if #available(macOS 11.0, *) {
+                return createHEICData(from: image)
             } else {
-                // Fallback to PNG
+                // Fallback to PNG for older macOS
                 return bitmapRep.representation(using: .png, properties: [:])
             }
         }
+    }
+    
+    /// Create HEIC data using ImageIO for proper encoding
+    @available(macOS 11.0, *)
+    private func createHEICData(from image: CGImage) -> Data? {
+        let data = NSMutableData()
+        
+        guard let destination = CGImageDestinationCreateWithData(
+            data as CFMutableData,
+            "public.heic" as CFString,
+            1,
+            nil
+        ) else {
+            return nil
+        }
+        
+        let options: [CFString: Any] = [
+            kCGImageDestinationLossyCompressionQuality: settings.imageQuality
+        ]
+        
+        CGImageDestinationAddImage(destination, image, options as CFDictionary)
+        
+        guard CGImageDestinationFinalize(destination) else {
+            return nil
+        }
+        
+        return data as Data
     }
 }
