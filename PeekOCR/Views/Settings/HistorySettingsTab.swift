@@ -122,18 +122,22 @@ private struct HistoryItemDetailRow: View {
     private var iconColor: Color {
         switch item.captureType {
         case .text:
-            return item.wasTranslated ? .orange : .blue
+            return .blue
         case .qrCode:
             return .purple
+        case .screenshot:
+            return .green
         }
     }
     
     private var typeLabel: String {
         switch item.captureType {
         case .text:
-            return item.wasTranslated ? "Traducido" : "Texto"
+            return "Texto"
         case .qrCode:
             return "QR"
+        case .screenshot:
+            return "Captura"
         }
     }
 }

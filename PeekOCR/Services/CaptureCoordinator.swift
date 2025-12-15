@@ -9,23 +9,29 @@ import AppKit
 import SwiftUI
 import Combine
 
-/// Coordinates the capture flow: overlay → capture → OCR → clipboard
+/// Capture mode enumeration
+enum CaptureMode {
+    case ocr
+    case screenshot
+}
+
+/// Coordinates the capture flow: native capture → process → clipboard/save
+/// Uses macOS native screencapture for all capture modes
 final class CaptureCoordinator: ObservableObject {
     static let shared = CaptureCoordinator()
     
     // MARK: - Properties
     
     @Published private(set) var isCapturing = false
-    private var overlayWindows: [CaptureOverlayWindow] = []
-    private var shouldTranslate = false
+    private var currentMode: CaptureMode = .ocr
     
     // MARK: - Services
     
-    private let screenCaptureService = ScreenCaptureService.shared
+    private let nativeScreenCapture = NativeScreenCaptureService.shared
     private let ocrService = OCRService.shared
     private let pasteboardService = PasteboardService.shared
+    private let screenshotService = ScreenshotService.shared
     private let historyManager = HistoryManager.shared
-    private let settings = AppSettings.shared
     
     // MARK: - Initialization
     
@@ -34,105 +40,93 @@ final class CaptureCoordinator: ObservableObject {
     // MARK: - Public Methods
     
     /// Start the capture flow
-    /// - Parameter withTranslation: Whether to translate the captured text
-    func startCapture(withTranslation: Bool) {
+    /// - Parameter mode: The capture mode (OCR or screenshot)
+    func startCapture(mode: CaptureMode) {
         guard !isCapturing else { return }
         
-        shouldTranslate = withTranslation
+        currentMode = mode
         isCapturing = true
         
-        showOverlay()
+        // Use native macOS screencapture for all modes
+        Task { @MainActor in
+            await captureWithNativeScreenshot()
+        }
     }
     
     /// Cancel the current capture
     func cancelCapture() {
-        hideOverlay()
         isCapturing = false
-    }
-    
-    /// Process a captured region
-    /// - Parameter rect: The screen region to process
-    func processRegion(_ rect: CGRect) {
-        Task { @MainActor in
-            hideOverlay()
-            
-            // Capture the screen region
-            guard let image = await screenCaptureService.captureRegion(rect) else {
-                isCapturing = false
-                return
-            }
-            
-            // Process with OCR
-            let result = await ocrService.processImage(image)
-            
-            switch result {
-            case .text(let text):
-                await handleTextResult(text)
-            case .qrCode(let content):
-                await handleQRResult(content)
-            case .empty:
-                // Nothing found
-                break
-            case .error:
-                // Handle error silently
-                break
-            }
-            
-            isCapturing = false
-        }
     }
     
     // MARK: - Private Methods
     
-    private func showOverlay() {
-        // Create overlay windows for each screen
-        for screen in NSScreen.screens {
-            let window = CaptureOverlayWindow(screen: screen, coordinator: self)
-            overlayWindows.append(window)
-            window.makeKeyAndOrderFront(nil)
+    /// Use native macOS screencapture for all capture modes
+    private func captureWithNativeScreenshot() async {
+        guard let image = await nativeScreenCapture.captureInteractive() else {
+            isCapturing = false
+            return
         }
         
-        // Make the app active
-        NSApp.activate(ignoringOtherApps: true)
+        // Process based on mode
+        switch currentMode {
+        case .ocr:
+            await processOCR(image: image)
+        case .screenshot:
+            await processScreenshot(image: image)
+        }
+        
+        isCapturing = false
     }
     
-    private func hideOverlay() {
-        for window in overlayWindows {
-            window.close()
+    // MARK: - OCR Processing
+    
+    private func processOCR(image: CGImage) async {
+        let result = await ocrService.processImage(image)
+        
+        switch result {
+        case .text(let text):
+            await handleTextResult(text)
+        case .qrCode(let content):
+            await handleQRResult(content)
+        case .empty, .error:
+            break
         }
-        overlayWindows.removeAll()
     }
+    
+    // MARK: - Screenshot Processing
+    
+    private func processScreenshot(image: CGImage) async {
+        let savedURL = await screenshotService.processScreenshot(image)
+        
+        let displayText: String
+        if let url = savedURL {
+            displayText = url.lastPathComponent
+        } else {
+            displayText = "Captura copiada al portapapeles"
+        }
+        
+        let item = CaptureItem(
+            text: displayText,
+            captureType: .screenshot
+        )
+        historyManager.addItem(item)
+    }
+    
+    // MARK: - Result Handlers
     
     private func handleTextResult(_ text: String) async {
-        var finalText = text
+        pasteboardService.copy(text)
         
-        // Translate if needed
-        if shouldTranslate {
-            finalText = await TranslationService.shared.translate(
-                text: text,
-                from: settings.sourceLanguage,
-                to: settings.targetLanguage
-            )
-        }
-        
-        // Copy to clipboard
-        pasteboardService.copy(finalText)
-        
-        // Add to history
         let item = CaptureItem(
-            text: finalText,
-            captureType: .text,
-            wasTranslated: shouldTranslate,
-            originalText: shouldTranslate ? text : nil
+            text: text,
+            captureType: .text
         )
         historyManager.addItem(item)
     }
     
     private func handleQRResult(_ content: String) async {
-        // Copy to clipboard
         pasteboardService.copy(content)
         
-        // Add to history
         let item = CaptureItem(
             text: content,
             captureType: .qrCode

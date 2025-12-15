@@ -20,12 +20,9 @@ final class AppSettings: ObservableObject {
     private enum Keys {
         static let captureHotKeyModifiers = "captureHotKeyModifiers"
         static let captureHotKeyCode = "captureHotKeyCode"
-        static let translateHotKeyModifiers = "translateHotKeyModifiers"
-        static let translateHotKeyCode = "translateHotKeyCode"
-        static let sourceLanguage = "sourceLanguage"
-        static let targetLanguage = "targetLanguage"
+        static let screenshotHotKeyModifiers = "screenshotHotKeyModifiers"
+        static let screenshotHotKeyCode = "screenshotHotKeyCode"
         static let launchAtLogin = "launchAtLogin"
-        static let historyItems = "historyItems"
     }
     
     // MARK: - Default Values
@@ -35,12 +32,10 @@ final class AppSettings: ObservableObject {
         static let captureModifiers: UInt32 = UInt32(shiftKey)
         static let captureKeyCode: UInt32 = UInt32(kVK_Space)
         
-        // Control + Shift + Space for translate
-        static let translateModifiers: UInt32 = UInt32(shiftKey | controlKey)
-        static let translateKeyCode: UInt32 = UInt32(kVK_Space)
+        // Cmd + Shift + 4 for screenshot (like macOS)
+        static let screenshotModifiers: UInt32 = UInt32(shiftKey | cmdKey)
+        static let screenshotKeyCode: UInt32 = UInt32(kVK_ANSI_4)
         
-        static let sourceLanguage = "en"
-        static let targetLanguage = "es"
         static let launchAtLogin = false
         static let maxHistoryItems = 6
     }
@@ -55,22 +50,12 @@ final class AppSettings: ObservableObject {
         didSet { defaults.set(captureHotKeyCode, forKey: Keys.captureHotKeyCode) }
     }
     
-    @Published var translateHotKeyModifiers: UInt32 {
-        didSet { defaults.set(translateHotKeyModifiers, forKey: Keys.translateHotKeyModifiers) }
+    @Published var screenshotHotKeyModifiers: UInt32 {
+        didSet { defaults.set(screenshotHotKeyModifiers, forKey: Keys.screenshotHotKeyModifiers) }
     }
     
-    @Published var translateHotKeyCode: UInt32 {
-        didSet { defaults.set(translateHotKeyCode, forKey: Keys.translateHotKeyCode) }
-    }
-    
-    // MARK: - Translation Settings
-    
-    @Published var sourceLanguage: String {
-        didSet { defaults.set(sourceLanguage, forKey: Keys.sourceLanguage) }
-    }
-    
-    @Published var targetLanguage: String {
-        didSet { defaults.set(targetLanguage, forKey: Keys.targetLanguage) }
+    @Published var screenshotHotKeyCode: UInt32 {
+        didSet { defaults.set(screenshotHotKeyCode, forKey: Keys.screenshotHotKeyCode) }
     }
     
     // MARK: - General Settings
@@ -93,16 +78,14 @@ final class AppSettings: ObservableObject {
             ? UInt32(defaults.integer(forKey: Keys.captureHotKeyCode))
             : Defaults.captureKeyCode
         
-        self.translateHotKeyModifiers = UInt32(defaults.integer(forKey: Keys.translateHotKeyModifiers)) != 0
-            ? UInt32(defaults.integer(forKey: Keys.translateHotKeyModifiers))
-            : Defaults.translateModifiers
+        self.screenshotHotKeyModifiers = UInt32(defaults.integer(forKey: Keys.screenshotHotKeyModifiers)) != 0
+            ? UInt32(defaults.integer(forKey: Keys.screenshotHotKeyModifiers))
+            : Defaults.screenshotModifiers
         
-        self.translateHotKeyCode = UInt32(defaults.integer(forKey: Keys.translateHotKeyCode)) != 0
-            ? UInt32(defaults.integer(forKey: Keys.translateHotKeyCode))
-            : Defaults.translateKeyCode
+        self.screenshotHotKeyCode = UInt32(defaults.integer(forKey: Keys.screenshotHotKeyCode)) != 0
+            ? UInt32(defaults.integer(forKey: Keys.screenshotHotKeyCode))
+            : Defaults.screenshotKeyCode
         
-        self.sourceLanguage = defaults.string(forKey: Keys.sourceLanguage) ?? Defaults.sourceLanguage
-        self.targetLanguage = defaults.string(forKey: Keys.targetLanguage) ?? Defaults.targetLanguage
         self.launchAtLogin = defaults.bool(forKey: Keys.launchAtLogin)
     }
     
@@ -112,8 +95,8 @@ final class AppSettings: ObservableObject {
         return hotKeyDisplayString(modifiers: captureHotKeyModifiers, keyCode: captureHotKeyCode)
     }
     
-    func translateHotKeyDisplayString() -> String {
-        return hotKeyDisplayString(modifiers: translateHotKeyModifiers, keyCode: translateHotKeyCode)
+    func screenshotHotKeyDisplayString() -> String {
+        return hotKeyDisplayString(modifiers: screenshotHotKeyModifiers, keyCode: screenshotHotKeyCode)
     }
     
     private func hotKeyDisplayString(modifiers: UInt32, keyCode: UInt32) -> String {
@@ -165,6 +148,16 @@ final class AppSettings: ObservableObject {
         case kVK_ANSI_B: return "B"
         case kVK_ANSI_N: return "N"
         case kVK_ANSI_M: return "M"
+        case kVK_ANSI_1: return "1"
+        case kVK_ANSI_2: return "2"
+        case kVK_ANSI_3: return "3"
+        case kVK_ANSI_4: return "4"
+        case kVK_ANSI_5: return "5"
+        case kVK_ANSI_6: return "6"
+        case kVK_ANSI_7: return "7"
+        case kVK_ANSI_8: return "8"
+        case kVK_ANSI_9: return "9"
+        case kVK_ANSI_0: return "0"
         default: return nil
         }
     }

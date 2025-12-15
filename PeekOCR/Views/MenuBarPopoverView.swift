@@ -66,18 +66,18 @@ private struct QuickActionsSection: View {
         VStack(spacing: 4) {
             ActionButton(
                 title: "Capturar Texto",
-                icon: "camera.viewfinder",
+                icon: "doc.text.viewfinder",
                 shortcut: settings.captureHotKeyDisplayString()
             ) {
-                CaptureCoordinator.shared.startCapture(withTranslation: false)
+                CaptureCoordinator.shared.startCapture(mode: .ocr)
             }
             
             ActionButton(
-                title: "Traducir Texto",
-                icon: "globe",
-                shortcut: settings.translateHotKeyDisplayString()
+                title: "Captura de Pantalla",
+                icon: "camera.viewfinder",
+                shortcut: settings.screenshotHotKeyDisplayString()
             ) {
-                CaptureCoordinator.shared.startCapture(withTranslation: true)
+                CaptureCoordinator.shared.startCapture(mode: .screenshot)
             }
         }
         .padding(.vertical, 8)
@@ -226,9 +226,11 @@ private struct HistoryItemRow: View {
     private var iconColor: Color {
         switch item.captureType {
         case .text:
-            return item.wasTranslated ? .orange : .blue
+            return .blue
         case .qrCode:
             return .purple
+        case .screenshot:
+            return .green
         }
     }
 }
