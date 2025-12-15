@@ -18,7 +18,7 @@ struct HistorySettingsTab: View {
                 HStack {
                     Text("Capturas guardadas")
                     Spacer()
-                    Text("\(historyManager.items.count) de 6")
+                    Text("\(historyManager.items.count) de \(Constants.History.maxItems)")
                         .foregroundStyle(.secondary)
                 }
             } header: {
@@ -75,31 +75,31 @@ private struct HistoryItemDetailRow: View {
     var body: some View {
         HStack {
             Image(systemName: item.icon)
-                .foregroundStyle(iconColor)
+                .foregroundStyle(item.captureType.displayColor)
                 .frame(width: 20)
-            
+
             VStack(alignment: .leading, spacing: 2) {
                 Text(item.displayText)
                     .font(.body)
                     .lineLimit(1)
-                
+
                 HStack {
-                    Text(typeLabel)
+                    Text(item.captureType.displayLabel)
                         .font(.caption2)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2)
-                        .background(iconColor.opacity(0.1))
-                        .foregroundStyle(iconColor)
+                        .background(item.captureType.displayColor.opacity(0.1))
+                        .foregroundStyle(item.captureType.displayColor)
                         .clipShape(RoundedRectangle(cornerRadius: 4))
-                    
+
                     Text(item.formattedTime)
                         .font(.caption)
                         .foregroundStyle(.tertiary)
                 }
             }
-            
+
             Spacer()
-            
+
             Button {
                 historyManager.copyItem(item)
             } label: {
@@ -107,7 +107,7 @@ private struct HistoryItemDetailRow: View {
             }
             .buttonStyle(.borderless)
             .help("Copiar")
-            
+
             Button(role: .destructive) {
                 historyManager.removeItem(item)
             } label: {
@@ -117,28 +117,6 @@ private struct HistoryItemDetailRow: View {
             .help("Eliminar")
         }
         .padding(.vertical, 2)
-    }
-    
-    private var iconColor: Color {
-        switch item.captureType {
-        case .text:
-            return .blue
-        case .qrCode:
-            return .purple
-        case .screenshot:
-            return .green
-        }
-    }
-    
-    private var typeLabel: String {
-        switch item.captureType {
-        case .text:
-            return "Texto"
-        case .qrCode:
-            return "QR"
-        case .screenshot:
-            return "Captura"
-        }
     }
 }
 

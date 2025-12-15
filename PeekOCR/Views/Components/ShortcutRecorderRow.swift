@@ -1,0 +1,103 @@
+//
+//  ShortcutRecorderRow.swift
+//  PeekOCR
+//
+//  Created by Steven on 14/12/25.
+//
+
+import SwiftUI
+
+/// A reusable row component for recording keyboard shortcuts
+struct ShortcutRecorderRow: View {
+    let title: String
+    let description: String
+    let icon: String
+    let currentShortcut: String
+    let onRecord: (UInt32, UInt32) -> Void
+
+    @State private var isRecording = false
+
+    var body: some View {
+        HStack {
+            Image(systemName: icon)
+                .font(.title3)
+                .foregroundStyle(.blue)
+                .frame(width: 24)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.body)
+
+                Text(description)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            if isRecording {
+                recordingIndicator
+            } else {
+                shortcutDisplay
+            }
+        }
+        .padding(.vertical, 4)
+    }
+
+    // MARK: - Subviews
+
+    private var recordingIndicator: some View {
+        Text("Presiona una tecla...")
+            .font(.caption)
+            .foregroundStyle(.orange)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(Color.orange.opacity(0.1))
+            .clipShape(RoundedRectangle(cornerRadius: 6))
+    }
+
+    private var shortcutDisplay: some View {
+        HStack(spacing: 8) {
+            Text(currentShortcut)
+                .font(.system(.caption, design: .monospaced))
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(Color.secondary.opacity(0.15))
+                .clipShape(RoundedRectangle(cornerRadius: 4))
+
+            Button("Grabar") {
+                startRecording()
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+        }
+    }
+
+    // MARK: - Actions
+
+    private func startRecording() {
+        isRecording = true
+
+        // Monitor for key events
+        NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            if isRecording {
+                let modifiers = HotKeyDisplay.carbonModifiers(from: event.modifierFlags)
+                let keyCode = UInt32(event.keyCode)
+
+                // Require at least one modifier
+                if modifiers != 0 {
+                    onRecord(modifiers, keyCode)
+                    isRecording = false
+                }
+
+                return nil // Consume the event
+            }
+            return event
+        }
+
+        // Cancel on escape or after timeout
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+            isRecording = false
+        }
+    }
+}

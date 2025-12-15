@@ -11,7 +11,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		B0D251C82EEF8800006F4EAA /* Exceptions for "PeekOCR" folder in "Copy Bundle Resources" phase from "PeekOCR" target */ = {
+		B0D251C82EEF8800006F4EAA /* Exceptions for "PeekOCR" folder in "PeekOCR" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -24,7 +24,7 @@
 		B0D251B62EEF870D006F4EAA /* PeekOCR */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				B0D251C82EEF8800006F4EAA /* Exceptions for "PeekOCR" folder in "Copy Bundle Resources" phase from "PeekOCR" target */,
+				B0D251C82EEF8800006F4EAA /* Exceptions for "PeekOCR" folder in "PeekOCR" target */,
 			);
 			path = PeekOCR;
 			sourceTree = "<group>";

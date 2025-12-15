@@ -16,7 +16,7 @@ final class HistoryManager: ObservableObject {
     
     @Published private(set) var items: [CaptureItem] = []
     
-    private let maxItems = 6
+    private let maxItems = Constants.History.maxItems
     private let storageKey = "captureHistory"
     private let defaults = UserDefaults.standard
     

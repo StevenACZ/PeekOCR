@@ -31,9 +31,8 @@ struct CaptureItem: Identifiable, Codable, Equatable {
     // MARK: - Computed Properties
     
     var displayText: String {
-        let maxLength = 50
-        if text.count > maxLength {
-            return String(text.prefix(maxLength)) + "..."
+        if text.count > Constants.History.maxPreviewLength {
+            return String(text.prefix(Constants.History.maxPreviewLength)) + "..."
         }
         return text
     }

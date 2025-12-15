@@ -33,7 +33,7 @@ struct MenuBarPopoverView: View {
             // Footer
             FooterSection()
         }
-        .frame(width: 320)
+        .frame(width: Constants.UI.popoverWidth)
         .background(Color(NSColor.windowBackgroundColor))
     }
 }
@@ -159,7 +159,7 @@ private struct HistorySection: View {
                         }
                     }
                 }
-                .frame(maxHeight: 180)
+                .frame(maxHeight: Constants.UI.historyMaxHeight)
             }
         }
         .padding(.bottom, 8)
@@ -197,16 +197,16 @@ private struct HistoryItemRow: View {
             HStack(spacing: 12) {
                 Image(systemName: item.icon)
                     .font(.caption)
-                    .foregroundStyle(iconColor)
+                    .foregroundStyle(item.captureType.displayColor)
                     .frame(width: 16)
-                
+
                 Text(item.displayText)
                     .font(.caption)
                     .lineLimit(1)
                     .truncationMode(.tail)
-                
+
                 Spacer()
-                
+
                 Text(item.formattedTime)
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
@@ -221,17 +221,6 @@ private struct HistoryItemRow: View {
             isHovered = hovering
         }
         .help("Clic para copiar")
-    }
-    
-    private var iconColor: Color {
-        switch item.captureType {
-        case .text:
-            return .blue
-        case .qrCode:
-            return .purple
-        case .screenshot:
-            return .green
-        }
     }
 }
 
