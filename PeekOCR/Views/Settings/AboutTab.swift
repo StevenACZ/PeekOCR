@@ -39,6 +39,7 @@ struct AboutTab: View {
                 .font(.body)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
                 .padding(.horizontal, 32)
             
             // Features
@@ -48,7 +49,7 @@ struct AboutTab: View {
             
             // Footer
             VStack(spacing: 4) {
-                Text("Desarrollado con ❤️")
+                Text("Desarrollado con ❤️ por StevenACZ")
                     .font(.caption)
                     .foregroundStyle(.tertiary)
                 
