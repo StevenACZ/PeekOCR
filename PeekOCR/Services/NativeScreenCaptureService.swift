@@ -25,19 +25,32 @@ final class NativeScreenCaptureService {
             .appendingPathComponent(UUID().uuidString)
             .appendingPathExtension("png")
         
-        defer {
-            // Clean up temp file
-            try? FileManager.default.removeItem(at: tempURL)
-        }
-        
         // Run screencapture command
         let success = await runScreenCapture(outputPath: tempURL.path)
         
-        guard success else { return nil }
+        guard success else { 
+            // Clean up in case of failure
+            try? FileManager.default.removeItem(at: tempURL)
+            return nil 
+        }
         
-        // Load the captured image
-        guard let imageSource = CGImageSourceCreateWithURL(tempURL as CFURL, nil),
-              let image = CGImageSourceCreateImageAtIndex(imageSource, 0, nil) else {
+        // Load file data into memory BEFORE deleting the file
+        guard let imageData = try? Data(contentsOf: tempURL) else {
+            try? FileManager.default.removeItem(at: tempURL)
+            return nil
+        }
+        
+        // Clean up temp file now that we have the data in memory
+        try? FileManager.default.removeItem(at: tempURL)
+        
+        // Create image from in-memory data
+        guard let dataProvider = CGDataProvider(data: imageData as CFData),
+              let image = CGImage(
+                pngDataProviderSource: dataProvider,
+                decode: nil,
+                shouldInterpolate: true,
+                intent: .defaultIntent
+              ) else {
             return nil
         }
         
@@ -52,18 +65,21 @@ final class NativeScreenCaptureService {
             .appendingPathComponent(UUID().uuidString)
             .appendingPathExtension("png")
         
-        defer {
-            // Clean up temp file
-            try? FileManager.default.removeItem(at: tempURL)
-        }
-        
         // Run screencapture command
         let success = await runScreenCapture(outputPath: tempURL.path)
         
-        guard success else { return nil }
+        guard success else { 
+            try? FileManager.default.removeItem(at: tempURL)
+            return nil 
+        }
         
-        // Read the file data
-        return try? Data(contentsOf: tempURL)
+        // Read the file data into memory
+        let data = try? Data(contentsOf: tempURL)
+        
+        // Clean up temp file
+        try? FileManager.default.removeItem(at: tempURL)
+        
+        return data
     }
     
     /// Capture to clipboard directly using native screencapture
