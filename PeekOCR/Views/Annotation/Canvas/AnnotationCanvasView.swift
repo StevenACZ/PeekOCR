@@ -33,7 +33,7 @@ struct AnnotationCanvasView: View {
                         text: $state.currentText,
                         position: state.textInputPosition,
                         color: state.selectedColor,
-                        fontSize: max(12, state.strokeWidth * 5),
+                        fontSize: state.fontSize,
                         onCommit: state.finishTextInput,
                         onCancel: state.cancelTextInput
                     )
@@ -93,6 +93,11 @@ struct AnnotationCanvasView: View {
     }
 
     private func handleDragChanged(_ value: DragGesture.Value) {
+        // Finish any active text input before processing other actions
+        if state.isTextInputActive && state.selectedTool != .text {
+            state.finishTextInput()
+        }
+
         if state.selectedTool == .select {
             handleSelectDrag(value)
             return
@@ -116,6 +121,10 @@ struct AnnotationCanvasView: View {
         }
 
         if state.selectedTool == .text {
+            // Finish any active text input before starting new one
+            if state.isTextInputActive {
+                state.finishTextInput()
+            }
             state.startTextInput(at: value.location)
         } else {
             state.finishAnnotation()

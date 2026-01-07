@@ -13,13 +13,31 @@ final class AnnotationState: ObservableObject {
     // MARK: - Tool Properties
 
     /// Currently selected tool
-    @Published var selectedTool: AnnotationTool = .arrow
+    @Published var selectedTool: AnnotationTool = .arrow {
+        didSet {
+            // Close text input when switching away from text tool
+            if isTextInputActive && oldValue == .text && selectedTool != .text {
+                finishTextInput()
+            }
+        }
+    }
 
     /// Currently selected color
     @Published var selectedColor: Color = .red
 
-    /// Current stroke width
+    /// Current stroke width (initialized from AppSettings)
     @Published var strokeWidth: CGFloat = 3.0
+
+    /// Current font size (initialized from AppSettings)
+    @Published var fontSize: CGFloat = 24.0
+
+    // MARK: - Initialization
+
+    init() {
+        let settings = AppSettings.shared
+        self.strokeWidth = settings.defaultAnnotationStrokeWidth
+        self.fontSize = settings.defaultAnnotationFontSize
+    }
 
     // MARK: - Annotation Properties
 
@@ -115,7 +133,7 @@ final class AnnotationState: ObservableObject {
             strokeWidth: strokeWidth,
             startPoint: textInputPosition,
             text: currentText,
-            fontSize: max(12, strokeWidth * 5)
+            fontSize: fontSize
         )
 
         annotations.append(textAnnotation)
@@ -236,6 +254,7 @@ final class AnnotationState: ObservableObject {
     // MARK: - Reset
 
     func reset() {
+        let settings = AppSettings.shared
         annotations.removeAll()
         currentAnnotation = nil
         undoStack.removeAll()
@@ -244,7 +263,8 @@ final class AnnotationState: ObservableObject {
         currentText = ""
         selectedTool = .arrow
         selectedColor = .red
-        strokeWidth = 3.0
+        strokeWidth = settings.defaultAnnotationStrokeWidth
+        fontSize = settings.defaultAnnotationFontSize
         selectedAnnotationId = nil
         activeHandle = nil
     }
