@@ -83,5 +83,8 @@ PeekOCR/
 │   ├── MenuBar/         # Menu bar popover
 │   ├── Settings/        # Preferences
 │   └── Components/      # Reusable UI
+├── Utils/               # Utilities
+│   └── AppLogger        # Centralized logging
+├── Managers/            # Singleton managers
 └── Extensions/          # Swift extensions
 ```

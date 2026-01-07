@@ -56,7 +56,6 @@ build/
 *.dSYM
 
 # AI Agent Config (keep private)
-AGENTS.md
 PEEKOCR_SPEC.md
 
 # Dev scripts (local)
@@ -92,4 +91,3 @@ logs/
 # Thumbnails
 Thumbs.db
 ehthumbs.db
-AGENTS.md
