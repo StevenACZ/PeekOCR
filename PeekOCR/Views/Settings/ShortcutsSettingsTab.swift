@@ -16,7 +16,7 @@ struct ShortcutsSettingsTab: View {
             Section {
                 ShortcutRecorderRow(
                     title: "Capturar Texto",
-                    description: "Activa la selección de pantalla para OCR",
+                    description: "Activa la seleccion de pantalla para OCR",
                     icon: "doc.text.viewfinder",
                     currentShortcut: settings.captureHotKeyDisplayString(),
                     onRecord: { modifiers, keyCode in
@@ -28,7 +28,7 @@ struct ShortcutsSettingsTab: View {
 
                 ShortcutRecorderRow(
                     title: "Captura de Pantalla",
-                    description: "Captura una imagen del área seleccionada",
+                    description: "Captura una imagen del area seleccionada",
                     icon: "camera.viewfinder",
                     currentShortcut: settings.screenshotHotKeyDisplayString(),
                     onRecord: { modifiers, keyCode in
@@ -37,10 +37,22 @@ struct ShortcutsSettingsTab: View {
                         HotKeyManager.shared.reregisterHotKeys()
                     }
                 )
+
+                ShortcutRecorderRow(
+                    title: "Captura con Anotacion",
+                    description: "Captura y abre el editor de anotaciones",
+                    icon: "pencil.and.scribble",
+                    currentShortcut: settings.annotatedScreenshotHotKeyDisplayString(),
+                    onRecord: { modifiers, keyCode in
+                        settings.annotatedScreenshotHotKeyModifiers = modifiers
+                        settings.annotatedScreenshotHotKeyCode = keyCode
+                        HotKeyManager.shared.reregisterHotKeys()
+                    }
+                )
             } header: {
                 Text("Atajos de Teclado")
             } footer: {
-                Text("Haz clic en \"Grabar\" y presiona la combinación de teclas deseada.")
+                Text("Haz clic en \"Grabar\" y presiona la combinacion de teclas deseada.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -60,6 +72,8 @@ struct ShortcutsSettingsTab: View {
         settings.captureHotKeyCode = AppSettings.Defaults.captureKeyCode
         settings.screenshotHotKeyModifiers = AppSettings.Defaults.screenshotModifiers
         settings.screenshotHotKeyCode = AppSettings.Defaults.screenshotKeyCode
+        settings.annotatedScreenshotHotKeyModifiers = AppSettings.Defaults.annotatedScreenshotModifiers
+        settings.annotatedScreenshotHotKeyCode = AppSettings.Defaults.annotatedScreenshotKeyCode
         HotKeyManager.shared.reregisterHotKeys()
     }
 }

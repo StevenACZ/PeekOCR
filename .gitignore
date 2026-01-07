@@ -59,13 +59,23 @@ build/
 AGENTS.md
 PEEKOCR_SPEC.md
 
+# Dev scripts (local)
+dev-reset.sh
+
 # Gemini/AI
 .gemini/
 
-# Environment
+# Environment & Secrets
 .env
 .env.local
 *.local
+credentials.json
+secrets/
+*.pem
+*.key
+
+# Claude Plans (temporary)
+.claude/plans/
 
 # Logs
 *.log

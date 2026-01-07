@@ -1,0 +1,118 @@
+# Views Structure
+
+Tree of views organized by module.
+
+## View Hierarchy
+
+```
+PeekOCRApp
+├── MenuBarPopoverView          # Menu bar interface
+│   ├── HeaderSection
+│   ├── QuickActionsSection
+│   │   └── MenuBarActionButton
+│   ├── HistorySection
+│   │   ├── HistoryItemRow
+│   │   └── EmptyStateView
+│   └── FooterSection
+│
+├── SettingsView               # Preferences window
+│   ├── GeneralSettingsTab
+│   ├── ShortcutsSettingsTab
+│   │   └── ShortcutRecorderRow
+│   ├── ScreenshotSettingsTab
+│   │   ├── FormatSection
+│   │   ├── ScaleSection
+│   │   └── AnnotationDefaultsSection
+│   ├── HistorySettingsTab
+│   └── AboutTab
+│
+└── AnnotationEditorView       # Screenshot editor
+    ├── AnnotationToolbar
+    │   ├── ToolsSection
+    │   │   └── ToolButton
+    │   ├── ColorPaletteView
+    │   ├── StrokeWidthPicker
+    │   ├── ActionButtonsSection
+    │   │   └── ActionIconButton
+    │   └── SaveCancelSection
+    │
+    └── AnnotationCanvasView
+        ├── Canvas (drawing)
+        │   └── AnnotationRenderer
+        ├── SelectionHandlesRenderer
+        └── TextInputOverlay
+```
+
+## Module Breakdown
+
+### MenuBar (`Views/MenuBar/`)
+| View | Description |
+|------|-------------|
+| `MenuBarPopoverView` | Main popover container |
+| `MenuBarActionButton` | Quick action button |
+| `HistoryItemRow` | Capture history item |
+| `EmptyStateView` | Empty list placeholder |
+
+### Annotation Editor (`Views/Annotation/`)
+
+**Canvas** (`Canvas/`)
+| View | Description |
+|------|-------------|
+| `AnnotationCanvasView` | Main drawing canvas |
+| `AnnotationRenderer` | Draws annotations |
+| `SelectionHandlesView` | Selection UI |
+| `TextInputOverlay` | Text entry field |
+
+**Editor** (`Editor/`)
+| View | Description |
+|------|-------------|
+| `AnnotationEditorView` | Main editor container |
+| `KeyboardEventHandler` | Keyboard shortcuts |
+| `CGContextAnnotationRenderer` | Export rendering |
+
+**Toolbar** (`Toolbar/`)
+| View | Description |
+|------|-------------|
+| `AnnotationToolbar` | Main toolbar |
+| `ToolButton` | Tool selection button |
+| `ActionIconButton` | Action button |
+| `ShortcutKeyBadge` | Shortcut display |
+
+### Settings (`Views/Settings/`)
+
+**Tabs** (`Tabs/`)
+| View | Description |
+|------|-------------|
+| `GeneralSettingsTab` | General preferences |
+| `ShortcutsSettingsTab` | Hotkey configuration |
+| `ScreenshotSettingsTab` | Screenshot options |
+| `HistorySettingsTab` | History settings |
+| `AboutTab` | App information |
+
+**Sections** (`Sections/`) *(planned)*
+| View | Description |
+|------|-------------|
+| `SaveOptionsSection` | Save toggles |
+| `SaveLocationSection` | Location picker |
+| `FormatSection` | Format + quality |
+| `ScaleSection` | Scale slider |
+
+### Components (`Views/Components/`)
+Reusable components. See [COMPONENTS.md](./COMPONENTS.md).
+
+## View Responsibilities
+
+### Container Views
+- Compose child views
+- Manage layout
+- Pass state down
+
+### Section Views
+- Group related controls
+- Handle section-specific logic
+- Usually private structs
+
+### Component Views
+- Reusable across modules
+- Parameterized behavior
+- Stateless when possible
