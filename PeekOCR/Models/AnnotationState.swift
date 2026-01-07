@@ -3,6 +3,7 @@
 //  PeekOCR
 //
 //  Observable state manager for the annotation editor canvas.
+//  Uses composition with specialized managers for undo/redo, drag, and text input.
 //
 
 import SwiftUI
@@ -10,26 +11,52 @@ import Combine
 
 /// Main state manager for the annotation editor
 final class AnnotationState: ObservableObject {
+    // MARK: - Managers (Composition)
+
+    let undoManager = AnnotationUndoManager()
+    let dragManager = AnnotationDragManager()
+    let textManager = AnnotationTextManager()
+
     // MARK: - Tool Properties
 
-    /// Currently selected tool
     @Published var selectedTool: AnnotationTool = .arrow {
         didSet {
-            // Close text input when switching away from text tool
-            if isTextInputActive && oldValue == .text && selectedTool != .text {
+            if textManager.isActive && oldValue == .text && selectedTool != .text {
                 finishTextInput()
             }
         }
     }
 
-    /// Currently selected color
     @Published var selectedColor: Color = .red
-
-    /// Current stroke width (initialized from AppSettings)
     @Published var strokeWidth: CGFloat = 3.0
-
-    /// Current font size (initialized from AppSettings)
     @Published var fontSize: CGFloat = 24.0
+
+    // MARK: - Annotation Properties
+
+    @Published var annotations: [Annotation] = []
+    @Published var currentAnnotation: Annotation?
+
+    // MARK: - Selection State
+
+    @Published var selectedAnnotationId: UUID?
+
+    var selectedAnnotation: Annotation? {
+        guard let id = selectedAnnotationId else { return nil }
+        return annotations.first { $0.id == id }
+    }
+
+    // MARK: - Computed Properties (Delegated)
+
+    var canUndo: Bool { undoManager.canUndo }
+    var canRedo: Bool { undoManager.canRedo }
+    var isTextInputActive: Bool { textManager.isActive }
+    var textInputPosition: CGPoint { textManager.position }
+    var currentText: String {
+        get { textManager.currentText }
+        set { textManager.currentText = newValue }
+    }
+    var activeHandle: ResizeHandle? { dragManager.activeHandle }
+    var dragStartPoint: CGPoint { dragManager.dragStartPoint }
 
     // MARK: - Initialization
 
@@ -37,40 +64,6 @@ final class AnnotationState: ObservableObject {
         let settings = AppSettings.shared
         self.strokeWidth = settings.defaultAnnotationStrokeWidth
         self.fontSize = settings.defaultAnnotationFontSize
-    }
-
-    // MARK: - Annotation Properties
-
-    /// All completed annotations
-    @Published var annotations: [Annotation] = []
-
-    /// Current annotation being drawn (in progress)
-    @Published var currentAnnotation: Annotation?
-
-    // MARK: - History (Undo/Redo)
-
-    @Published private(set) var undoStack: [[Annotation]] = []
-    @Published private(set) var redoStack: [[Annotation]] = []
-
-    var canUndo: Bool { !undoStack.isEmpty }
-    var canRedo: Bool { !redoStack.isEmpty }
-
-    // MARK: - Text Input State
-
-    @Published var isTextInputActive: Bool = false
-    @Published var textInputPosition: CGPoint = .zero
-    @Published var currentText: String = ""
-
-    // MARK: - Selection State
-
-    @Published var selectedAnnotationId: UUID?
-    @Published var activeHandle: ResizeHandle?
-    @Published var dragStartPoint: CGPoint = .zero
-    private var originalAnnotation: Annotation?
-
-    var selectedAnnotation: Annotation? {
-        guard let id = selectedAnnotationId else { return nil }
-        return annotations.first { $0.id == id }
     }
 
     // MARK: - Drawing Methods
@@ -93,7 +86,6 @@ final class AnnotationState: ObservableObject {
 
     func updateAnnotation(to point: CGPoint) {
         guard var annotation = currentAnnotation else { return }
-
         annotation.endPoint = point
 
         if annotation.tool == .freehand {
@@ -105,8 +97,7 @@ final class AnnotationState: ObservableObject {
 
     func finishAnnotation() {
         guard let annotation = currentAnnotation else { return }
-
-        saveToUndoStack()
+        undoManager.saveState(annotations)
         annotations.append(annotation)
         currentAnnotation = nil
     }
@@ -114,55 +105,39 @@ final class AnnotationState: ObservableObject {
     // MARK: - Text Input Methods
 
     func startTextInput(at point: CGPoint) {
-        textInputPosition = point
-        currentText = ""
-        isTextInputActive = true
+        textManager.startInput(at: point)
     }
 
     func finishTextInput() {
-        guard !currentText.isEmpty else {
-            isTextInputActive = false
-            return
-        }
-
-        saveToUndoStack()
-
-        let textAnnotation = Annotation(
-            tool: .text,
+        guard let annotation = textManager.createAnnotation(
             color: selectedColor,
             strokeWidth: strokeWidth,
-            startPoint: textInputPosition,
-            text: currentText,
             fontSize: fontSize
-        )
+        ) else { return }
 
-        annotations.append(textAnnotation)
-        isTextInputActive = false
-        currentText = ""
+        undoManager.saveState(annotations)
+        annotations.append(annotation)
     }
 
     func cancelTextInput() {
-        isTextInputActive = false
-        currentText = ""
+        textManager.cancel()
     }
 
     // MARK: - Undo/Redo Methods
 
     func undo() {
-        guard let previousState = undoStack.popLast() else { return }
-        redoStack.append(annotations)
+        guard let previousState = undoManager.undo(currentAnnotations: annotations) else { return }
         annotations = previousState
     }
 
     func redo() {
-        guard let nextState = redoStack.popLast() else { return }
-        undoStack.append(annotations)
+        guard let nextState = undoManager.redo(currentAnnotations: annotations) else { return }
         annotations = nextState
     }
 
     func clearAll() {
         guard !annotations.isEmpty else { return }
-        saveToUndoStack()
+        undoManager.saveState(annotations)
         annotations.removeAll()
     }
 
@@ -181,12 +156,12 @@ final class AnnotationState: ObservableObject {
 
     func deselectAnnotation() {
         selectedAnnotationId = nil
-        activeHandle = nil
+        dragManager.reset()
     }
 
     func deleteSelectedAnnotation() {
         guard let id = selectedAnnotationId else { return }
-        saveToUndoStack()
+        undoManager.saveState(annotations)
         annotations.removeAll { $0.id == id }
         selectedAnnotationId = nil
     }
@@ -196,44 +171,29 @@ final class AnnotationState: ObservableObject {
     func startDrag(at point: CGPoint, handle: ResizeHandle?) {
         guard let id = selectedAnnotationId,
               let annotation = annotations.first(where: { $0.id == id }) else { return }
-
-        dragStartPoint = point
-        activeHandle = handle
-        originalAnnotation = annotation
+        dragManager.startDrag(at: point, handle: handle, annotation: annotation)
     }
 
     func updateDrag(to point: CGPoint) {
         guard let id = selectedAnnotationId,
-              let original = originalAnnotation,
+              let original = dragManager.getOriginalForUndo(),
               let index = annotations.firstIndex(where: { $0.id == id }) else { return }
 
-        let dx = point.x - dragStartPoint.x
-        let dy = point.y - dragStartPoint.y
-
-        let updated: Annotation
-        if let handle = activeHandle {
-            updated = AnnotationTransformer.resize(original, handle: handle, dx: dx, dy: dy)
-        } else {
-            updated = AnnotationTransformer.move(original, dx: dx, dy: dy)
-        }
-
-        annotations[index] = updated
+        annotations[index] = dragManager.calculateDragUpdate(to: point, for: original)
     }
 
     func finishDrag() {
         if let id = selectedAnnotationId,
            let current = annotations.first(where: { $0.id == id }),
-           let original = originalAnnotation,
-           current.startPoint != original.startPoint || current.endPoint != original.endPoint {
+           dragManager.hasChanges(current: current),
+           let original = dragManager.getOriginalForUndo() {
             var previousState = annotations
             if let index = previousState.firstIndex(where: { $0.id == id }) {
                 previousState[index] = original
             }
-            undoStack.append(previousState)
-            redoStack.removeAll()
+            undoManager.saveState(previousState)
         }
-        originalAnnotation = nil
-        activeHandle = nil
+        dragManager.finishDrag()
     }
 
     // MARK: - Geometry Helpers (Delegated)
@@ -257,22 +217,13 @@ final class AnnotationState: ObservableObject {
         let settings = AppSettings.shared
         annotations.removeAll()
         currentAnnotation = nil
-        undoStack.removeAll()
-        redoStack.removeAll()
-        isTextInputActive = false
-        currentText = ""
+        undoManager.clear()
+        textManager.reset()
+        dragManager.reset()
         selectedTool = .arrow
         selectedColor = .red
         strokeWidth = settings.defaultAnnotationStrokeWidth
         fontSize = settings.defaultAnnotationFontSize
         selectedAnnotationId = nil
-        activeHandle = nil
-    }
-
-    // MARK: - Private Helpers
-
-    private func saveToUndoStack() {
-        undoStack.append(annotations)
-        redoStack.removeAll()
     }
 }

@@ -6,6 +6,30 @@
 //
 
 import AppKit
+import os
+
+// MARK: - Screenshot Errors
+
+/// Errors that can occur during screenshot processing
+enum ScreenshotError: Error, CustomStringConvertible {
+    case encodingFailed(format: ImageFormat)
+    case directoryCreationFailed(path: String, underlyingError: Error)
+    case saveFailed(path: String, underlyingError: Error)
+    case invalidImage
+
+    var description: String {
+        switch self {
+        case .encodingFailed(let format):
+            return "Failed to encode image as \(format.fileExtension)"
+        case .directoryCreationFailed(let path, let error):
+            return "Failed to create directory at \(path): \(error.localizedDescription)"
+        case .saveFailed(let path, let error):
+            return "Failed to save screenshot to \(path): \(error.localizedDescription)"
+        case .invalidImage:
+            return "Invalid or corrupted image data"
+        }
+    }
+}
 
 /// Service for processing and saving screenshots
 final class ScreenshotService {
@@ -15,7 +39,9 @@ final class ScreenshotService {
 
     // MARK: - Initialization
 
-    private init() {}
+    private init() {
+        AppLogger.capture.debug("ScreenshotService initialized")
+    }
 
     // MARK: - Public Methods
 
@@ -24,18 +50,38 @@ final class ScreenshotService {
     /// - Returns: URL where the image was saved, or nil if not saved to file
     @discardableResult
     func processScreenshot(_ image: CGImage) async -> URL? {
+        AppLogger.capture.info("Processing screenshot - dimensions: \(image.width)x\(image.height)")
+
         // Apply scale if needed
-        let processedImage = settings.imageScale < 1.0
-            ? ImageScalingService.scaleImage(image, scale: settings.imageScale)
-            : image
+        let processedImage: CGImage
+        if settings.imageScale < 1.0 {
+            AppLogger.capture.debug("Applying scale factor: \(self.settings.imageScale)")
+            processedImage = ImageScalingService.scaleImage(image, scale: settings.imageScale)
+        } else {
+            processedImage = image
+        }
 
         // Copy to clipboard if enabled
         if settings.copyToClipboard {
+            AppLogger.capture.debug("Copying image to clipboard")
             copyImageToClipboard(processedImage)
+            AppLogger.capture.info("Image copied to clipboard successfully")
         }
 
         // Save to file if enabled
-        return settings.saveToFile ? saveImageToFile(processedImage) : nil
+        if settings.saveToFile {
+            AppLogger.capture.debug("Save to file enabled, attempting to save")
+            let result = saveImageToFile(processedImage)
+            if let url = result {
+                AppLogger.capture.info("Screenshot processing complete - saved to: \(url.lastPathComponent)")
+            } else {
+                AppLogger.capture.warning("Screenshot processing complete - save to file failed")
+            }
+            return result
+        }
+
+        AppLogger.capture.info("Screenshot processing complete - clipboard only")
+        return nil
     }
 
     /// Copy image to clipboard with maximum quality
@@ -44,7 +90,13 @@ final class ScreenshotService {
         pasteboard.clearContents()
 
         let nsImage = createHighQualityNSImage(from: image)
-        pasteboard.writeObjects([nsImage])
+        let success = pasteboard.writeObjects([nsImage])
+
+        if success {
+            AppLogger.capture.debug("Clipboard write successful")
+        } else {
+            AppLogger.capture.error("Clipboard write failed")
+        }
     }
 
     /// Save image to file with configured format and quality
@@ -53,8 +105,16 @@ final class ScreenshotService {
         let filename = generateFilename()
         let fileURL = directory.appendingPathComponent(filename)
 
+        AppLogger.capture.debug("Attempting to save to: \(fileURL.path)")
+
         // Ensure directory exists
-        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        do {
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            AppLogger.capture.debug("Directory verified/created: \(directory.path)")
+        } catch {
+            AppLogger.capture.error("Failed to create directory: \(directory.path) - \(error.localizedDescription)")
+            return nil
+        }
 
         // Encode image using the service
         guard let imageData = ImageEncodingService.encode(
@@ -62,15 +122,19 @@ final class ScreenshotService {
             format: settings.imageFormat,
             quality: settings.imageQuality
         ) else {
+            AppLogger.capture.error("Image encoding failed - format: \(self.settings.imageFormat.fileExtension), quality: \(self.settings.imageQuality)")
             return nil
         }
+
+        AppLogger.capture.debug("Image encoded successfully - size: \(imageData.count) bytes, format: \(self.settings.imageFormat.fileExtension)")
 
         // Write to file
         do {
             try imageData.write(to: fileURL)
+            AppLogger.capture.info("Screenshot saved: \(filename) (\(imageData.count) bytes)")
             return fileURL
         } catch {
-            print("Failed to save screenshot: \(error)")
+            AppLogger.capture.error("Failed to write file: \(fileURL.path) - \(error.localizedDescription)")
             return nil
         }
     }
