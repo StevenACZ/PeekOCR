@@ -2,7 +2,7 @@
 //  HotKeyManager.swift
 //  PeekOCR
 //
-//  Created by Steven on 14/12/25.
+//  Manages global keyboard shortcuts using Carbon API.
 //
 
 import AppKit
@@ -14,14 +14,7 @@ final class HotKeyManager {
 
     // MARK: - Properties
 
-    private var captureHotKeyRef: EventHotKeyRef?
-    private var screenshotHotKeyRef: EventHotKeyRef?
-    private var annotatedScreenshotHotKeyRef: EventHotKeyRef?
-
-    private let captureHotKeyID = EventHotKeyID(signature: OSType(0x504B4F43), id: 1) // "PKOC"
-    private let screenshotHotKeyID = EventHotKeyID(signature: OSType(0x504B4F43), id: 2) // "PKOC"
-    private let annotatedScreenshotHotKeyID = EventHotKeyID(signature: OSType(0x504B4F43), id: 3) // "PKOC"
-
+    private var hotKeyRefs: [HotKeyID: EventHotKeyRef] = [:]
     private var eventHandler: EventHandlerRef?
 
     // MARK: - Initialization
@@ -31,44 +24,21 @@ final class HotKeyManager {
     // MARK: - Public Methods
 
     func registerHotKeys() {
-        // Request accessibility permissions
         requestAccessibilityPermissions()
-
-        // Install event handler
         installEventHandler()
-
-        // Register capture hotkey (Shift + Space by default)
-        registerCaptureHotKey()
-
-        // Register screenshot hotkey (Cmd + Shift + 4 by default)
-        registerScreenshotHotKey()
-
-        // Register annotated screenshot hotkey (Cmd + Shift + 5 by default)
-        registerAnnotatedScreenshotHotKey()
+        registerAllHotKeys()
     }
 
     func unregisterHotKeys() {
-        if let captureRef = captureHotKeyRef {
-            UnregisterEventHotKey(captureRef)
-            captureHotKeyRef = nil
-        }
-
-        if let screenshotRef = screenshotHotKeyRef {
-            UnregisterEventHotKey(screenshotRef)
-            screenshotHotKeyRef = nil
-        }
-
-        if let annotatedScreenshotRef = annotatedScreenshotHotKeyRef {
-            UnregisterEventHotKey(annotatedScreenshotRef)
-            annotatedScreenshotHotKeyRef = nil
+        for (id, ref) in hotKeyRefs {
+            UnregisterEventHotKey(ref)
+            hotKeyRefs[id] = nil
         }
     }
 
     func reregisterHotKeys() {
         unregisterHotKeys()
-        registerCaptureHotKey()
-        registerScreenshotHotKey()
-        registerAnnotatedScreenshotHotKey()
+        registerAllHotKeys()
     }
 
     // MARK: - Private Methods
@@ -79,7 +49,10 @@ final class HotKeyManager {
     }
 
     private func installEventHandler() {
-        var eventSpec = EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyPressed))
+        var eventSpec = EventTypeSpec(
+            eventClass: OSType(kEventClassKeyboard),
+            eventKind: UInt32(kEventHotKeyPressed)
+        )
 
         let handler: EventHandlerUPP = { _, event, _ -> OSStatus in
             var hotKeyID = EventHotKeyID()
@@ -94,19 +67,7 @@ final class HotKeyManager {
             )
 
             DispatchQueue.main.async {
-                switch hotKeyID.id {
-                case 1:
-                    // Capture hotkey pressed (OCR)
-                    CaptureCoordinator.shared.startCapture(mode: .ocr)
-                case 2:
-                    // Screenshot hotkey pressed
-                    CaptureCoordinator.shared.startCapture(mode: .screenshot)
-                case 3:
-                    // Annotated screenshot hotkey pressed
-                    CaptureCoordinator.shared.startCapture(mode: .annotatedScreenshot)
-                default:
-                    break
-                }
+                HotKeyManager.shared.handleHotKey(id: hotKeyID.id)
             }
 
             return noErr
@@ -122,45 +83,56 @@ final class HotKeyManager {
         )
     }
 
-    private func registerCaptureHotKey() {
-        let settings = AppSettings.shared
-        let hotKeyID = captureHotKeyID
+    private func handleHotKey(id: UInt32) {
+        guard let hotKeyID = HotKeyID(rawValue: id) else { return }
 
-        RegisterEventHotKey(
-            settings.captureHotKeyCode,
-            settings.captureHotKeyModifiers,
-            hotKeyID,
-            GetApplicationEventTarget(),
-            0,
-            &captureHotKeyRef
+        switch hotKeyID {
+        case .capture:
+            CaptureCoordinator.shared.startCapture(mode: .ocr)
+        case .screenshot:
+            CaptureCoordinator.shared.startCapture(mode: .screenshot)
+        case .annotated:
+            CaptureCoordinator.shared.startCapture(mode: .annotatedScreenshot)
+        }
+    }
+
+    private func registerAllHotKeys() {
+        let settings = AppSettings.shared
+
+        registerHotKey(
+            id: .capture,
+            keyCode: settings.captureHotKeyCode,
+            modifiers: settings.captureHotKeyModifiers
+        )
+
+        registerHotKey(
+            id: .screenshot,
+            keyCode: settings.screenshotHotKeyCode,
+            modifiers: settings.screenshotHotKeyModifiers
+        )
+
+        registerHotKey(
+            id: .annotated,
+            keyCode: settings.annotatedScreenshotHotKeyCode,
+            modifiers: settings.annotatedScreenshotHotKeyModifiers
         )
     }
 
-    private func registerScreenshotHotKey() {
-        let settings = AppSettings.shared
-        let hotKeyID = screenshotHotKeyID
+    private func registerHotKey(id: HotKeyID, keyCode: UInt32, modifiers: UInt32) {
+        var ref: EventHotKeyRef?
+        let hotKeyID = EventHotKeyID(signature: HotKeyDefinition.signature, id: id.rawValue)
 
         RegisterEventHotKey(
-            settings.screenshotHotKeyCode,
-            settings.screenshotHotKeyModifiers,
+            keyCode,
+            modifiers,
             hotKeyID,
             GetApplicationEventTarget(),
             0,
-            &screenshotHotKeyRef
+            &ref
         )
-    }
 
-    private func registerAnnotatedScreenshotHotKey() {
-        let settings = AppSettings.shared
-        let hotKeyID = annotatedScreenshotHotKeyID
-
-        RegisterEventHotKey(
-            settings.annotatedScreenshotHotKeyCode,
-            settings.annotatedScreenshotHotKeyModifiers,
-            hotKeyID,
-            GetApplicationEventTarget(),
-            0,
-            &annotatedScreenshotHotKeyRef
-        )
+        if let ref = ref {
+            hotKeyRefs[id] = ref
+        }
     }
 }

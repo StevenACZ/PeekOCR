@@ -2,7 +2,7 @@
 //  MenuBarPopoverView.swift
 //  PeekOCR
 //
-//  Created by Steven on 14/12/25.
+//  Main popover view shown from menu bar with quick actions and history.
 //
 
 import SwiftUI
@@ -12,25 +12,15 @@ struct MenuBarPopoverView: View {
     @EnvironmentObject var appState: AppState
     @StateObject private var historyManager = HistoryManager.shared
     @StateObject private var settings = AppSettings.shared
-    
+
     var body: some View {
         VStack(spacing: 0) {
-            // Header
             HeaderSection()
-            
             Divider()
-            
-            // Quick Actions
             QuickActionsSection(settings: settings)
-            
             Divider()
-            
-            // History
             HistorySection(historyManager: historyManager)
-            
             Divider()
-            
-            // Footer
             FooterSection()
         }
         .frame(width: Constants.UI.popoverWidth)
@@ -46,10 +36,10 @@ private struct HeaderSection: View {
             Image(systemName: "eye.fill")
                 .font(.title2)
                 .foregroundStyle(.blue)
-            
+
             Text("PeekOCR")
                 .font(.headline)
-            
+
             Spacer()
         }
         .padding(.horizontal, 16)
@@ -61,18 +51,18 @@ private struct HeaderSection: View {
 
 private struct QuickActionsSection: View {
     @ObservedObject var settings: AppSettings
-    
+
     var body: some View {
         VStack(spacing: 4) {
-            ActionButton(
+            MenuBarActionButton(
                 title: "Capturar Texto",
                 icon: "doc.text.viewfinder",
                 shortcut: settings.captureHotKeyDisplayString()
             ) {
                 CaptureCoordinator.shared.startCapture(mode: .ocr)
             }
-            
-            ActionButton(
+
+            MenuBarActionButton(
                 title: "Captura de Pantalla",
                 icon: "camera.viewfinder",
                 shortcut: settings.screenshotHotKeyDisplayString()
@@ -84,71 +74,28 @@ private struct QuickActionsSection: View {
     }
 }
 
-// MARK: - Action Button
-
-private struct ActionButton: View {
-    let title: String
-    let icon: String
-    let shortcut: String
-    let action: () -> Void
-    
-    @State private var isHovered = false
-    
-    var body: some View {
-        Button(action: action) {
-            HStack {
-                Image(systemName: icon)
-                    .font(.body)
-                    .frame(width: 24)
-                    .foregroundStyle(.blue)
-                
-                Text(title)
-                    .font(.body)
-                
-                Spacer()
-                
-                Text(shortcut)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(Color.secondary.opacity(0.15))
-                    .clipShape(RoundedRectangle(cornerRadius: 4))
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
-            .background(isHovered ? Color.blue.opacity(0.1) : Color.clear)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .onHover { hovering in
-            isHovered = hovering
-        }
-    }
-}
-
 // MARK: - History Section
 
 private struct HistorySection: View {
     @ObservedObject var historyManager: HistoryManager
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Image(systemName: "clock.arrow.circlepath")
                     .foregroundStyle(.secondary)
-                
+
                 Text("Historial")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                
+
                 Spacer()
             }
             .padding(.horizontal, 16)
             .padding(.top, 8)
-            
+
             if historyManager.items.isEmpty {
-                EmptyHistoryView()
+                EmptyStateView()
             } else {
                 ScrollView {
                     VStack(spacing: 2) {
@@ -166,76 +113,18 @@ private struct HistorySection: View {
     }
 }
 
-// MARK: - Empty History View
-
-private struct EmptyHistoryView: View {
-    var body: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "doc.text.magnifyingglass")
-                .font(.title2)
-                .foregroundStyle(.tertiary)
-            
-            Text("No hay capturas recientes")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 20)
-    }
-}
-
-// MARK: - History Item Row
-
-private struct HistoryItemRow: View {
-    let item: CaptureItem
-    let onTap: () -> Void
-    
-    @State private var isHovered = false
-    
-    var body: some View {
-        Button(action: onTap) {
-            HStack(spacing: 12) {
-                Image(systemName: item.icon)
-                    .font(.caption)
-                    .foregroundStyle(item.captureType.displayColor)
-                    .frame(width: 16)
-
-                Text(item.displayText)
-                    .font(.caption)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-
-                Spacer()
-
-                Text(item.formattedTime)
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 6)
-            .background(isHovered ? Color.blue.opacity(0.1) : Color.clear)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .onHover { hovering in
-            isHovered = hovering
-        }
-        .help("Clic para copiar")
-    }
-}
-
 // MARK: - Footer Section
 
 private struct FooterSection: View {
     @State private var isHoveringSettings = false
     @State private var isHoveringQuit = false
-    
+
     var body: some View {
         HStack {
             settingsButton
-            
+
             Spacer()
-            
+
             Button {
                 NSApplication.shared.terminate(nil)
             } label: {
@@ -251,7 +140,7 @@ private struct FooterSection: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
     }
-    
+
     @ViewBuilder
     private var settingsButton: some View {
         if #available(macOS 14.0, *) {
@@ -266,7 +155,6 @@ private struct FooterSection: View {
             }
         } else {
             Button {
-                // Fallback for macOS 13
                 if #available(macOS 13.0, *) {
                     NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
                 }
