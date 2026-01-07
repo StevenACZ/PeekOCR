@@ -59,6 +59,9 @@ build/
 AGENTS.md
 PEEKOCR_SPEC.md
 
+# Dev scripts (local)
+dev-reset.sh
+
 # Gemini/AI
 .gemini/
 

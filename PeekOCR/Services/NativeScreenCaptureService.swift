@@ -53,7 +53,7 @@ final class NativeScreenCaptureService {
               ) else {
             return nil
         }
-        
+
         return image
     }
     
