@@ -40,6 +40,11 @@ enum AnnotationTransformer {
     ///   - dy: Vertical delta
     /// - Returns: The resized annotation
     static func resize(_ annotation: Annotation, handle: ResizeHandle, dx: CGFloat, dy: CGFloat) -> Annotation {
+        // Special case for text: resize by changing fontSize
+        if annotation.tool == .text {
+            return resizeText(annotation, handle: handle, dx: dx, dy: dy)
+        }
+
         var resized = annotation
 
         switch handle {
@@ -62,6 +67,33 @@ enum AnnotationTransformer {
         case .bottomRight:
             resized.endPoint = CGPoint(x: annotation.endPoint.x + dx, y: annotation.endPoint.y + dy)
         }
+
+        return resized
+    }
+
+    /// Resizes a text annotation by changing its fontSize
+    private static func resizeText(_ annotation: Annotation, handle: ResizeHandle, dx: CGFloat, dy: CGFloat) -> Annotation {
+        var resized = annotation
+        let currentHeight = annotation.fontSize * 1.2
+        var newHeight = currentHeight
+
+        switch handle {
+        case .topLeft, .top, .topRight:
+            // Dragging from top - increase size when moving up (negative dy)
+            newHeight = currentHeight - dy
+            // Adjust startPoint to maintain bottom position
+            resized.startPoint.y = annotation.startPoint.y + dy
+        case .bottomLeft, .bottom, .bottomRight:
+            // Dragging from bottom - increase size when moving down (positive dy)
+            newHeight = currentHeight + dy
+        case .left, .right:
+            // Horizontal handles don't resize text
+            return annotation
+        }
+
+        // Convert height to fontSize with constraints (8-72pt)
+        let newFontSize = max(8, min(72, newHeight / 1.2))
+        resized.fontSize = newFontSize
 
         return resized
     }

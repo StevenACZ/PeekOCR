@@ -54,7 +54,7 @@ struct AnnotationToolbar: View {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 16)
         }
-        .frame(width: 200)
+        .frame(width: 240)
         .background(.ultraThinMaterial)
     }
 }
