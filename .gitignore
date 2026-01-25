@@ -64,6 +64,10 @@ dev-reset.sh
 # Gemini/AI
 .gemini/
 
+# ChunkHound (local)
+.chunkhound/
+.chunkhound.json
+
 # Environment & Secrets
 .env
 .env.local
