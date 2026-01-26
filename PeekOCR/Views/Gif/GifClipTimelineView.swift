@@ -9,6 +9,11 @@ import SwiftUI
 
 /// Timeline that supports a trim range (in/out) plus a draggable playhead.
 struct GifClipTimelineView: View {
+    private enum DragHandle {
+        case start
+        case end
+    }
+
     @Binding var startSeconds: Double
     @Binding var endSeconds: Double
 
@@ -24,6 +29,13 @@ struct GifClipTimelineView: View {
     private let trackHeight: CGFloat = 54
     private let cornerRadius: CGFloat = 12
     private let handleWidth: CGFloat = 18
+
+    private struct DragState {
+        let initialStartSeconds: Double
+        let initialEndSeconds: Double
+    }
+
+    @State private var dragState: DragState?
 
     var body: some View {
         GeometryReader { geo in
@@ -42,21 +54,29 @@ struct GifClipTimelineView: View {
 
                 playhead(x: playheadX)
 
-                handle(isLeading: true, x: startX)
+                handle(isLeading: true, x: startX, width: width)
                     .highPriorityGesture(
                         DragGesture(minimumDistance: 0)
                             .onChanged { gesture in
                                 onBeginEditing()
-                                updateLeadingHandle(locationX: gesture.location.x, width: width)
+                                beginDragIfNeeded()
+                                updateHandle(.start, translationX: gesture.translation.width, width: width)
+                            }
+                            .onEnded { _ in
+                                dragState = nil
                             }
                     )
 
-                handle(isLeading: false, x: endX)
+                handle(isLeading: false, x: endX, width: width)
                     .highPriorityGesture(
                         DragGesture(minimumDistance: 0)
                             .onChanged { gesture in
                                 onBeginEditing()
-                                updateTrailingHandle(locationX: gesture.location.x, width: width)
+                                beginDragIfNeeded()
+                                updateHandle(.end, translationX: gesture.translation.width, width: width)
+                            }
+                            .onEnded { _ in
+                                dragState = nil
                             }
                     )
             }
@@ -65,6 +85,7 @@ struct GifClipTimelineView: View {
             .gesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { gesture in
+                        guard dragState == nil else { return }
                         onBeginEditing()
                         let seconds = seconds(for: gesture.location.x, width: width)
                         onScrub(snap(seconds))
@@ -104,8 +125,10 @@ struct GifClipTimelineView: View {
             .allowsHitTesting(false)
     }
 
-    private func handle(isLeading: Bool, x: CGFloat) -> some View {
+    private func handle(isLeading: Bool, x: CGFloat, width: CGFloat) -> some View {
         let offsetX = x - handleWidth / 2
+        let maxOffsetX = max(0, width - handleWidth)
+        let clampedOffsetX = min(max(0, offsetX), maxOffsetX)
         return ZStack {
             RoundedRectangle(cornerRadius: 6, style: .continuous)
                 .fill(Color.yellow.opacity(0.95))
@@ -121,24 +144,35 @@ struct GifClipTimelineView: View {
         }
         .frame(width: handleWidth, height: trackHeight - 14)
         .padding(.vertical, 7)
-        .offset(x: offsetX)
+        .contentShape(Rectangle())
+        .offset(x: clampedOffsetX)
+        .zIndex(10)
         .accessibilityLabel(isLeading ? "Inicio" : "Fin")
     }
 
-    private func updateLeadingHandle(locationX: CGFloat, width: CGFloat) {
-        guard durationSeconds > 0 else { return }
-        let seconds = snap(seconds(for: locationX, width: width))
-        let maxStart = max(0, min(durationSeconds, endSeconds - minimumSelectionSeconds))
-        startSeconds = clamp(seconds, 0, maxStart)
-        onScrub(startSeconds)
+    private func beginDragIfNeeded() {
+        guard dragState == nil else { return }
+        dragState = DragState(initialStartSeconds: startSeconds, initialEndSeconds: endSeconds)
     }
 
-    private func updateTrailingHandle(locationX: CGFloat, width: CGFloat) {
-        guard durationSeconds > 0 else { return }
-        let seconds = snap(seconds(for: locationX, width: width))
-        let minEnd = min(durationSeconds, startSeconds + minimumSelectionSeconds)
-        endSeconds = clamp(seconds, minEnd, durationSeconds)
-        onScrub(endSeconds)
+    private func updateHandle(_ handle: DragHandle, translationX: CGFloat, width: CGFloat) {
+        guard durationSeconds > 0, width > 0 else { return }
+        guard let dragState else { return }
+
+        let deltaSeconds = Double(translationX / width) * durationSeconds
+
+        switch handle {
+        case .start:
+            let proposed = snap(dragState.initialStartSeconds + deltaSeconds)
+            let maxStart = max(0, min(durationSeconds, dragState.initialEndSeconds - minimumSelectionSeconds))
+            startSeconds = clamp(proposed, 0, maxStart)
+            onScrub(startSeconds)
+        case .end:
+            let proposed = snap(dragState.initialEndSeconds + deltaSeconds)
+            let minEnd = min(durationSeconds, dragState.initialStartSeconds + minimumSelectionSeconds)
+            endSeconds = clamp(proposed, minEnd, durationSeconds)
+            onScrub(endSeconds)
+        }
     }
 
     private func snap(_ seconds: Double) -> Double {
