@@ -2,7 +2,7 @@
 //  GifClipEditorView.swift
 //  PeekOCR
 //
-//  SwiftUI editor for trimming a recorded video and exporting it as an optimized GIF.
+//  Post-recording editor for trimming a video and exporting it as a GIF.
 //
 
 import SwiftUI
@@ -16,8 +16,10 @@ struct GifClipEditorView: View {
     let onCancel: () -> Void
 
     @StateObject private var state: GifClipEditorState
+    @State private var exportOptions = GifExportOptions()
     @State private var isExporting = false
     @State private var exportError: String?
+    @State private var keyboardHandler = GifClipKeyboardHandler()
 
     init(
         videoURL: URL,
@@ -38,22 +40,27 @@ struct GifClipEditorView: View {
     var body: some View {
         ZStack {
             VStack(spacing: 0) {
-                header
+                mainContent
                 Divider()
-                content
-                Divider()
-                footer
+                bottomBar
             }
-            .disabled(isExporting)
+            .disabled(isExporting || !state.isReady)
 
             if isExporting {
                 GifExportLoadingOverlay()
             }
         }
-        .frame(minWidth: 720, minHeight: 520)
+        .frame(minWidth: 1120, minHeight: 680)
         .background(Color(NSColor.windowBackgroundColor))
         .task {
             await state.prepare()
+        }
+        .onAppear {
+            configureKeyboardShortcuts()
+        }
+        .onDisappear {
+            keyboardHandler.teardown()
+            state.stopPlayback()
         }
         .alert("No se pudo exportar el GIF", isPresented: Binding(
             get: { exportError != nil },
@@ -65,184 +72,93 @@ struct GifClipEditorView: View {
         }
     }
 
-    private var header: some View {
-        HStack {
-            Image(systemName: "film")
-                .foregroundStyle(.blue)
+    private var mainContent: some View {
+        HStack(spacing: 0) {
+            leftPane
+            Divider()
+            GifClipSidebarView(
+                options: $exportOptions,
+                outputDirectory: saveDirectory,
+                selectionDurationSeconds: selectionDuration
+            )
+        }
+    }
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Exportar GIF")
-                    .font(.headline)
-                Text("Selecciona el rango y exporta con calidad media")
+    private var leftPane: some View {
+        VStack(spacing: 14) {
+            GifClipVideoPreviewView(
+                player: state.player,
+                isPlaying: state.isPreviewPlaying,
+                currentSeconds: state.currentSeconds,
+                durationSeconds: state.durationSeconds,
+                onTogglePlay: togglePlayPause,
+                onStepBackward: { stepFrame(-1) },
+                onStepForward: { stepFrame(1) }
+            )
+            timelineSection
+        }
+        .padding(18)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+    }
+
+    private var timelineSection: some View {
+        VStack(spacing: 10) {
+            if let message = state.loadErrorMessage {
+                Text(message)
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
 
-            Spacer()
-
-            Text("Max \(Constants.Gif.maxDurationSeconds)s")
-                .font(.caption2)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-                .background(Color.secondary.opacity(0.12))
-                .clipShape(RoundedRectangle(cornerRadius: 6))
-        }
-        .padding(16)
-    }
-
-    private var content: some View {
-        HStack(spacing: 0) {
-            mainPanel
-            Divider()
-            sidePanel
-        }
-    }
-
-    private var mainPanel: some View {
-        VStack(spacing: 12) {
-            NonInteractiveVideoPlayer(player: state.player)
-                .onDisappear { state.stopPlayback() }
-
-            rangeTimeline
-
-            playbackControls
-        }
-        .padding(16)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    private var playbackControls: some View {
-        HStack(spacing: 8) {
-            Button {
-                state.seek(toSeconds: state.startSeconds)
-            } label: {
-                Label("Ir al inicio", systemImage: "backward.end")
-            }
-
-            Button {
-                if state.isPreviewPlaying {
-                    state.stopPlayback()
-                } else {
-                    state.playSelection()
-                }
-            } label: {
-                Label(state.isPreviewPlaying ? "Pausar" : "Previsualizar", systemImage: state.isPreviewPlaying ? "pause.fill" : "play.fill")
-            }
-            .keyboardShortcut(.defaultAction)
-
-            Spacer()
-        }
-        .buttonStyle(.bordered)
-    }
-
-    private var rangeTimeline: some View {
-        GroupBox("Rango") {
-            VStack(alignment: .leading, spacing: 12) {
-                if !state.isReady {
-                    HStack(spacing: 8) {
-                        ProgressView()
-                            .controlSize(.small)
-                        Text("Cargando video…")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Spacer()
+            if state.durationSeconds > 0 {
+                GifClipTimelineView(
+                    startSeconds: $state.startSeconds,
+                    endSeconds: $state.endSeconds,
+                    durationSeconds: state.durationSeconds,
+                    currentSeconds: state.currentSeconds,
+                    stepSeconds: Constants.Gif.trimStepSeconds,
+                    minimumSelectionSeconds: Constants.Gif.minimumClipDurationSeconds,
+                    onScrub: { seconds in
+                        state.stopPlayback()
+                        state.seek(toSeconds: seconds)
+                    },
+                    onBeginEditing: {
+                        state.stopPlayback()
                     }
-                } else if let message = state.loadErrorMessage {
-                    Text(message)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                } else if state.durationSeconds <= 0 {
-                    Text("El video no tiene duración válida.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                } else {
-                    HStack {
-                        Text("Inicio")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Spacer()
-                        Text(formattedDuration(state.startSeconds))
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                            .monospacedDigit()
-                        Text("—")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                        Text(formattedDuration(state.endSeconds))
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                            .monospacedDigit()
-                        Spacer()
-                        Text("Fin")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
+                )
 
-                    RangeSlider(
-                        lowerValue: $state.startSeconds,
-                        upperValue: $state.endSeconds,
-                        bounds: 0...state.durationSeconds,
-                        step: Constants.Gif.trimStepSeconds,
-                        minimumDistance: Constants.Gif.minimumClipDurationSeconds,
-                        onValueChange: { _, value in
-                            state.seek(toSeconds: value)
-                        }
-                    )
-
-                    HStack {
-                        let selectionDuration = max(0, state.endSeconds - state.startSeconds)
-                        Text("Duración: \(formattedDuration(selectionDuration)) (mín \(formattedDuration(Constants.Gif.minimumClipDurationSeconds)))")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Spacer()
-                    }
-                }
+                GifClipTimelineReadoutView(startSeconds: state.startSeconds, endSeconds: state.endSeconds)
+            } else {
+                Text("Cargando…")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding(.top, 4)
         }
     }
 
-    private var sidePanel: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            GroupBox("Salida") {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(saveDirectory.path)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(2)
-
-                    Text("FPS: \(Constants.Gif.defaultFps) • Max \(Constants.Gif.maxPixelSize)px")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.top, 2)
-            }
-
-            Spacer()
-        }
-        .padding(16)
-        .frame(width: 280)
-    }
-
-    private var footer: some View {
-        HStack {
+    private var bottomBar: some View {
+        HStack(spacing: 12) {
             Button("Cancelar", role: .cancel) {
+                let finalVideoURL = state.videoURL
                 state.stopPlayback()
+                try? FileManager.default.removeItem(at: finalVideoURL)
                 onCancel()
             }
             .keyboardShortcut(.cancelAction)
 
             Spacer()
 
-            if isExporting {
-                ProgressView()
-                    .controlSize(.small)
+            Button("Regrabar") {
+                Task { await reRecord() }
             }
+            .buttonStyle(.bordered)
 
             Button {
                 Task { await exportGif() }
             } label: {
-                Label(isExporting ? "Exportando..." : "Exportar GIF", systemImage: "square.and.arrow.down")
+                Text(isExporting ? "Exportando…" : "Exportar GIF")
+                    .frame(minWidth: 130)
             }
             .buttonStyle(.borderedProminent)
             .disabled(isExporting || !canExport)
@@ -262,12 +178,15 @@ struct GifClipEditorView: View {
         exportError = nil
 
         do {
+            let finalVideoURL = state.videoURL
             let url = try await GifExportService.shared.exportGif(
-                videoURL: videoURL,
+                videoURL: state.videoURL,
                 timeRange: state.currentTimeRange(),
-                outputDirectory: saveDirectory
+                outputDirectory: saveDirectory,
+                options: exportOptions
             )
             state.stopPlayback()
+            try? FileManager.default.removeItem(at: finalVideoURL)
             onExport(url)
         } catch {
             AppLogger.capture.error("GIF export failed: \(error.localizedDescription)")
@@ -277,9 +196,51 @@ struct GifClipEditorView: View {
         isExporting = false
     }
 
-    private func formattedDuration(_ seconds: Double) -> String {
-        guard seconds.isFinite else { return "0.0s" }
-        return String(format: "%.1fs", seconds)
+    private func reRecord() async {
+        state.stopPlayback()
+
+        AppLogger.capture.info("GIF clip re-record requested")
+        guard let newVideoURL = await GifRecordingController.shared.record(maxDurationSeconds: Constants.Gif.maxDurationSeconds) else {
+            AppLogger.capture.info("GIF clip re-record cancelled")
+            return
+        }
+
+        let oldVideoURL = state.videoURL
+        await state.setVideo(url: newVideoURL)
+        try? FileManager.default.removeItem(at: oldVideoURL)
+    }
+
+    private func configureKeyboardShortcuts() {
+        keyboardHandler.onCancel = {
+            let finalVideoURL = state.videoURL
+            state.stopPlayback()
+            try? FileManager.default.removeItem(at: finalVideoURL)
+            onCancel()
+        }
+        keyboardHandler.onTogglePlay = {
+            togglePlayPause()
+        }
+        keyboardHandler.onStepFrame = { delta in
+            stepFrame(delta)
+        }
+        keyboardHandler.setup()
+    }
+
+    private func togglePlayPause() {
+        if state.isPreviewPlaying {
+            state.stopPlayback()
+        } else {
+            state.playSelection()
+        }
+    }
+
+    private func stepFrame(_ delta: Int) {
+        state.stopPlayback()
+        state.stepFrame(delta: delta)
+    }
+
+    private var selectionDuration: Double {
+        max(0, state.endSeconds - state.startSeconds)
     }
 }
 
@@ -287,5 +248,5 @@ struct GifClipEditorView: View {
 
 #Preview {
     Text("GifClipEditorView Preview")
-        .frame(width: 720, height: 520)
+        .frame(width: 1120, height: 680)
 }

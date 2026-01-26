@@ -43,7 +43,12 @@ final class GifExportService {
     private init() {}
 
     /// Export a GIF from the given video and time range into the output directory.
-    func exportGif(videoURL: URL, timeRange: CMTimeRange, outputDirectory: URL) async throws -> URL {
+    func exportGif(
+        videoURL: URL,
+        timeRange: CMTimeRange,
+        outputDirectory: URL,
+        options: GifExportOptions
+    ) async throws -> URL {
         do {
             try FileManager.default.createDirectory(at: outputDirectory, withIntermediateDirectories: true)
         } catch {
@@ -55,10 +60,11 @@ final class GifExportService {
             .appendingPathExtension("gif")
 
         let maxDuration = Double(Constants.Gif.maxDurationSeconds)
+        let loopCount = options.isLoopEnabled ? 0 : 1
         let preset = GifExportPreset(
-            fps: Constants.Gif.defaultFps,
-            maxPixelSize: Constants.Gif.maxPixelSize,
-            loopCount: 0
+            fps: max(1, options.fps),
+            maxPixelSize: max(16, options.maxPixelSize),
+            loopCount: loopCount
         )
 
         return try await Task.detached(priority: .userInitiated) {

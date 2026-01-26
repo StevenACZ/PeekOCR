@@ -17,20 +17,20 @@ enum GifClipWindowFactory {
             defer: false
         )
 
-        window.title = "Exportar GIF"
+        window.title = "PeekOCR Editor"
         window.titlebarAppearsTransparent = true
         window.titleVisibility = .hidden
         window.level = .floating
         window.isReleasedWhenClosed = false
         window.delegate = delegate
         window.backgroundColor = NSColor.controlBackgroundColor
-        window.minSize = NSSize(width: 640, height: 480)
+        window.minSize = NSSize(width: 960, height: 640)
 
         return window
     }
 
     static func calculateWindowSize() -> CGSize {
-        let fallback = CGSize(width: 900, height: 560)
+        let fallback = CGSize(width: 1200, height: 720)
         guard let screen = NSScreen.main else { return fallback }
 
         let frame = screen.visibleFrame
@@ -43,4 +43,3 @@ enum GifClipWindowFactory {
         )
     }
 }
-

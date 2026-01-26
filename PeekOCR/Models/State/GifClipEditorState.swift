@@ -15,10 +15,10 @@ import os
 final class GifClipEditorState: NSObject, ObservableObject {
     // MARK: - Public Properties
 
-    let videoURL: URL
     let maxDurationSeconds: Int
     let player: AVPlayer
 
+    @Published private(set) var videoURL: URL
     @Published private(set) var isReady = false
     @Published private(set) var loadErrorMessage: String?
 
@@ -26,12 +26,14 @@ final class GifClipEditorState: NSObject, ObservableObject {
     @Published var startSeconds: Double = 0
     @Published var endSeconds: Double = 0
 
+    @Published private(set) var currentSeconds: Double = 0
     @Published var isPreviewPlaying = false
 
     // MARK: - Private Properties
 
-    private let asset: AVURLAsset
+    private var asset: AVURLAsset
     private var playbackTimer: Timer?
+    private var videoFrameRate: Double = 30
 
     // MARK: - Initialization
 
@@ -54,26 +56,48 @@ final class GifClipEditorState: NSObject, ObservableObject {
         loadErrorMessage = nil
 
         do {
+            let tracks = try await asset.loadTracks(withMediaType: .video)
+            if let track = tracks.first, track.nominalFrameRate.isFinite, track.nominalFrameRate > 0 {
+                videoFrameRate = Double(track.nominalFrameRate)
+            } else {
+                videoFrameRate = 30
+            }
+
             let duration = try await asset.load(.duration)
             let rawSeconds = duration.seconds.isFinite ? duration.seconds : 0
             let clampedSeconds = min(rawSeconds, Double(maxDurationSeconds))
             durationSeconds = max(0, clampedSeconds)
             startSeconds = 0
             endSeconds = durationSeconds
+            currentSeconds = 0
         } catch {
             AppLogger.capture.error("Failed to load video duration: \(error.localizedDescription)")
             loadErrorMessage = "No se pudo cargar el video. Intenta grabar de nuevo."
             durationSeconds = 0
             startSeconds = 0
             endSeconds = 0
+            currentSeconds = 0
         }
 
         isReady = true
     }
 
+    func setVideo(url: URL) async {
+        stopPlayback()
+        isReady = false
+        loadErrorMessage = nil
+
+        videoURL = url
+        asset = AVURLAsset(url: url)
+        player.replaceCurrentItem(with: AVPlayerItem(asset: asset))
+        await prepare()
+    }
+
     func playSelection() {
         guard durationSeconds > 0 else { return }
-        seek(toSeconds: startSeconds)
+        if currentSeconds < startSeconds || currentSeconds > endSeconds {
+            seek(toSeconds: startSeconds)
+        }
         isPreviewPlaying = true
         startPlaybackMonitor()
         player.play()
@@ -86,14 +110,22 @@ final class GifClipEditorState: NSObject, ObservableObject {
     }
 
     func seek(toSeconds seconds: Double) {
-        let time = CMTime(seconds: max(0, seconds), preferredTimescale: 600)
+        let clamped = max(0, min(seconds, durationSeconds))
+        let time = CMTime(seconds: clamped, preferredTimescale: 600)
         player.seek(to: time, toleranceBefore: .zero, toleranceAfter: .zero)
+        currentSeconds = clamped
     }
 
     func currentTimeRange() -> CMTimeRange {
         let start = CMTime(seconds: max(0, startSeconds), preferredTimescale: 600)
         let end = CMTime(seconds: max(startSeconds, endSeconds), preferredTimescale: 600)
         return CMTimeRangeFromTimeToTime(start: start, end: end)
+    }
+
+    func stepFrame(delta: Int) {
+        let stepSeconds = 1.0 / max(1, videoFrameRate)
+        let target = currentSeconds + (Double(delta) * stepSeconds)
+        seek(toSeconds: target)
     }
 
     // MARK: - Private Methods
@@ -120,7 +152,12 @@ final class GifClipEditorState: NSObject, ObservableObject {
     @objc
     private func handlePlaybackTimer(_ timer: Timer) {
         guard isPreviewPlaying else { return }
-        if player.currentTime().seconds >= endSeconds {
+        let current = player.currentTime().seconds
+        if current.isFinite {
+            currentSeconds = current
+        }
+
+        if current >= endSeconds {
             stopPlayback()
         }
     }
