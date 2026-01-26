@@ -69,6 +69,14 @@ private struct QuickActionsSection: View {
             ) {
                 CaptureCoordinator.shared.startCapture(mode: .screenshot)
             }
+
+            MenuBarActionButton(
+                title: "Grabar GIF (10s)",
+                icon: "film",
+                shortcut: settings.gifHotKeyDisplayString()
+            ) {
+                CaptureCoordinator.shared.startCapture(mode: .gifClip)
+            }
         }
         .padding(.vertical, 8)
     }

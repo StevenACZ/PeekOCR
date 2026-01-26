@@ -51,6 +51,8 @@ struct CaptureItem: Identifiable, Codable, Equatable {
             return "qrcode"
         case .screenshot:
             return "camera.viewfinder"
+        case .gif:
+            return "film"
         }
     }
 }
@@ -61,4 +63,5 @@ enum CaptureType: String, Codable {
     case text
     case qrCode
     case screenshot
+    case gif
 }

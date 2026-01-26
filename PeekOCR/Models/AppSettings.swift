@@ -24,6 +24,8 @@ final class AppSettings: ObservableObject {
         static let screenshotHotKeyCode = "screenshotHotKeyCode"
         static let annotatedScreenshotHotKeyModifiers = "annotatedScreenshotHotKeyModifiers"
         static let annotatedScreenshotHotKeyCode = "annotatedScreenshotHotKeyCode"
+        static let gifHotKeyModifiers = "gifHotKeyModifiers"
+        static let gifHotKeyCode = "gifHotKeyCode"
         static let launchAtLogin = "launchAtLogin"
         static let defaultAnnotationStrokeWidth = "defaultAnnotationStrokeWidth"
         static let defaultAnnotationFontSize = "defaultAnnotationFontSize"
@@ -43,6 +45,10 @@ final class AppSettings: ObservableObject {
         // Cmd + Shift + 5 for annotated screenshot
         static let annotatedScreenshotModifiers: UInt32 = UInt32(shiftKey | cmdKey)
         static let annotatedScreenshotKeyCode: UInt32 = UInt32(kVK_ANSI_5)
+
+        // Cmd + Shift + 6 for GIF recording (user can change in settings)
+        static let gifModifiers: UInt32 = UInt32(shiftKey | cmdKey)
+        static let gifKeyCode: UInt32 = UInt32(kVK_ANSI_6)
 
         static let launchAtLogin = false
         static let maxHistoryItems = Constants.History.maxItems
@@ -76,6 +82,14 @@ final class AppSettings: ObservableObject {
 
     @Published var annotatedScreenshotHotKeyCode: UInt32 {
         didSet { defaults.set(annotatedScreenshotHotKeyCode, forKey: Keys.annotatedScreenshotHotKeyCode) }
+    }
+
+    @Published var gifHotKeyModifiers: UInt32 {
+        didSet { defaults.set(gifHotKeyModifiers, forKey: Keys.gifHotKeyModifiers) }
+    }
+
+    @Published var gifHotKeyCode: UInt32 {
+        didSet { defaults.set(gifHotKeyCode, forKey: Keys.gifHotKeyCode) }
     }
 
     // MARK: - General Settings
@@ -124,6 +138,14 @@ final class AppSettings: ObservableObject {
             ? UInt32(defaults.integer(forKey: Keys.annotatedScreenshotHotKeyCode))
             : Defaults.annotatedScreenshotKeyCode
 
+        self.gifHotKeyModifiers = UInt32(defaults.integer(forKey: Keys.gifHotKeyModifiers)) != 0
+            ? UInt32(defaults.integer(forKey: Keys.gifHotKeyModifiers))
+            : Defaults.gifModifiers
+
+        self.gifHotKeyCode = UInt32(defaults.integer(forKey: Keys.gifHotKeyCode)) != 0
+            ? UInt32(defaults.integer(forKey: Keys.gifHotKeyCode))
+            : Defaults.gifKeyCode
+
         self.launchAtLogin = defaults.bool(forKey: Keys.launchAtLogin)
 
         // Load annotation settings with defaults
@@ -146,5 +168,9 @@ final class AppSettings: ObservableObject {
 
     func annotatedScreenshotHotKeyDisplayString() -> String {
         HotKeyDisplay.displayString(modifiers: annotatedScreenshotHotKeyModifiers, keyCode: annotatedScreenshotHotKeyCode)
+    }
+
+    func gifHotKeyDisplayString() -> String {
+        HotKeyDisplay.displayString(modifiers: gifHotKeyModifiers, keyCode: gifHotKeyCode)
     }
 }

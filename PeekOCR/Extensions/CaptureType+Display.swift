@@ -18,6 +18,8 @@ extension CaptureType {
             return .purple
         case .screenshot:
             return .green
+        case .gif:
+            return .orange
         }
     }
 
@@ -30,6 +32,8 @@ extension CaptureType {
             return "QR"
         case .screenshot:
             return "Captura"
+        case .gif:
+            return "GIF"
         }
     }
 }
