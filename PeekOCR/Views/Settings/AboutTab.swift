@@ -29,7 +29,7 @@ struct AboutTab: View {
                     .font(.title)
                     .fontWeight(.bold)
                 
-                Text("Versión 1.0.0")
+                Text("Versión \(Constants.App.version)")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
