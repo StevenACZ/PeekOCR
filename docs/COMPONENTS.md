@@ -56,6 +56,28 @@ PermissionStatusRow(
 )
 ```
 
+## Video / GIF Components
+
+### NonInteractiveVideoPlayer
+Preview-only video player (AVPlayerView) with controls disabled.
+
+```swift
+NonInteractiveVideoPlayer(player: player)
+```
+
+### RangeSlider
+Dual-handle slider used for selecting a numeric range (e.g. GIF trim in/out).
+
+```swift
+RangeSlider(
+    lowerValue: $startSeconds,
+    upperValue: $endSeconds,
+    bounds: 0...durationSeconds,
+    step: 0.1,
+    minimumDistance: Constants.Gif.minimumClipDurationSeconds
+)
+```
+
 ## Annotation Components
 
 ### ToolButton
@@ -113,7 +135,7 @@ Action button with icon and shortcut.
 MenuBarActionButton(
     title: "Capture Text",
     icon: "doc.text.viewfinder",
-    shortcut: "⌘⇧1"
+    shortcut: "⇧ Space"
 ) {
     /* action */
 }

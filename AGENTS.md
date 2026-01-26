@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-PeekOCR is a native macOS Menu Bar application for OCR text capture, QR code detection, screenshots, and **annotation editing**. Built with Swift 5.9, SwiftUI, and AppKit.
+PeekOCR is a native macOS Menu Bar application for OCR text capture, QR code detection, screenshots, **GIF clip recording**, and **annotation editing**. Built with Swift 5.9, SwiftUI, and AppKit.
 
 ## Documentation Index
 
@@ -10,6 +10,7 @@ PeekOCR is a native macOS Menu Bar application for OCR text capture, QR code det
 |----------|-------------|
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Layer diagram, data flow, patterns |
 | [docs/COMPONENTS.md](docs/COMPONENTS.md) | Reusable UI components catalog |
+| [docs/GIF_CLIP.md](docs/GIF_CLIP.md) | GIF clip capture flow + key modules |
 | [docs/MODELS.md](docs/MODELS.md) | Data models and state managers |
 | [docs/SERVICES.md](docs/SERVICES.md) | Service classes documentation |
 | [docs/VIEWS.md](docs/VIEWS.md) | View hierarchy and modules |
@@ -54,7 +55,8 @@ PeekOCR/
 │   │   ├── TextInputController.swift # Text input lifecycle
 │   │   ├── AnnotationUndoManager.swift   # Annotation-specific undo/redo (NEW)
 │   │   ├── AnnotationDragManager.swift   # Drag and resize state (NEW)
-│   │   └── AnnotationTextManager.swift   # Text input state (NEW)
+│   │   ├── AnnotationTextManager.swift   # Text input state (NEW)
+│   │   └── GifClipEditorState.swift      # GIF trim + playback state
 │   │
 │   ├── AnnotationState.swift         # Main editor state (refactored, uses composition)
 │   ├── AppState.swift                # Global app state
@@ -62,6 +64,7 @@ PeekOCR/
 │   ├── AnnotationSettings.swift      # Annotation defaults
 │   ├── ScreenshotSettings.swift      # Screenshot options
 │   ├── CaptureItem.swift             # History item
+│   ├── GifExportOptions.swift         # GIF export presets/options
 │   └── SaveLocation.swift            # Save location enum
 │
 ├── Services/
@@ -78,8 +81,15 @@ PeekOCR/
 │   │
 │   ├── AnnotationWindowController.swift   # Window lifecycle
 │   ├── CaptureCoordinator.swift           # Capture orchestration
+│   ├── GifClipWindowController.swift      # GIF editor window lifecycle
+│   ├── GifClipWindowFactory.swift         # GIF editor window creation
+│   ├── GifExportService.swift             # Video -> GIF export
+│   ├── GifRecordingController.swift       # Selection + recording orchestration
+│   ├── GifRecordingHudWindowController.swift     # Countdown + stop HUD
+│   ├── GifRecordingOverlayWindowController.swift # Full-screen selection overlay
 │   ├── ScreenshotService.swift            # Screenshot processing
 │   ├── NativeScreenCaptureService.swift   # Native capture
+│   ├── NativeScreenRecordingService.swift # Native video capture support checks
 │   ├── HotKeyManager.swift                # Global shortcuts
 │   └── OCRService.swift                   # Text recognition
 │
@@ -111,6 +121,19 @@ PeekOCR/
 │   │   ├── HistoryItemRow.swift              # History item row
 │   │   └── EmptyStateView.swift              # Empty state placeholder
 │   │
+│   ├── Gif/
+│   │   ├── GifClipEditorView.swift           # Post-record editor window
+│   │   ├── GifClipKeyboardHandler.swift      # Frame-by-frame shortcuts
+│   │   ├── GifClipPlaybackControlsView.swift # Play/pause + stepping UI
+│   │   ├── GifClipSidebarView.swift          # Export options + estimates
+│   │   ├── GifClipTimelineReadoutView.swift  # In/out readout
+│   │   ├── GifClipTimelineView.swift         # Timeline + trim range
+│   │   ├── GifClipVideoPreviewView.swift     # Video preview container
+│   │   ├── GifExportLoadingOverlay.swift     # Export loading UI
+│   │   └── Overlay/
+│   │       ├── GifRecordingHudView.swift     # HUD SwiftUI view
+│   │       └── GifRecordingOverlayView.swift # Selection overlay view
+│   │
 │   ├── Settings/
 │   │   ├── Sections/                         # Modular settings sections
 │   │   │   ├── HotkeyDisplaySection.swift    # Hotkey display
@@ -128,6 +151,8 @@ PeekOCR/
 │   │   └── AboutTab.swift
 │   │
 │   ├── Components/                           # Reusable components
+│   │   ├── NonInteractiveVideoPlayer.swift   # AVPlayerView wrapper (no controls)
+│   │   ├── RangeSlider.swift                 # Dual-handle range slider
 │   │   ├── SectionHeader.swift
 │   │   ├── SectionDivider.swift
 │   │   ├── SettingSliderRow.swift
@@ -145,6 +170,7 @@ PeekOCR/
 │   └── AppLogger.swift                       # Centralized logging (OSLog)
 │
 ├── Extensions/
+│   ├── CaptureType+Display.swift
 │   └── HotKeyDisplay.swift
 │
 ├── AppDelegate.swift
@@ -191,8 +217,16 @@ PeekOCR/
 | OCR | `⇧ Space` | Extract text, copy to clipboard |
 | Screenshot | `⌘⇧4` | Save image to file |
 | Annotated | `⌘⇧5` | Open annotation editor, then save |
+| GIF Clip | `⌘⇧6` | Select region, record up to 10s, export as GIF |
 
 ## Common Tasks
+
+### Adding a New Capture Mode
+1. Add case to `CaptureMode` in `Services/CaptureCoordinator.swift`
+2. Add a quick action button in `Views/MenuBar/MenuBarPopoverView.swift`
+3. Register the default hotkey in `Models/AppSettings.swift` and `Services/HotKeyManager.swift`
+4. Add/label the shortcut in `Views/Settings/ShortcutsSettingsTab.swift`
+5. Update docs and manual QA checklist
 
 ### Adding a New Annotation Tool
 1. Add case to `AnnotationTool` enum
@@ -229,6 +263,9 @@ PeekOCR/
 | Carbon | Global hotkeys |
 | CoreGraphics | Image processing |
 | CoreText | Text rendering |
+| AVFoundation / AVKit | Video preview + frame extraction |
+| ImageIO | GIF encoding |
+| UniformTypeIdentifiers | GIF UTType identifiers |
 
 ## Permissions Required
 
@@ -240,10 +277,12 @@ PeekOCR/
 - [ ] Menu bar icon appears
 - [ ] Hotkeys trigger capture
 - [ ] Annotation editor opens for `⌘⇧5`
+- [ ] GIF clip capture opens for `⌘⇧6` (select → record → editor)
 - [ ] Drawing tools work (arrow, text, freehand, rectangle, oval)
 - [ ] Undo/redo works
 - [ ] Selection and resize works
 - [ ] Save exports image correctly
+- [ ] GIF export saves correctly and appears in history
 - [ ] Settings persist
 
 ## Git Workflow
