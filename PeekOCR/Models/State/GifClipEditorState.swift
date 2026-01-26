@@ -57,8 +57,17 @@ final class GifClipEditorState: NSObject, ObservableObject {
 
         do {
             let tracks = try await asset.loadTracks(withMediaType: .video)
-            if let track = tracks.first, track.nominalFrameRate.isFinite, track.nominalFrameRate > 0 {
-                videoFrameRate = Double(track.nominalFrameRate)
+            if let track = tracks.first {
+                do {
+                    let nominalFrameRate = try await track.load(.nominalFrameRate)
+                    if nominalFrameRate.isFinite, nominalFrameRate > 0 {
+                        videoFrameRate = Double(nominalFrameRate)
+                    } else {
+                        videoFrameRate = 30
+                    }
+                } catch {
+                    videoFrameRate = 30
+                }
             } else {
                 videoFrameRate = 30
             }
@@ -123,9 +132,19 @@ final class GifClipEditorState: NSObject, ObservableObject {
     }
 
     func stepFrame(delta: Int) {
+        guard durationSeconds > 0 else { return }
         let stepSeconds = 1.0 / max(1, videoFrameRate)
         let target = currentSeconds + (Double(delta) * stepSeconds)
-        seek(toSeconds: target)
+        let clamped = max(0, min(target, durationSeconds))
+
+        if clamped < startSeconds {
+            startSeconds = clamped
+        }
+        if clamped > endSeconds {
+            endSeconds = clamped
+        }
+
+        seek(toSeconds: clamped)
     }
 
     // MARK: - Private Methods
