@@ -15,12 +15,14 @@ enum CaptureMode: CustomStringConvertible {
     case ocr
     case screenshot
     case annotatedScreenshot
+    case gifClip
 
     var description: String {
         switch self {
         case .ocr: return "OCR"
         case .screenshot: return "Screenshot"
         case .annotatedScreenshot: return "Annotated Screenshot"
+        case .gifClip: return "GIF Clip"
         }
     }
 }
@@ -39,6 +41,8 @@ final class CaptureCoordinator: ObservableObject {
     // MARK: - Services
 
     private let nativeScreenCapture = NativeScreenCaptureService.shared
+    private let nativeScreenRecording = NativeScreenRecordingService.shared
+    private let gifRecordingController = GifRecordingController.shared
     private let ocrService = OCRService.shared
     private let pasteboardService = PasteboardService.shared
     private let screenshotService = ScreenshotService.shared
@@ -55,7 +59,12 @@ final class CaptureCoordinator: ObservableObject {
     /// Start the capture flow
     /// - Parameter mode: The capture mode (OCR or screenshot)
     func startCapture(mode: CaptureMode) {
-        guard !isCapturing else {
+        if isCapturing {
+            if currentMode == .gifClip, mode == .gifClip {
+                AppLogger.capture.info("Stopping GIF recording via hotkey")
+                gifRecordingController.stop()
+                return
+            }
             AppLogger.capture.warning("Capture already in progress, ignoring request for mode: \(mode.description)")
             return
         }
@@ -68,7 +77,12 @@ final class CaptureCoordinator: ObservableObject {
 
         // Use native macOS screencapture for all modes
         Task { @MainActor in
-            await captureWithNativeScreenshot()
+            switch mode {
+            case .gifClip:
+                await captureGifClipWithNativeRecorder()
+            case .ocr, .screenshot, .annotatedScreenshot:
+                await captureWithNativeScreenshot()
+            }
         }
     }
 
@@ -80,6 +94,9 @@ final class CaptureCoordinator: ObservableObject {
         if wasCapturing {
             let elapsed = CFAbsoluteTimeGetCurrent() - captureStartTime
             AppLogger.capture.info("Capture cancelled - mode: \(self.currentMode.description), elapsed: \(String(format: "%.2f", elapsed))s")
+            if currentMode == .gifClip {
+                gifRecordingController.stop()
+            }
         } else {
             AppLogger.capture.debug("Cancel called but no capture was in progress")
         }
@@ -111,6 +128,8 @@ final class CaptureCoordinator: ObservableObject {
         case .annotatedScreenshot:
             AppLogger.capture.debug("Processing as annotated screenshot")
             await processAnnotatedScreenshot(image: image)
+        case .gifClip:
+            AppLogger.capture.warning("Unexpected screenshot path for GIF clip mode")
         }
 
         let elapsed = CFAbsoluteTimeGetCurrent() - captureStartTime
@@ -182,6 +201,43 @@ final class CaptureCoordinator: ObservableObject {
 
         // Process the annotated image as a regular screenshot
         await processScreenshot(image: annotatedImage)
+    }
+
+    // MARK: - GIF Clip Processing
+
+    private func captureGifClipWithNativeRecorder() async {
+        let startTime = CFAbsoluteTimeGetCurrent()
+        AppLogger.capture.debug("Invoking native screen recording")
+
+        defer {
+            let elapsed = CFAbsoluteTimeGetCurrent() - startTime
+            AppLogger.capture.info("GIF clip flow finished in \(String(format: "%.2f", elapsed))s")
+            isCapturing = false
+        }
+
+        let supported = await nativeScreenRecording.supportsInteractiveVideoCapture()
+        guard supported else {
+            AppLogger.capture.error("screencapture video recording flags are not supported on this OS")
+            return
+        }
+
+        guard let videoURL = await gifRecordingController.record(maxDurationSeconds: Constants.Gif.maxDurationSeconds) else {
+            AppLogger.capture.info("GIF clip recording cancelled")
+            return
+        }
+
+        let saveDirectory = ScreenshotSettings.shared.saveDirectoryURL
+        let gifURL = await GifClipWindowController.shared.showEditor(with: videoURL, saveDirectory: saveDirectory)
+
+        try? FileManager.default.removeItem(at: videoURL)
+
+        guard let gifURL else {
+            AppLogger.capture.info("GIF export cancelled")
+            return
+        }
+
+        AppLogger.capture.info("GIF exported: \(gifURL.lastPathComponent)")
+        historyManager.addItem(CaptureItem(text: gifURL.lastPathComponent, captureType: .gif))
     }
 
     // MARK: - Result Handlers

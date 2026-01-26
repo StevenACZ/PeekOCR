@@ -28,4 +28,5 @@ enum HotKeyID: UInt32 {
     case capture = 1        // OCR capture
     case screenshot = 2     // Screenshot
     case annotated = 3      // Annotated screenshot
+    case gif = 4            // GIF clip recording
 }

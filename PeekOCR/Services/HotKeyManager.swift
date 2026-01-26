@@ -7,6 +7,7 @@
 
 import AppKit
 import Carbon
+import os
 
 /// Manages global keyboard shortcuts for the app
 final class HotKeyManager {
@@ -93,6 +94,8 @@ final class HotKeyManager {
             CaptureCoordinator.shared.startCapture(mode: .screenshot)
         case .annotated:
             CaptureCoordinator.shared.startCapture(mode: .annotatedScreenshot)
+        case .gif:
+            CaptureCoordinator.shared.startCapture(mode: .gifClip)
         }
     }
 
@@ -116,13 +119,19 @@ final class HotKeyManager {
             keyCode: settings.annotatedScreenshotHotKeyCode,
             modifiers: settings.annotatedScreenshotHotKeyModifiers
         )
+
+        registerHotKey(
+            id: .gif,
+            keyCode: settings.gifHotKeyCode,
+            modifiers: settings.gifHotKeyModifiers
+        )
     }
 
     private func registerHotKey(id: HotKeyID, keyCode: UInt32, modifiers: UInt32) {
         var ref: EventHotKeyRef?
         let hotKeyID = EventHotKeyID(signature: HotKeyDefinition.signature, id: id.rawValue)
 
-        RegisterEventHotKey(
+        let status = RegisterEventHotKey(
             keyCode,
             modifiers,
             hotKeyID,
@@ -130,6 +139,11 @@ final class HotKeyManager {
             0,
             &ref
         )
+
+        if status != noErr {
+            AppLogger.capture.error("Failed to register hotkey id=\(id.rawValue) (status=\(status))")
+            return
+        }
 
         if let ref = ref {
             hotKeyRefs[id] = ref

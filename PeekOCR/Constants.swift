@@ -41,4 +41,13 @@ enum Constants {
         static let version = "1.0.0"
         static let minimumOSVersion = "macOS 13.0+"
     }
+
+    /// GIF capture/export defaults
+    enum Gif {
+        static let maxDurationSeconds = 10
+        static let defaultFps = 12
+        static let maxPixelSize = 720
+        static let trimStepSeconds: Double = 0.1
+        static let minimumClipDurationSeconds: Double = 3.0
+    }
 }

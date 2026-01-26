@@ -49,10 +49,25 @@ struct ShortcutsSettingsTab: View {
                         HotKeyManager.shared.reregisterHotKeys()
                     }
                 )
+
+                ShortcutRecorderRow(
+                    title: "Grabar GIF (10s)",
+                    description: "Graba un clip corto y lo exporta como GIF",
+                    icon: "film",
+                    currentShortcut: settings.gifHotKeyDisplayString(),
+                    onRecord: { modifiers, keyCode in
+                        settings.gifHotKeyModifiers = modifiers
+                        settings.gifHotKeyCode = keyCode
+                        HotKeyManager.shared.reregisterHotKeys()
+                    }
+                )
             } header: {
                 Text("Atajos de Teclado")
             } footer: {
-                Text("Haz clic en \"Grabar\" y presiona la combinacion de teclas deseada.")
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Haz clic en \"Grabar\" y presiona la combinacion de teclas deseada.")
+                    Text("Nota: algunos atajos como ⌘⇧5/⌘⇧6 pueden estar reservados por macOS. Si no funcionan, desactiva esos atajos en Ajustes del Sistema → Teclado → Atajos de teclado → Capturas de pantalla, o elige otra combinacion.")
+                }
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -74,6 +89,8 @@ struct ShortcutsSettingsTab: View {
         settings.screenshotHotKeyCode = AppSettings.Defaults.screenshotKeyCode
         settings.annotatedScreenshotHotKeyModifiers = AppSettings.Defaults.annotatedScreenshotModifiers
         settings.annotatedScreenshotHotKeyCode = AppSettings.Defaults.annotatedScreenshotKeyCode
+        settings.gifHotKeyModifiers = AppSettings.Defaults.gifModifiers
+        settings.gifHotKeyCode = AppSettings.Defaults.gifKeyCode
         HotKeyManager.shared.reregisterHotKeys()
     }
 }
