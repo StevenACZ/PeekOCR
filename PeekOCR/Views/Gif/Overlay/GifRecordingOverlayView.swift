@@ -18,6 +18,7 @@ final class GifRecordingOverlayView: NSView {
         didSet {
             needsDisplay = true
             window?.invalidateCursorRects(for: self)
+            updateCursor()
         }
     }
 
@@ -49,6 +50,7 @@ final class GifRecordingOverlayView: NSView {
         super.viewDidMoveToWindow()
         window?.makeFirstResponder(self)
         window?.invalidateCursorRects(for: self)
+        updateCursor()
     }
 
     override func resetCursorRects() {
@@ -211,6 +213,14 @@ final class GifRecordingOverlayView: NSView {
 
         let textOrigin = CGPoint(x: pillRect.minX + paddingX, y: pillRect.minY + paddingY)
         (text as NSString).draw(at: textOrigin, withAttributes: attributes)
+    }
+
+    private func updateCursor() {
+        if mode == .selecting {
+            NSCursor.crosshair.set()
+        } else {
+            NSCursor.arrow.set()
+        }
     }
 
     // MARK: - Geometry

@@ -5,6 +5,7 @@
 //  Post-recording editor for trimming a video and exporting it as a GIF.
 //
 
+import AppKit
 import SwiftUI
 import os
 
@@ -198,6 +199,13 @@ struct GifClipEditorView: View {
 
     private func reRecord() async {
         state.stopPlayback()
+
+        let windowToHide = NSApp.keyWindow
+        windowToHide?.orderOut(nil)
+        defer {
+            windowToHide?.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+        }
 
         AppLogger.capture.info("GIF clip re-record requested")
         guard let newVideoURL = await GifRecordingController.shared.record(maxDurationSeconds: Constants.Gif.maxDurationSeconds) else {

@@ -42,6 +42,7 @@ final class GifRecordingOverlayWindowController: NSWindowController {
         overlayView.autoresizingMask = [.width, .height]
 
         window.makeKeyAndOrderFront(nil)
+        window.makeFirstResponder(overlayView)
         NSApp.activate(ignoringOtherApps: true)
 
         return await withCheckedContinuation { continuation in
@@ -99,7 +100,7 @@ final class GifRecordingOverlayWindowController: NSWindowController {
 
     private func createOverlayWindow() -> NSWindow {
         let frame = unionFrameForAllScreens()
-        let window = NSWindow(
+        let window = KeyableOverlayWindow(
             contentRect: frame,
             styleMask: [.borderless],
             backing: .buffered,
@@ -127,4 +128,9 @@ final class GifRecordingOverlayWindowController: NSWindowController {
             result = result.union(screen.frame)
         }
     }
+}
+
+private final class KeyableOverlayWindow: NSWindow {
+    override var canBecomeKey: Bool { true }
+    override var canBecomeMain: Bool { true }
 }
