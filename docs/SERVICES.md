@@ -10,27 +10,42 @@ Orchestrates the capture workflow.
 **Location:** `Services/CaptureCoordinator.swift`
 
 **Responsibilities:**
-- Start capture with specified mode (OCR, screenshot, annotated)
-- Coordinate with native capture service
-- Process results based on mode
-- Copy results to clipboard
+- Start capture with a specified mode (OCR, screenshot, annotated screenshot, GIF clip)
+- Coordinate with native capture/recording services
+- Route results to clipboard / file export
+- Add items to history
 
 ```swift
 // Usage
 CaptureCoordinator.shared.startCapture(mode: .ocr)
 CaptureCoordinator.shared.startCapture(mode: .screenshot)
 CaptureCoordinator.shared.startCapture(mode: .annotatedScreenshot)
+CaptureCoordinator.shared.startCapture(mode: .gifClip)
 ```
 
 ### NativeScreenCaptureService
-Interfaces with macOS screencapture tool.
+Interfaces with macOS `screencapture` (image).
 
 **Location:** `Services/NativeScreenCaptureService.swift`
 
 **Responsibilities:**
-- Execute native screencapture command
+- Execute native screenshot capture
 - Handle temporary file management
-- Return captured CGImage
+- Return captured `CGImage`
+
+### NativeScreenRecordingService
+Low-level wrapper for macOS `screencapture` (video).
+
+**Location:** `Services/NativeScreenRecordingService.swift`
+
+**Responsibilities:**
+- Detect whether the current OS supports video capture flags
+- Provide an interactive recording fallback when needed
+
+```swift
+// Usage
+let supported = await NativeScreenRecordingService.shared.supportsInteractiveVideoCapture()
+```
 
 ### OCRService
 Text recognition from images.
@@ -89,6 +104,75 @@ let data = ImageEncodingService.encode(image, format: .png)
 let jpegData = ImageEncodingService.encode(image, format: .jpg, quality: 0.8)
 ```
 
+## GIF Clip Services
+
+### GifRecordingController
+Orchestrates region selection, countdown, and video recording for GIF capture.
+
+**Location:** `Services/GifRecordingController.swift`
+
+**Responsibilities:**
+- Present a full-screen region selection overlay (ESC cancels)
+- Start a region recording using `screencapture -R ... -v`
+- Show a countdown + stop button HUD (auto-stops at the max duration)
+- Support stopping early by pressing the GIF hotkey again
+- Return a temporary `.mov` URL (caller deletes it after export)
+
+```swift
+// Usage
+let videoURL = await GifRecordingController.shared.record(maxDurationSeconds: Constants.Gif.maxDurationSeconds)
+```
+
+### GifRecordingOverlayWindowController
+Full-screen overlay window used for region selection + recording focus.
+
+**Location:** `Services/GifRecordingOverlayWindowController.swift`
+
+**Responsibilities:**
+- Host the overlay view across all screens
+- Capture selection rect + screen
+- Drive recording mode visuals (dim outside selection, crosshair cursor)
+
+### GifRecordingHudWindowController
+Small HUD panel shown during recording.
+
+**Location:** `Services/GifRecordingHudWindowController.swift`
+
+**Responsibilities:**
+- Display remaining seconds
+- Provide a quick Stop button
+
+### GifClipWindowController
+Manages the GIF clip editor window lifecycle and async continuation.
+
+**Location:** `Services/GifClipWindowController.swift`
+
+**Responsibilities:**
+- Present the post-recording editor (`GifClipEditorView`)
+- Return the exported GIF URL (or nil if canceled)
+
+```swift
+// Usage
+let gifURL = await GifClipWindowController.shared.showEditor(with: videoURL, saveDirectory: outputDir)
+```
+
+### GifClipWindowFactory
+Creates and configures the editor `NSWindow`.
+
+**Location:** `Services/GifClipWindowFactory.swift`
+
+### GifExportService
+Exports a trimmed segment of a video to an optimized animated GIF.
+
+**Location:** `Services/GifExportService.swift`
+
+**Responsibilities:**
+- Extract frames from a time range using `AVAssetImageGenerator`
+- Encode frames into an animated GIF via `ImageIO`
+- Save into the configured output directory
+
+> Note: `GifExportOptions.isDitheringEnabled` is currently UI-only (reserved for future export improvements).
+
 ## Annotation Services
 
 ### AnnotationWindowController
@@ -112,7 +196,7 @@ Creates and configures editor windows.
 **Location:** `Services/Annotation/AnnotationWindowFactory.swift`
 
 **Responsibilities:**
-- Create configured NSWindow instances
+- Create configured `NSWindow` instances
 - Calculate optimal window size for images
 - Configure window styling and behavior
 
@@ -127,7 +211,7 @@ Geometry calculations.
 
 **Location:** `Services/Annotation/AnnotationGeometry.swift`
 
-See [MODELS.md](./MODELS.md) for details.
+See [MODELS.md](./MODELS.md) for related models.
 
 ## HotKey Services
 
@@ -138,14 +222,8 @@ Global keyboard shortcuts.
 
 **Responsibilities:**
 - Register global hotkeys using Carbon API
-- Handle hotkey events
+- Handle hotkey events and route to `CaptureCoordinator`
 - Manage accessibility permissions
-
-```swift
-// Usage
-HotKeyManager.shared.registerHotKeys()
-HotKeyManager.shared.reregisterHotKeys()
-```
 
 ### HotKeyDefinition
 Configuration struct for hotkeys.
@@ -155,12 +233,7 @@ Configuration struct for hotkeys.
 **Responsibilities:**
 - Define hotkey configuration structure
 - Provide shared signature for Carbon registration
-- Define hotkey identifiers
-
-```swift
-// Usage
-let hotKeyID = HotKeyDefinition.signature
-```
+- Define hotkey identifiers (including GIF clip)
 
 ## Service Patterns
 
@@ -175,10 +248,10 @@ AppSettings.shared
 ```
 
 ### Coordinator Pattern
-CaptureCoordinator orchestrates complex workflows involving multiple services.
+`CaptureCoordinator` orchestrates complex workflows involving multiple services.
 
 ### Factory Pattern
-AnnotationWindowFactory creates configured windows with consistent styling.
+`AnnotationWindowFactory` / `GifClipWindowFactory` create configured windows with consistent styling.
 
 ### Static Helpers
-Services like ImageScalingService and ImageEncodingService use static methods for pure operations.
+Services like `ImageScalingService` and `ImageEncodingService` use static methods for pure operations.

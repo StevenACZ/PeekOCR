@@ -11,14 +11,20 @@ PeekOCR follows a clean **MVVM** architecture with clear separation of concerns.
 │  │  MenuBar    │  │  Annotation │  │  Settings   │     │
 │  │  Popover    │  │   Editor    │  │    Tabs     │     │
 │  └─────────────┘  └─────────────┘  └─────────────┘     │
+│  ┌─────────────┐  ┌──────────────────────────────┐     │
+│  │ GIF Overlay │  │        GIF Clip Editor        │     │
+│  └─────────────┘  └──────────────────────────────┘     │
 └─────────────────────────────────────────────────────────┘
                            │
                            ▼
 ┌─────────────────────────────────────────────────────────┐
 │                       STATE                              │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐     │
-│  │AnnotationState│ │AppSettings │  │HistoryManager│    │
-│  └─────────────┘  └─────────────┘  └─────────────┘     │
+│  ┌───────────────┐  ┌──────────────────┐  ┌───────────┐│
+│  │AnnotationState │  │GifClipEditorState│  │AppSettings││
+│  └───────────────┘  └──────────────────┘  └───────────┘│
+│  ┌───────────────────────────────────────────────────┐  │
+│  │                 HistoryManager                      │  │
+│  └───────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────┘
                            │
                            ▼
@@ -28,6 +34,9 @@ PeekOCR follows a clean **MVVM** architecture with clear separation of concerns.
 │  │  Capture    │  │ Screenshot  │  │   HotKey    │     │
 │  │ Coordinator │  │  Service    │  │  Manager    │     │
 │  └─────────────┘  └─────────────┘  └─────────────┘     │
+│  ┌──────────────────────┐  ┌────────────────────────┐  │
+│  │ GifRecordingController│  │     GifExportService    │  │
+│  └──────────────────────┘  └────────────────────────┘  │
 └─────────────────────────────────────────────────────────┘
                            │
                            ▼
@@ -35,8 +44,11 @@ PeekOCR follows a clean **MVVM** architecture with clear separation of concerns.
 │                      MODELS                              │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐     │
 │  │ Annotation  │  │CaptureItem  │  │  Settings   │     │
-│  │   Tool      │  │             │  │   Models    │     │
+│  │   Models    │  │ + CaptureType│ │   Models    │     │
 │  └─────────────┘  └─────────────┘  └─────────────┘     │
+│  ┌───────────────────────────────────────────────────┐  │
+│  │                 GifExportOptions                    │  │
+│  └───────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -74,12 +86,14 @@ PeekOCR/
 ├── Services/
 │   ├── Annotation/      # Editor services
 │   ├── Screenshot/      # Image processing
-│   └── HotKey/          # Keyboard shortcuts
+│   ├── HotKey/          # Keyboard shortcuts
+│   └── (root)           # CaptureCoordinator, Gif* services, NativeScreen* wrappers
 ├── Views/
 │   ├── Annotation/      # Editor views
 │   │   ├── Canvas/      # Drawing canvas
 │   │   ├── Editor/      # Main editor
 │   │   └── Toolbar/     # Tool selection
+│   ├── Gif/             # GIF clip editor + recording overlay views
 │   ├── MenuBar/         # Menu bar popover
 │   ├── Settings/        # Preferences
 │   └── Components/      # Reusable UI

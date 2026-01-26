@@ -1,89 +1,119 @@
-<p align="center">
-  <img src="https://img.icons8.com/fluency/96/eye.png" alt="PeekOCR Logo" width="96"/>
-</p>
-
 <h1 align="center">👁️ PeekOCR</h1>
 
 <p align="center">
-  <strong>Captura texto de tu pantalla con un atajo de teclado</strong>
+  <strong>OCR, screenshots, GIF clips, and annotations — from your macOS menu bar</strong>
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/macOS-13.0+-007AFF?style=for-the-badge&logo=apple&logoColor=white" alt="macOS 13+"/>
   <img src="https://img.shields.io/badge/Swift-5.9-F05138?style=for-the-badge&logo=swift&logoColor=white" alt="Swift 5.9"/>
-  <img src="https://img.shields.io/badge/Licencia-MIT-34C759?style=for-the-badge" alt="MIT License"/>
+  <img src="https://img.shields.io/badge/License-MIT-34C759?style=for-the-badge" alt="MIT License"/>
 </p>
 
 ---
 
-## ✨ ¿Qué es PeekOCR?
+## ✨ What is PeekOCR?
 
-PeekOCR es una app para Mac que vive en tu barra de menú. Con un simple atajo de teclado, puedes **seleccionar cualquier área de tu pantalla** y el texto se copia automáticamente al portapapeles.
+PeekOCR is a macOS menu bar app that lets you quickly **select an area of your screen** to:
 
-### 🎯 Características
+- copy extracted text (OCR) to the clipboard,
+- save screenshots (optionally annotated),
+- and record short **GIF clips** (ideal for sharing UI bugs/animations).
 
-| Función                     | Descripción                                          |
-| --------------------------- | ---------------------------------------------------- |
-| 📸 **Captura de Texto**     | Selecciona cualquier área y extrae el texto          |
-| 🔗 **Códigos QR**           | Detecta y copia el contenido de códigos QR           |
-| 📷 **Capturas de Pantalla** | Guarda imágenes con formato y calidad personalizable |
-| 📋 **Historial**            | Accede a tus últimas 6 capturas                      |
-| ⌨️ **Atajos**               | Personaliza los atajos de teclado                    |
+### 🎯 Features
 
----
-
-## 🚀 Instalación
-
-1. Descarga la última versión desde [Releases](https://github.com/StevenACZ/PeekOCR/releases)
-2. Mueve `PeekOCR.app` a tu carpeta de Aplicaciones
-3. Abre la app
-4. Concede los permisos necesarios cuando se soliciten
+| Feature                  | Description                                        |
+| ------------------------ | -------------------------------------------------- |
+| 📸 **OCR Capture**       | Select an area and copy the extracted text         |
+| 🔗 **QR Detection**      | Detect and copy QR contents                        |
+| 📷 **Screenshots**       | Save images with configurable format/quality/scale |
+| ✍️ **Annotation Editor** | Capture with annotations, then export              |
+| 🎞️ **GIF Clip Capture**  | Record up to 10s, trim, preview, and export as GIF |
+| 🕘 **History**           | Quickly access your last 6 captures                |
+| ⌨️ **Hotkeys**           | Customize global shortcuts in Settings             |
 
 ---
 
-## ⌨️ Cómo Usar
+## 🚀 Installation
 
-### Atajos de Teclado
+1. Download the latest version from [Releases](https://github.com/StevenACZ/PeekOCR/releases)
+2. Open the DMG and drag `PeekOCR.app` to your Applications folder
+3. Launch PeekOCR
+4. Grant the required permissions when prompted
 
-| Acción                  | Atajo                       |
-| ----------------------- | --------------------------- |
-| **Capturar texto**      | `⇧ Space` (Shift + Espacio) |
-| **Captura de pantalla** | `⌘⇧ 4` (Cmd + Shift + 4)    |
+---
 
-### Pasos
+## ⌨️ How to Use
 
-1. Presiona **⇧ Space**
-2. Dibuja un rectángulo sobre el texto
-3. ¡Listo! El texto está en tu portapapeles 📋
+### Default Keyboard Shortcuts
+
+All shortcuts can be changed in Settings.
+
+| Action                         | Shortcut  |
+| ------------------------------ | --------- |
+| **Capture text (OCR)**         | `⇧ Space` |
+| **Capture screenshot**         | `⌘⇧4`     |
+| **Capture with annotations**   | `⌘⇧5`     |
+| **Capture GIF clip (max 10s)** | `⌘⇧6`     |
+
+### Quick Start
+
+**OCR**
+
+1. Press `⇧ Space`
+2. Drag to select a region
+3. The extracted text is copied to your clipboard
+
+**GIF Clip**
+
+1. Press `⌘⇧6`
+2. Select a region
+3. Record (auto-stops at 10s or stop early)
+4. Trim in/out in the editor and export as a GIF
 
 ---
 
 ## 🔐 Permisos
 
-PeekOCR necesita dos permisos para funcionar:
+## 🔐 Permissions
 
-| Permiso             | Para qué                     |
-| ------------------- | ---------------------------- |
-| **Grabar Pantalla** | Capturar el contenido visual |
-| **Accesibilidad**   | Atajos de teclado globales   |
+PeekOCR needs two permissions to work properly:
 
-> 💡 La app te guiará para activar estos permisos la primera vez
+| Permission           | Why                     |
+| -------------------- | ----------------------- |
+| **Screen Recording** | Capture screen content  |
+| **Accessibility**    | Register global hotkeys |
+
+> Tip: PeekOCR will guide you to enable these the first time you use a capture mode.
 
 ---
 
 ## 💻 Requisitos
 
-- macOS 13.0 (Ventura) o superior
-- Chip Apple Silicon o Intel
+## 💻 Requirements
+
+- macOS 13.0 (Ventura) or later
+- Apple Silicon or Intel Mac
 
 ---
 
+## 📚 Documentation
+
+- `AGENTS.md` (project map + conventions)
+- `docs/ARCHITECTURE.md`
+- `docs/SERVICES.md`
+- `docs/MODELS.md`
+- `docs/VIEWS.md`
+- `docs/GIF_CLIP.md`
+
 ## 📝 Licencia
 
-MIT License - Usa y modifica libremente
+## 📝 License
+
+MIT License — use and modify freely
 
 ---
 
 <p align="center">
-  Hecho con ❤️ para la comunidad de macOS
+  Made with ❤️ for the macOS community
 </p>

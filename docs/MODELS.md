@@ -118,6 +118,7 @@ User preferences with persistence.
 - Hotkey configurations
 - Save location preferences
 - Annotation defaults
+- GIF hotkey configuration (`gifHotKeyCode` / `gifHotKeyModifiers`)
 
 ### CaptureItem
 History item for captures.
@@ -125,17 +126,51 @@ History item for captures.
 **Location:** `Models/CaptureItem.swift`
 
 ```swift
-struct CaptureItem: Identifiable {
+struct CaptureItem: Identifiable, Codable, Equatable {
     let id: UUID
+    let text: String
     let captureType: CaptureType
-    let content: String
     let timestamp: Date
 
     var displayText: String
     var formattedTime: String
     var icon: String
 }
+
+enum CaptureType: String, Codable {
+    case text
+    case qrCode
+    case screenshot
+    case gif
+}
 ```
+
+## GIF Models
+
+### GifExportOptions
+Export presets and toggles for GIF rendering.
+
+**Location:** `Models/GifExportOptions.swift`
+
+```swift
+struct GifExportOptions: Equatable {
+    var quality: GifExportQuality
+    var fps: Int
+    var maxPixelSize: Int
+    var isDitheringEnabled: Bool
+    var isLoopEnabled: Bool
+}
+```
+
+### GifClipEditorState
+Trim + playback state for the GIF clip editor.
+
+**Location:** `Models/State/GifClipEditorState.swift`
+
+**Responsibilities:**
+- Load video duration + nominal FPS
+- Keep `startSeconds` / `endSeconds` within bounds (with a minimum clip duration)
+- Control preview playback and frame-by-frame stepping via `AVPlayer`
 
 ## Geometry Helpers
 
