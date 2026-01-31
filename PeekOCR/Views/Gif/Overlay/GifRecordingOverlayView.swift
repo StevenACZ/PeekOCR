@@ -131,6 +131,10 @@ final class GifRecordingOverlayView: NSView {
                 border.stroke()
             }
 
+            if mode == .recording {
+                drawRecordingBorder(around: rectInView)
+            }
+
             if mode == .selecting {
                 drawSelectionHud(in: rectInView)
             }
@@ -175,6 +179,32 @@ final class GifRecordingOverlayView: NSView {
     private func drawSelectionHud(in selectionRect: CGRect) {
         let text = "Suelta para empezar a grabar"
         drawPill(text: text, in: selectionRect, color: NSColor.black.withAlphaComponent(0.55))
+    }
+
+    private func drawRecordingBorder(around selectionRect: CGRect) {
+        let lineWidth: CGFloat = 2
+        let outsideInset: CGFloat = lineWidth / 2 + 3
+
+        let borderRect = selectionRect.insetBy(dx: -outsideInset, dy: -outsideInset)
+        let path = NSBezierPath(roundedRect: borderRect, xRadius: 8, yRadius: 8)
+        path.lineWidth = lineWidth
+
+        NSGraphicsContext.saveGraphicsState()
+        // Ensure the border (and any glow) never draws inside the captured rectangle.
+        let clip = NSBezierPath(rect: bounds)
+        clip.appendRect(selectionRect)
+        clip.windingRule = .evenOdd
+        clip.addClip()
+
+        let shadow = NSShadow()
+        shadow.shadowColor = NSColor.systemBlue.withAlphaComponent(0.35)
+        shadow.shadowBlurRadius = 8
+        shadow.shadowOffset = .zero
+        shadow.set()
+
+        NSColor.systemBlue.withAlphaComponent(0.95).setStroke()
+        path.stroke()
+        NSGraphicsContext.restoreGraphicsState()
     }
 
     private func drawPill(text: String, in selectionRect: CGRect, color: NSColor) {

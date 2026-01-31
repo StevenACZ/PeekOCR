@@ -2,7 +2,7 @@
 //  GifRecordingController.swift
 //  PeekOCR
 //
-//  Orchestrates region selection, countdown, and video recording for GIF capture.
+//  Orchestrates region selection and video recording for GIF/clip capture.
 //
 
 import AppKit
@@ -29,6 +29,8 @@ final class GifRecordingController {
     private var outputURL: URL?
     private var phase: Phase = .idle
     private var cancelRequested = false
+    private var elapsedSeconds: Int = 0
+    private var maxDurationSeconds: Int = 0
 
     private init() {}
 
@@ -40,6 +42,8 @@ final class GifRecordingController {
         guard !isRecording else { return outputURL }
 
         cancelRequested = false
+        self.maxDurationSeconds = max(0, maxDurationSeconds)
+        elapsedSeconds = 0
         phase = .selecting
         let overlay = GifRecordingOverlayWindowController()
         overlayController = overlay
@@ -67,6 +71,7 @@ final class GifRecordingController {
         overlay.beginRecording(
             selectionRectInScreen: selection.rect,
             screen: selection.screen,
+            maxDurationSeconds: maxDurationSeconds,
             onStop: { [weak self] in
                 self?.stop()
             },
@@ -74,7 +79,7 @@ final class GifRecordingController {
                 self?.cancel()
             }
         )
-        startElapsedTimer(maxDurationSeconds: maxDurationSeconds)
+        startTimer()
 
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
@@ -133,18 +138,25 @@ final class GifRecordingController {
 
     // MARK: - Private
 
-    private func startElapsedTimer(maxDurationSeconds: Int) {
+    private func startTimer() {
         countdownTask?.cancel()
         countdownTask = Task { @MainActor [weak self] in
             guard let self else { return }
-            for elapsed in 0...maxDurationSeconds {
-                self.overlayController?.updateElapsedSeconds(elapsed)
-                if elapsed == maxDurationSeconds { break }
+            while self.isRecording || self.phase == .recording {
+                self.overlayController?.updateRecordingHud(
+                    elapsedSeconds: self.elapsedSeconds,
+                    maxDurationSeconds: self.maxDurationSeconds
+                )
+
+                if self.elapsedSeconds >= self.maxDurationSeconds, self.isRecording {
+                    self.stop()
+                    return
+                }
+
                 try? await Task.sleep(nanoseconds: 1_000_000_000)
+
                 if !self.isRecording { return }
-            }
-            if self.isRecording {
-                self.stop()
+                self.elapsedSeconds += 1
             }
         }
     }
@@ -159,6 +171,8 @@ final class GifRecordingController {
         recordingProcess = nil
         outputURL = nil
         phase = .idle
+        elapsedSeconds = 0
+        maxDurationSeconds = 0
     }
 
     private func convertToCaptureRect(selectionRectInScreen: CGRect, screen: NSScreen) -> CGRect {
