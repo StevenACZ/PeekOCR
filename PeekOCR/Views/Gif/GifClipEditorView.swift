@@ -2,14 +2,14 @@
 //  GifClipEditorView.swift
 //  PeekOCR
 //
-//  Post-recording editor for trimming a video and exporting it as a GIF.
+//  Post-recording editor for trimming a video and exporting it as a GIF or MP4.
 //
 
 import AppKit
 import SwiftUI
 import os
 
-/// Editor UI for selecting a trim range and exporting a GIF
+/// Editor UI for selecting a trim range and exporting a GIF or video
 struct GifClipEditorView: View {
     let videoURL: URL
     let saveDirectory: URL

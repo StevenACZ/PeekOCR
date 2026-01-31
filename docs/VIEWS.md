@@ -99,6 +99,7 @@ PeekOCRApp
 | `GeneralSettingsTab` | General preferences |
 | `ShortcutsSettingsTab` | Hotkey configuration |
 | `ScreenshotSettingsTab` | Screenshot options |
+| `ClipSettingsTab` | Clip recording + export defaults |
 | `HistorySettingsTab` | History settings |
 | `AboutTab` | App information |
 
@@ -123,9 +124,9 @@ Post-record editor + recording overlay.
 | `GifClipTimelineView` | Timeline trimming UI |
 | `GifClipTimelineReadoutView` | In/Out + duration readout |
 | `GifClipSidebarView` | Export options + output + estimates |
-| `GifExportLoadingOverlay` | Export loading UI |
+| `ClipExportOverlay` | Export overlay (loading + success) |
 | `Overlay/GifRecordingOverlayView` | Full-screen selection overlay |
-| `Overlay/GifRecordingHudView` | Recording HUD (countdown + stop) |
+| `Overlay/GifRecordingHudView` | Recording HUD (timer + stop) |
 
 ### Components (`Views/Components/`)
 Reusable components. See [COMPONENTS.md](./COMPONENTS.md).

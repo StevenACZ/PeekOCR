@@ -107,20 +107,21 @@ let jpegData = ImageEncodingService.encode(image, format: .jpg, quality: 0.8)
 ## GIF Clip Services
 
 ### GifRecordingController
-Orchestrates region selection, countdown, and video recording for GIF capture.
+Orchestrates region selection and short screen video recording for clip capture.
 
 **Location:** `Services/GifRecordingController.swift`
 
 **Responsibilities:**
 - Present a full-screen region selection overlay (ESC cancels)
 - Start a region recording using `screencapture -R ... -v`
-- Show a countdown + stop button HUD (auto-stops at the max duration)
+- Show an external HUD with remaining time + Stop button (not captured)
 - Support stopping early by pressing the GIF hotkey again
 - Return a temporary `.mov` URL (caller deletes it after export)
 
 ```swift
 // Usage
-let videoURL = await GifRecordingController.shared.record(maxDurationSeconds: Constants.Gif.maxDurationSeconds)
+let maxDurationSeconds = GifClipSettings.shared.maxDurationSeconds
+let videoURL = await GifRecordingController.shared.record(maxDurationSeconds: maxDurationSeconds)
 ```
 
 ### GifRecordingOverlayWindowController
@@ -139,7 +140,7 @@ Small HUD panel shown during recording.
 **Location:** `Services/GifRecordingHudWindowController.swift`
 
 **Responsibilities:**
-- Display remaining seconds
+- Display remaining seconds and progress
 - Provide a quick Stop button
 
 ### GifClipWindowController
