@@ -26,6 +26,12 @@ enum GifClipWindowFactory {
         window.backgroundColor = NSColor.controlBackgroundColor
         window.minSize = NSSize(width: 960, height: 640)
 
+        // The editor already provides its own explicit actions (Cancel/Re-record/Export),
+        // so we can hide standard window controls to keep the UI focused.
+        window.standardWindowButton(.closeButton)?.isHidden = true
+        window.standardWindowButton(.miniaturizeButton)?.isHidden = true
+        window.standardWindowButton(.zoomButton)?.isHidden = true
+
         return window
     }
 

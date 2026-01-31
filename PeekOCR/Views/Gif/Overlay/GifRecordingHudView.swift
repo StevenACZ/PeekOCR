@@ -2,26 +2,30 @@
 //  GifRecordingHudView.swift
 //  PeekOCR
 //
-//  Small HUD view that shows recording countdown and a stop button.
+//  Small HUD view that shows recording status, timer, and controls.
 //
 
 import AppKit
 
-/// Heads-up display shown while recording a GIF clip.
+/// Heads-up display shown while recording a clip (outside the captured region).
 final class GifRecordingHudView: NSView {
-    var remainingSeconds: Int = 0 {
-        didSet { updateLabel() }
-    }
+    var elapsedSeconds: Int = 0 { didSet { updateUI() } }
+    var maxDurationSeconds: Int = 0 { didSet { updateUI() } }
 
     var onStop: (() -> Void)?
 
-    private let label = NSTextField(labelWithString: "")
+    private let backgroundView = NSVisualEffectView()
+    private let dotView = NSView()
+    private let recLabel = NSTextField(labelWithString: "REC")
+    private let timerLabel = NSTextField(labelWithString: "00:00")
+    private let subtitleLabel = NSTextField(labelWithString: "")
+    private let progressView = HudProgressBarView(frame: .zero)
     private let stopButton = NSButton()
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
         setupUI()
-        updateLabel()
+        updateUI()
     }
 
     @available(*, unavailable)
@@ -37,61 +41,158 @@ final class GifRecordingHudView: NSView {
 
     private func setupUI() {
         wantsLayer = true
-        layer?.backgroundColor = NSColor.black.withAlphaComponent(0.75).cgColor
-        layer?.cornerRadius = 18
+        layer?.cornerRadius = 14
         layer?.masksToBounds = true
 
-        label.font = NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .semibold)
-        label.textColor = .white
+        backgroundView.material = .hudWindow
+        backgroundView.blendingMode = .withinWindow
+        backgroundView.state = .active
+        backgroundView.wantsLayer = true
+        backgroundView.layer?.cornerRadius = 14
+        backgroundView.layer?.masksToBounds = true
+        backgroundView.layer?.borderWidth = 1
+        backgroundView.layer?.borderColor = NSColor.white.withAlphaComponent(0.10).cgColor
+
+        addSubview(backgroundView)
+        backgroundView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            backgroundView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            backgroundView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            backgroundView.topAnchor.constraint(equalTo: topAnchor),
+            backgroundView.bottomAnchor.constraint(equalTo: bottomAnchor),
+        ])
+
+        dotView.wantsLayer = true
+        dotView.layer?.cornerRadius = 4.5
+        dotView.layer?.backgroundColor = NSColor.systemRed.cgColor
+
+        recLabel.font = NSFont.systemFont(ofSize: 12, weight: .semibold)
+        recLabel.textColor = .white
+
+        timerLabel.font = NSFont.monospacedDigitSystemFont(ofSize: 18, weight: .semibold)
+        timerLabel.textColor = .white
+
+        subtitleLabel.font = NSFont.systemFont(ofSize: 10, weight: .semibold)
+        subtitleLabel.textColor = NSColor.white.withAlphaComponent(0.75)
+
+        progressView.progressTintColor = .systemBlue
+        progressView.trackTintColor = NSColor.white.withAlphaComponent(0.18)
 
         stopButton.target = self
         stopButton.action = #selector(stopPressed)
-        stopButton.isBordered = false
-        stopButton.bezelStyle = .regularSquare
+        stopButton.bezelStyle = .texturedRounded
+        stopButton.isBordered = true
         stopButton.contentTintColor = .white
-        stopButton.toolTip = "Detener grabación"
         stopButton.image = NSImage(systemSymbolName: "stop.fill", accessibilityDescription: "Stop")
+        stopButton.toolTip = "Detener"
 
-        let stack = NSStackView(views: [label, stopButton])
-        stack.orientation = .horizontal
-        stack.alignment = .centerY
-        stack.spacing = 10
-        stack.edgeInsets = NSEdgeInsets(top: 8, left: 12, bottom: 8, right: 10)
+        let leftStack = NSStackView(views: [dotView, recLabel])
+        leftStack.orientation = .horizontal
+        leftStack.alignment = .centerY
+        leftStack.spacing = 8
 
-        addSubview(stack)
-        stack.translatesAutoresizingMaskIntoConstraints = false
+        let centerStack = NSStackView(views: [timerLabel, subtitleLabel, progressView])
+        centerStack.orientation = .vertical
+        centerStack.alignment = .leading
+        centerStack.spacing = 4
+
+        let root = NSStackView(views: [leftStack, centerStack, stopButton])
+        root.orientation = .horizontal
+        root.alignment = .centerY
+        root.spacing = 16
+        root.edgeInsets = NSEdgeInsets(top: 14, left: 16, bottom: 14, right: 16)
+
+        addSubview(root)
+        root.translatesAutoresizingMaskIntoConstraints = false
+        dotView.translatesAutoresizingMaskIntoConstraints = false
         stopButton.translatesAutoresizingMaskIntoConstraints = false
+        progressView.translatesAutoresizingMaskIntoConstraints = false
 
         NSLayoutConstraint.activate([
-            stack.leadingAnchor.constraint(equalTo: leadingAnchor),
-            stack.trailingAnchor.constraint(equalTo: trailingAnchor),
-            stack.topAnchor.constraint(equalTo: topAnchor),
-            stack.bottomAnchor.constraint(equalTo: bottomAnchor),
+            root.leadingAnchor.constraint(equalTo: leadingAnchor),
+            root.trailingAnchor.constraint(equalTo: trailingAnchor),
+            root.topAnchor.constraint(equalTo: topAnchor),
+            root.bottomAnchor.constraint(equalTo: bottomAnchor),
 
-            stopButton.widthAnchor.constraint(equalToConstant: 22),
-            stopButton.heightAnchor.constraint(equalToConstant: 22),
+            dotView.widthAnchor.constraint(equalToConstant: 9),
+            dotView.heightAnchor.constraint(equalToConstant: 9),
+
+            stopButton.widthAnchor.constraint(equalToConstant: 30),
+            stopButton.heightAnchor.constraint(equalToConstant: 30),
+
+            progressView.widthAnchor.constraint(greaterThanOrEqualToConstant: 110),
+            progressView.heightAnchor.constraint(equalToConstant: 4),
         ])
     }
 
-    private func updateLabel() {
-        let remaining = max(0, remainingSeconds)
-        let text = "● REC  \(remaining)s"
+    private func updateUI() {
+        let elapsed = max(0, elapsedSeconds)
+        let maxDuration = max(0, maxDurationSeconds)
+        let remaining = max(0, maxDuration - elapsed)
 
-        let attributed = NSMutableAttributedString(string: text, attributes: [
-            .font: NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .semibold),
-            .foregroundColor: NSColor.white,
-        ])
-        if let dotRange = text.range(of: "●") {
-            let nsRange = NSRange(dotRange, in: text)
-            attributed.addAttribute(.foregroundColor, value: NSColor.systemRed, range: nsRange)
-        }
+        timerLabel.stringValue = formatTime(seconds: remaining)
+        subtitleLabel.stringValue = "Restante"
 
-        label.attributedStringValue = attributed
+        let progress = (maxDuration > 0) ? (Double(elapsed) / Double(maxDuration)) : 0
+        progressView.progress = progress
+
         invalidateIntrinsicContentSize()
+    }
+
+    private func formatTime(seconds: Int) -> String {
+        let clamped = max(0, seconds)
+        let minutes = clamped / 60
+        let secs = clamped % 60
+        return String(format: "%02d:%02d", minutes, secs)
     }
 
     @objc
     private func stopPressed() {
         onStop?()
+    }
+}
+
+private final class HudProgressBarView: NSView {
+    var progress: Double = 0 { didSet { needsLayout = true } }
+    var progressTintColor: NSColor = .systemBlue { didSet { updateColors() } }
+    var trackTintColor: NSColor = NSColor.white.withAlphaComponent(0.18) { didSet { updateColors() } }
+
+    private let trackLayer = CALayer()
+    private let fillLayer = CALayer()
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        wantsLayer = true
+        layer?.addSublayer(trackLayer)
+        layer?.addSublayer(fillLayer)
+        updateColors()
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func layout() {
+        super.layout()
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+
+        let radius = bounds.height / 2
+        trackLayer.frame = bounds
+        trackLayer.cornerRadius = radius
+        trackLayer.masksToBounds = true
+
+        let clamped = min(1, max(0, progress))
+        fillLayer.frame = CGRect(x: 0, y: 0, width: bounds.width * clamped, height: bounds.height)
+        fillLayer.cornerRadius = radius
+        fillLayer.masksToBounds = true
+
+        CATransaction.commit()
+    }
+
+    private func updateColors() {
+        trackLayer.backgroundColor = trackTintColor.cgColor
+        fillLayer.backgroundColor = progressTintColor.cgColor
     }
 }

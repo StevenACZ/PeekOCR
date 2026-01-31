@@ -1,22 +1,23 @@
 # GIF Clip Capture
 
-PeekOCR includes a short **GIF Clip** capture mode designed for sharing UI bugs/animations as a lightweight GIF that can be reviewed frame-by-frame.
+PeekOCR includes a short **GIF Clip** capture mode designed for sharing UI bugs/animations either as a lightweight GIF (great for frame-by-frame debugging) or as an MP4 video (better quality/size for sharing with a team).
 
 ## User Flow
 
 1. Trigger **GIF Clip** via the hotkey (default: `⌘⇧6`) or the Menu Bar quick action.
 2. Select a screen region (cursor becomes a crosshair).
    - Press `Esc` to cancel selection.
-3. Recording starts with a countdown HUD (max duration: **10s**).
+3. Recording starts with a small **REC HUD** that shows elapsed seconds (max duration is configurable in Settings: **3–60s**, default **10s**).
    - Stop early via the HUD Stop button.
    - Or press the GIF hotkey again to stop.
 4. The post-record editor opens:
    - Play/pause preview
    - Step frame-by-frame (buttons and keyboard arrows)
    - Trim via the timeline range slider (minimum duration: **3s**)
-5. Export GIF:
+5. Export:
+   - Choose **GIF** or **Video** in the sidebar
    - UI is disabled while exporting and a loading overlay is shown
-   - The GIF is saved to the configured output directory (same directory used by screenshots)
+   - Output is saved to the configured output directory (same directory used by screenshots)
 6. The temporary `.mov` file is deleted after the editor completes.
 
 ## Key Modules
@@ -30,7 +31,7 @@ PeekOCR includes a short **GIF Clip** capture mode designed for sharing UI bugs/
 - `Services/GifRecordingController.swift` (orchestrates selection → recording → stop/cancel)
 - `Services/GifRecordingOverlayWindowController.swift` (full-screen keyable overlay window)
 - `Views/Gif/Overlay/GifRecordingOverlayView.swift` (selection UI, dim outside region)
-- `Services/GifRecordingHudWindowController.swift` + `Views/Gif/Overlay/GifRecordingHudView.swift` (countdown + Stop button)
+- `Services/GifRecordingHudWindowController.swift` + `Views/Gif/Overlay/GifRecordingHudView.swift` (elapsed timer + Stop button)
 
 ### Post-record editor window
 - `Services/GifClipWindowController.swift` (presents editor and returns exported URL)
@@ -42,14 +43,16 @@ PeekOCR includes a short **GIF Clip** capture mode designed for sharing UI bugs/
 
 ### Export pipeline
 - `Services/GifExportService.swift` (extracts frames and writes animated GIF via ImageIO)
-- `Models/GifExportOptions.swift` (quality/FPS/size presets and toggles)
+- `Services/VideoExportService.swift` (exports a trimmed segment as MP4, no audio)
+- `Models/GifExportOptions.swift` (GIF profile/FPS presets and toggles)
+- `Models/VideoExportOptions.swift` (video resolution/codec options, exports at 30 FPS)
+- `Models/GifClipSettings.swift` (max duration + default export preferences)
 
 ## Behavior Notes
 
-- **Max duration** is enforced by the recording controller (`Constants.Gif.maxDurationSeconds`).
+- **Max duration** is enforced by the recording controller (from `GifClipSettings.maxDurationSeconds`).
 - **Stopping early** is supported via the hotkey or HUD Stop button.
 - **Minimum trim duration** is enforced by the timeline slider (`Constants.Gif.minimumClipDurationSeconds`).
-- **Dithering toggle** (`GifExportOptions.isDitheringEnabled`) is currently UI-only and reserved for future export improvements.
 
 ## Debugging Tips
 

@@ -59,7 +59,6 @@ final class GifExportService {
             .appendingPathComponent(generateFilename())
             .appendingPathExtension("gif")
 
-        let maxDuration = Double(Constants.Gif.maxDurationSeconds)
         let loopCount = options.isLoopEnabled ? 0 : 1
         let preset = GifExportPreset(
             fps: max(1, options.fps),
@@ -71,7 +70,6 @@ final class GifExportService {
             try await Self.renderGif(
                 videoURL: videoURL,
                 timeRange: timeRange,
-                maxDurationSeconds: maxDuration,
                 preset: preset,
                 outputURL: outputURL
             )
@@ -90,7 +88,6 @@ final class GifExportService {
     private static func renderGif(
         videoURL: URL,
         timeRange: CMTimeRange,
-        maxDurationSeconds: Double,
         preset: GifExportPreset,
         outputURL: URL
     ) async throws {
@@ -101,7 +98,7 @@ final class GifExportService {
         guard durationSeconds > 0 else { throw GifExportError.cannotLoadDuration }
 
         let start = max(0, timeRange.start.seconds)
-        let end = min(durationSeconds, timeRange.end.seconds, start + maxDurationSeconds)
+        let end = min(durationSeconds, timeRange.end.seconds)
 
         guard end > start else {
             throw GifExportError.invalidTimeRange

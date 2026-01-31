@@ -221,23 +221,27 @@ final class CaptureCoordinator: ObservableObject {
             return
         }
 
-        guard let videoURL = await gifRecordingController.record(maxDurationSeconds: Constants.Gif.maxDurationSeconds) else {
+        let clipSettings = GifClipSettings.shared
+        guard let videoURL = await gifRecordingController.record(maxDurationSeconds: clipSettings.maxDurationSeconds) else {
             AppLogger.capture.info("GIF clip recording cancelled")
             return
         }
 
         let saveDirectory = ScreenshotSettings.shared.saveDirectoryURL
-        let gifURL = await GifClipWindowController.shared.showEditor(with: videoURL, saveDirectory: saveDirectory)
+        let exportResult = await GifClipWindowController.shared.showEditor(with: videoURL, saveDirectory: saveDirectory)
 
         try? FileManager.default.removeItem(at: videoURL)
 
-        guard let gifURL else {
-            AppLogger.capture.info("GIF export cancelled")
+        guard let exportResult else {
+            AppLogger.capture.info("Clip export cancelled")
             return
         }
 
-        AppLogger.capture.info("GIF exported: \(gifURL.lastPathComponent)")
-        historyManager.addItem(CaptureItem(text: gifURL.lastPathComponent, captureType: .gif))
+        AppLogger.capture.info("Clip exported: \(exportResult.url.lastPathComponent)")
+        historyManager.addItem(CaptureItem(
+            text: exportResult.url.lastPathComponent,
+            captureType: exportResult.format == .gif ? .gif : .video
+        ))
     }
 
     // MARK: - Result Handlers

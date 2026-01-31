@@ -27,6 +27,11 @@ struct SettingsView: View {
                 .tabItem {
                     Label("Capturas", systemImage: "camera.viewfinder")
                 }
+
+            ClipSettingsTab()
+                .tabItem {
+                    Label("Clips", systemImage: "film")
+                }
             
             HistorySettingsTab()
                 .tabItem {

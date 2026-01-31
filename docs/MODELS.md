@@ -142,10 +142,11 @@ enum CaptureType: String, Codable {
     case qrCode
     case screenshot
     case gif
+    case video
 }
 ```
 
-## GIF Models
+## Clip Models
 
 ### GifExportOptions
 Export presets and toggles for GIF rendering.
@@ -154,13 +155,30 @@ Export presets and toggles for GIF rendering.
 
 ```swift
 struct GifExportOptions: Equatable {
-    var quality: GifExportQuality
+    var profile: GifExportProfile
     var fps: Int
     var maxPixelSize: Int
-    var isDitheringEnabled: Bool
     var isLoopEnabled: Bool
 }
 ```
+
+### VideoExportOptions
+Export options for MP4 (no audio) rendering.
+
+**Location:** `Models/VideoExportOptions.swift`
+
+```swift
+struct VideoExportOptions: Equatable {
+    var resolution: VideoExportResolution
+    var fps: Int
+    var codec: VideoExportCodec
+}
+```
+
+### GifClipSettings
+UserDefaults-backed settings for clip capture and export defaults.
+
+**Location:** `Models/GifClipSettings.swift`
 
 ### GifClipEditorState
 Trim + playback state for the GIF clip editor.

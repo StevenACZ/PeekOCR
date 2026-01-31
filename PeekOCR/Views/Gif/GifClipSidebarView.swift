@@ -8,18 +8,25 @@
 import AppKit
 import SwiftUI
 
-/// Sidebar content for the GIF clip editor (quality/FPS/size + estimates).
+/// Sidebar content for the clip editor (GIF/Video settings + estimates).
 struct GifClipSidebarView: View {
-    @Binding var options: GifExportOptions
+    @Binding var exportFormat: ClipExportFormat
+    @Binding var gifOptions: GifExportOptions
+    @Binding var videoOptions: VideoExportOptions
 
     let outputDirectory: URL
     let selectionDurationSeconds: Double
+    let sourceNominalFps: Double
+    let exportDisabledMessage: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             header
-            gifSection
-            optimizationSection
+            formatSection
+            exportOptionsSection
+            if exportFormat == .gif {
+                loopSection
+            }
             outputSection
             estimationSection
             Spacer()
@@ -30,59 +37,112 @@ struct GifClipSidebarView: View {
     }
 
     private var header: some View {
-        Text("GIF")
-            .font(.headline)
-            .foregroundStyle(.primary)
+        HStack {
+            Text("Exportación")
+                .font(.headline)
+                .foregroundStyle(.primary)
+            Spacer()
+        }
+        .contentShape(Rectangle())
     }
 
-    private var gifSection: some View {
+    private var formatSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            rowLabel("Calidad")
-            Picker("", selection: Binding(
-                get: { options.quality },
-                set: { newValue in options.applyQualityPreset(newValue) }
-            )) {
-                ForEach(GifExportQuality.allCases) { quality in
-                    Text(quality.displayName).tag(quality)
+            rowLabel("Formato")
+            Picker("", selection: $exportFormat) {
+                ForEach(ClipExportFormat.allCases) { format in
+                    Text(format.displayName).tag(format)
                 }
             }
             .pickerStyle(.segmented)
-
-            rowLabel("FPS")
-            HStack(spacing: 10) {
-                Picker("", selection: $options.fps) {
-                    ForEach([12, 15, 24, 30], id: \.self) { fps in
-                        Text("\(fps)").tag(fps)
-                    }
-                }
-                .pickerStyle(.segmented)
-
-                Stepper("", value: $options.fps, in: 1...60)
-                    .labelsHidden()
-                    .help("FPS personalizado")
-            }
-
-            rowLabel("Tamaño")
-            Picker("", selection: $options.maxPixelSize) {
-                Text("Auto (máx 480px)").tag(480)
-                Text("Auto (máx 720px)").tag(720)
-                Text("Auto (máx 1080px)").tag(1080)
-            }
-            .pickerStyle(.menu)
         }
         .padding(12)
         .background(.thinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
-    private var optimizationSection: some View {
+    @ViewBuilder
+    private var exportOptionsSection: some View {
+        switch exportFormat {
+        case .gif:
+            gifOptionsSection
+        case .video:
+            videoOptionsSection
+        }
+    }
+
+    private var gifOptionsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Optimización")
-                .font(.headline)
+            rowLabel("Perfil")
+            Picker("", selection: Binding(
+                get: { gifOptions.profile },
+                set: { newValue in gifOptions.applyProfilePreset(newValue) }
+            )) {
+                ForEach(GifExportProfile.allCases) { profile in
+                    Text(profile.displayName).tag(profile)
+                }
+            }
+            .pickerStyle(.segmented)
 
-            Toggle("Dithering (recomendado)", isOn: $options.isDitheringEnabled)
+            rowLabel("FPS")
+            Picker("", selection: $gifOptions.fps) {
+                ForEach([1, 15, 20], id: \.self) { fps in
+                    Text("\(fps)").tag(fps)
+                }
+            }
+            .pickerStyle(.segmented)
+        }
+        .padding(12)
+        .background(.thinMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
 
-            Toggle("Loop (infinito)", isOn: $options.isLoopEnabled)
+    private var videoOptionsSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            rowLabel("Resolución")
+            Picker("", selection: $videoOptions.resolution) {
+                ForEach(VideoExportResolution.allCases) { resolution in
+                    Text(resolution.displayName).tag(resolution)
+                }
+            }
+            .pickerStyle(.segmented)
+            .help(videoOptions.resolution.helpText)
+
+            rowLabel("FPS")
+            Text("30")
+                .font(.body.weight(.semibold))
+                .monospacedDigit()
+                .help("Se exporta a 30 FPS (o menos si la fuente es menor).")
+
+            if sourceNominalFps > 1, sourceNominalFps < 29 {
+                InlineNoticeView(
+                    style: .info,
+                    text: "Este clip se grabó a ~\(Int(sourceNominalFps.rounded())) FPS. Se exportará a ~\(Int(min(30.0, sourceNominalFps).rounded())) FPS."
+                )
+            }
+
+            rowLabel("Codec")
+            Picker("", selection: $videoOptions.codec) {
+                ForEach(VideoExportCodec.allCases) { codec in
+                    Text(codec.displayName).tag(codec)
+                }
+            }
+            .pickerStyle(.segmented)
+        }
+        .padding(12)
+        .background(.thinMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+
+    private var loopSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            if exportFormat == .gif {
+                Text("Opciones")
+                    .font(.headline)
+
+                Toggle("Loop (infinito)", isOn: $gifOptions.isLoopEnabled)
+                    .help("Repite el GIF indefinidamente. Desactívalo para reproducir una sola vez.")
+            }
         }
         .padding(12)
         .background(.thinMaterial)
@@ -122,9 +182,21 @@ struct GifClipSidebarView: View {
             Text("Estimación")
                 .font(.headline)
 
+            Text(estimateSummary())
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+
+            if let message = exportDisabledMessage {
+                InlineNoticeView(style: .warning, text: message)
+            }
+
             estimationRow(label: "Duración:", value: formatSeconds(selectionDurationSeconds))
-            estimationRow(label: "Frames estimados:", value: "~\(estimatedFrames())")
-            estimationRow(label: "Tamaño estimado:", value: "~\(formatBytes(estimatedSizeBytes()))")
+            if exportFormat == .gif {
+                estimationRow(label: "Frames:", value: "~\(estimatedGifFrames())")
+                estimationRow(label: "Tamaño:", value: "~\(formatBytes(estimatedGifSizeBytes()))")
+            } else {
+                estimationRow(label: "Tamaño:", value: "~\(formatBytes(estimatedVideoSizeBytes()))")
+            }
         }
         .padding(12)
         .background(.thinMaterial)
@@ -157,18 +229,28 @@ struct GifClipSidebarView: View {
         return outputDirectory.lastPathComponent
     }
 
-    private func estimatedFrames() -> Int {
+    private func estimatedGifFrames() -> Int {
         let duration = max(0, selectionDurationSeconds)
-        let fps = max(1, options.fps)
+        let fps = max(1, gifOptions.fps)
         return max(1, Int(ceil(duration * Double(fps))))
     }
 
-    private func estimatedSizeBytes() -> Int64 {
-        // Heuristic: roughly 0.05 bytes per pixel per frame for "medium" UI estimate.
-        let frames = Double(estimatedFrames())
-        let pixelsPerFrame = Double(options.maxPixelSize * options.maxPixelSize)
+    private func estimatedGifSizeBytes() -> Int64 {
+        // Heuristic: roughly 0.05 bytes per pixel per frame for UI estimate.
+        let frames = Double(estimatedGifFrames())
+        let pixelsPerFrame = Double(gifOptions.maxPixelSize * gifOptions.maxPixelSize)
         let bytes = frames * pixelsPerFrame * 0.05
         return Int64(max(0, bytes))
+    }
+
+    private func estimatedVideoSizeBytes() -> Int64 {
+        let duration = max(0, selectionDurationSeconds)
+        let size = videoOptions.resolution.maxSize
+        let fps = max(1, videoOptions.fps)
+        let bitsPerPixelPerFrame: Double = videoOptions.codec == .hevc ? 0.07 : 0.12
+        let estimatedBitsPerSecond = Double(size.width * size.height) * Double(fps) * bitsPerPixelPerFrame
+        let estimatedBytes = (estimatedBitsPerSecond / 8) * duration
+        return Int64(max(0, estimatedBytes))
     }
 
     private func formatBytes(_ bytes: Int64) -> String {
@@ -182,22 +264,13 @@ struct GifClipSidebarView: View {
         guard seconds.isFinite else { return "0.0s" }
         return String(format: "%.1fs", max(0, seconds))
     }
-}
 
-#Preview {
-    GifClipSidebarPreviewWrapper()
-        .frame(height: 560)
-}
-
-private struct GifClipSidebarPreviewWrapper: View {
-    @State private var options = GifExportOptions()
-
-    var body: some View {
-        GifClipSidebarView(
-            options: $options,
-            outputDirectory: URL(fileURLWithPath: "/Users/steven/Downloads"),
-            selectionDurationSeconds: 4.2
-        )
-        .padding()
+    private func estimateSummary() -> String {
+        switch exportFormat {
+        case .gif:
+            return "GIF · \(gifOptions.profile.displayName) · \(gifOptions.fps) FPS"
+        case .video:
+            return "Video · \(videoOptions.resolution.displayName) · \(videoOptions.fps) FPS · \(videoOptions.codec.displayName)"
+        }
     }
 }

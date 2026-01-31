@@ -55,25 +55,28 @@ final class GifRecordingOverlayWindowController: NSWindowController {
     func beginRecording(
         selectionRectInScreen: CGRect,
         screen: NSScreen,
-        remainingSeconds: Int,
+        maxDurationSeconds: Int,
         onStop: @escaping () -> Void,
         onCancel: @escaping () -> Void
     ) {
         guard let window else { return }
         overlayView.mode = .recording
         overlayView.selectionRectInScreen = selectionRectInScreen
-        overlayView.remainingSeconds = remainingSeconds
         overlayView.onCancel = onCancel
         window.ignoresMouseEvents = true
 
         let hud = GifRecordingHudWindowController()
-        hud.show(on: screen, remainingSeconds: remainingSeconds, onStop: onStop)
+        hud.show(
+            on: screen,
+            selectionRectInScreen: selectionRectInScreen,
+            maxDurationSeconds: maxDurationSeconds,
+            onStop: onStop
+        )
         hudController = hud
     }
 
-    func updateRemainingSeconds(_ seconds: Int) {
-        overlayView.remainingSeconds = seconds
-        hudController?.updateRemainingSeconds(seconds)
+    func updateRecordingHud(elapsedSeconds: Int, maxDurationSeconds: Int) {
+        hudController?.update(elapsedSeconds: elapsedSeconds, maxDurationSeconds: maxDurationSeconds)
     }
 
     func closeOverlay() {

@@ -26,10 +26,6 @@ final class GifRecordingOverlayView: NSView {
         didSet { needsDisplay = true }
     }
 
-    var remainingSeconds: Int? {
-        didSet { needsDisplay = true }
-    }
-
     var onSelection: ((CGRect, NSScreen) -> Void)?
     var onCancel: (() -> Void)?
 
@@ -42,7 +38,6 @@ final class GifRecordingOverlayView: NSView {
         dragStartInScreen = nil
         activeScreen = nil
         selectionRectInScreen = nil
-        remainingSeconds = nil
         needsDisplay = true
     }
 
@@ -121,9 +116,10 @@ final class GifRecordingOverlayView: NSView {
         if let rectInScreen = selectionRectInScreen {
             let rectInWindow = window.convertFromScreen(rectInScreen)
             let rectInView = convert(rectInWindow, from: nil)
+            let holeRect = (mode == .recording) ? rectInView.insetBy(dx: -2, dy: -2) : rectInView
 
             let path = NSBezierPath(rect: bounds)
-            path.appendRect(rectInView)
+            path.appendRect(holeRect)
             path.windingRule = .evenOdd
             overlayColor.setFill()
             path.fill()
@@ -136,8 +132,10 @@ final class GifRecordingOverlayView: NSView {
             }
 
             if mode == .recording {
-                drawRecordingHud(in: rectInView)
-            } else {
+                drawRecordingBorder(around: rectInView)
+            }
+
+            if mode == .selecting {
                 drawSelectionHud(in: rectInView)
             }
         } else {
@@ -183,10 +181,30 @@ final class GifRecordingOverlayView: NSView {
         drawPill(text: text, in: selectionRect, color: NSColor.black.withAlphaComponent(0.55))
     }
 
-    private func drawRecordingHud(in selectionRect: CGRect) {
-        let remaining = max(0, remainingSeconds ?? 0)
-        let text = "● REC  \(remaining)s   ⌘⇧6 para detener"
-        drawPill(text: text, in: selectionRect, color: NSColor.black.withAlphaComponent(0.65))
+    private func drawRecordingBorder(around selectionRect: CGRect) {
+        let lineWidth: CGFloat = 2
+        let outsideInset: CGFloat = lineWidth / 2 + 3
+
+        let borderRect = selectionRect.insetBy(dx: -outsideInset, dy: -outsideInset)
+        let path = NSBezierPath(roundedRect: borderRect, xRadius: 8, yRadius: 8)
+        path.lineWidth = lineWidth
+
+        NSGraphicsContext.saveGraphicsState()
+        // Ensure the border (and any glow) never draws inside the captured rectangle.
+        let clip = NSBezierPath(rect: bounds)
+        clip.appendRect(selectionRect)
+        clip.windingRule = .evenOdd
+        clip.addClip()
+
+        let shadow = NSShadow()
+        shadow.shadowColor = NSColor.systemBlue.withAlphaComponent(0.35)
+        shadow.shadowBlurRadius = 8
+        shadow.shadowOffset = .zero
+        shadow.set()
+
+        NSColor.systemBlue.withAlphaComponent(0.95).setStroke()
+        path.stroke()
+        NSGraphicsContext.restoreGraphicsState()
     }
 
     private func drawPill(text: String, in selectionRect: CGRect, color: NSColor) {
