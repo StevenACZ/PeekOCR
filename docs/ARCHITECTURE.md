@@ -35,7 +35,7 @@ PeekOCR follows a clean **MVVM** architecture with clear separation of concerns.
 │  │ Coordinator │  │  Service    │  │  Manager    │     │
 │  └─────────────┘  └─────────────┘  └─────────────┘     │
 │  ┌──────────────────────┐  ┌────────────────────────┐  │
-│  │ GifRecordingController│  │     GifExportService    │  │
+│  │ GifRecordingController│  │ GifExport/VideoExport   │  │
 │  └──────────────────────┘  └────────────────────────┘  │
 └─────────────────────────────────────────────────────────┘
                            │
@@ -47,7 +47,7 @@ PeekOCR follows a clean **MVVM** architecture with clear separation of concerns.
 │  │   Models    │  │ + CaptureType│ │   Models    │     │
 │  └─────────────┘  └─────────────┘  └─────────────┘     │
 │  ┌───────────────────────────────────────────────────┐  │
-│  │                 GifExportOptions                    │  │
+│  │        Gif/Video Export Options + Settings          │  │
 │  └───────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────┘
 ```

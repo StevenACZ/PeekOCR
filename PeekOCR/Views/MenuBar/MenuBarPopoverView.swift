@@ -51,6 +51,7 @@ private struct HeaderSection: View {
 
 private struct QuickActionsSection: View {
     @ObservedObject var settings: AppSettings
+    @ObservedObject private var clipSettings = GifClipSettings.shared
 
     var body: some View {
         VStack(spacing: 4) {
@@ -71,7 +72,7 @@ private struct QuickActionsSection: View {
             }
 
             MenuBarActionButton(
-                title: "Grabar GIF (10s)",
+                title: "Grabar Clip (\(clipSettings.maxDurationSeconds)s)",
                 icon: "film",
                 shortcut: settings.gifHotKeyDisplayString()
             ) {

@@ -20,6 +20,8 @@ extension CaptureType {
             return .green
         case .gif:
             return .orange
+        case .video:
+            return .orange
         }
     }
 
@@ -34,6 +36,8 @@ extension CaptureType {
             return "Captura"
         case .gif:
             return "GIF"
+        case .video:
+            return "Video"
         }
     }
 }

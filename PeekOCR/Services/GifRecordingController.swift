@@ -67,7 +67,6 @@ final class GifRecordingController {
         overlay.beginRecording(
             selectionRectInScreen: selection.rect,
             screen: selection.screen,
-            remainingSeconds: maxDurationSeconds,
             onStop: { [weak self] in
                 self?.stop()
             },
@@ -75,7 +74,7 @@ final class GifRecordingController {
                 self?.cancel()
             }
         )
-        startCountdown(seconds: maxDurationSeconds)
+        startElapsedTimer(maxDurationSeconds: maxDurationSeconds)
 
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
@@ -134,14 +133,15 @@ final class GifRecordingController {
 
     // MARK: - Private
 
-    private func startCountdown(seconds: Int) {
+    private func startElapsedTimer(maxDurationSeconds: Int) {
         countdownTask?.cancel()
         countdownTask = Task { @MainActor [weak self] in
             guard let self else { return }
-            for remaining in stride(from: seconds, through: 0, by: -1) {
-                self.overlayController?.updateRemainingSeconds(remaining)
-                if remaining == 0 { break }
+            for elapsed in 0...maxDurationSeconds {
+                self.overlayController?.updateElapsedSeconds(elapsed)
+                if elapsed == maxDurationSeconds { break }
                 try? await Task.sleep(nanoseconds: 1_000_000_000)
+                if !self.isRecording { return }
             }
             if self.isRecording {
                 self.stop()

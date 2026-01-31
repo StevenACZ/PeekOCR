@@ -10,6 +10,7 @@ import SwiftUI
 /// Keyboard shortcuts settings tab
 struct ShortcutsSettingsTab: View {
     @StateObject private var settings = AppSettings.shared
+    @StateObject private var clipSettings = GifClipSettings.shared
 
     var body: some View {
         Form {
@@ -51,8 +52,8 @@ struct ShortcutsSettingsTab: View {
                 )
 
                 ShortcutRecorderRow(
-                    title: "Grabar GIF (10s)",
-                    description: "Graba un clip corto y lo exporta como GIF",
+                    title: "Grabar Clip (\(clipSettings.maxDurationSeconds)s)",
+                    description: "Graba un clip corto y lo exporta como GIF o Video",
                     icon: "film",
                     currentShortcut: settings.gifHotKeyDisplayString(),
                     onRecord: { modifiers, keyCode in

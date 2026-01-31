@@ -21,8 +21,8 @@ final class GifRecordingHudWindowController: NSWindowController {
         fatalError("init(coder:) has not been implemented")
     }
 
-    func show(on screen: NSScreen, remainingSeconds: Int, onStop: @escaping () -> Void) {
-        hudView.remainingSeconds = remainingSeconds
+    func show(on screen: NSScreen, selectionRectInScreen: CGRect, elapsedSeconds: Int, onStop: @escaping () -> Void) {
+        hudView.elapsedSeconds = elapsedSeconds
         hudView.onStop = onStop
 
         let panel = createHudPanel()
@@ -30,15 +30,15 @@ final class GifRecordingHudWindowController: NSWindowController {
         panel.layoutIfNeeded()
 
         let size = hudView.fittingSize
-        let origin = hudOrigin(for: size, on: screen)
+        let origin = hudOrigin(for: size, on: screen, avoiding: selectionRectInScreen)
         panel.setFrame(CGRect(origin: origin, size: size), display: false)
 
         window = panel
         panel.orderFrontRegardless()
     }
 
-    func updateRemainingSeconds(_ seconds: Int) {
-        hudView.remainingSeconds = seconds
+    func updateElapsedSeconds(_ seconds: Int) {
+        hudView.elapsedSeconds = seconds
     }
 
     func closeHud() {
@@ -75,13 +75,26 @@ final class GifRecordingHudWindowController: NSWindowController {
         return panel
     }
 
-    private func hudOrigin(for size: CGSize, on screen: NSScreen) -> CGPoint {
+    private func hudOrigin(for size: CGSize, on screen: NSScreen, avoiding selectionRectInScreen: CGRect) -> CGPoint {
         let inset: CGFloat = 16
         let frame = screen.visibleFrame
-        return CGPoint(
-            x: frame.maxX - size.width - inset,
-            y: frame.maxY - size.height - inset
-        )
+        let avoidanceRect = selectionRectInScreen.insetBy(dx: -12, dy: -12)
+
+        let candidates: [CGPoint] = [
+            CGPoint(x: frame.maxX - size.width - inset, y: frame.maxY - size.height - inset), // top-right
+            CGPoint(x: frame.minX + inset, y: frame.maxY - size.height - inset), // top-left
+            CGPoint(x: frame.maxX - size.width - inset, y: frame.minY + inset), // bottom-right
+            CGPoint(x: frame.minX + inset, y: frame.minY + inset), // bottom-left
+        ]
+
+        for origin in candidates {
+            let rect = CGRect(origin: origin, size: size)
+            if !rect.intersects(avoidanceRect) {
+                return origin
+            }
+        }
+
+        // Fallback if the selection covers most of the screen.
+        return CGPoint(x: frame.maxX - size.width - inset, y: frame.maxY - size.height - inset)
     }
 }
-

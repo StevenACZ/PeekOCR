@@ -44,9 +44,8 @@ enum Constants {
 
     /// GIF capture/export defaults
     enum Gif {
-        static let maxDurationSeconds = 10
-        static let defaultFps = 12
-        static let maxPixelSize = 720
+        static let defaultMaxDurationSeconds = 10
+        static let maxDurationRange = 3...60
         static let trimStepSeconds: Double = 0.1
         static let minimumClipDurationSeconds: Double = 3.0
     }

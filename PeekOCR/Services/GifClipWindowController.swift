@@ -14,7 +14,7 @@ final class GifClipWindowController: NSWindowController {
 
     // MARK: - Properties
 
-    private var continuation: CheckedContinuation<URL?, Never>?
+    private var continuation: CheckedContinuation<ClipExportResult?, Never>?
     private var hostingController: NSHostingController<AnyView>?
     private var currentEditorId = UUID()
 
@@ -33,7 +33,7 @@ final class GifClipWindowController: NSWindowController {
 
     /// Show the GIF clip editor for a recorded video.
     @MainActor
-    func showEditor(with videoURL: URL, saveDirectory: URL) async -> URL? {
+    func showEditor(with videoURL: URL, saveDirectory: URL) async -> ClipExportResult? {
         return await withCheckedContinuation { continuation in
             self.continuation = continuation
             presentEditor(with: videoURL, saveDirectory: saveDirectory)
@@ -64,8 +64,8 @@ final class GifClipWindowController: NSWindowController {
         let editorView = GifClipEditorView(
             videoURL: videoURL,
             saveDirectory: saveDirectory,
-            onExport: { [weak self] gifURL in
-                self?.handleExport(gifURL)
+            onExport: { [weak self] result in
+                self?.handleExport(result)
             },
             onCancel: { [weak self] in
                 self?.handleCancel()
@@ -85,8 +85,8 @@ final class GifClipWindowController: NSWindowController {
     }
 
     @MainActor
-    private func handleExport(_ url: URL) {
-        continuation?.resume(returning: url)
+    private func handleExport(_ result: ClipExportResult) {
+        continuation?.resume(returning: result)
         continuation = nil
         closeEditor()
     }
@@ -127,4 +127,3 @@ extension GifClipWindowController: NSWindowDelegate {
         window?.level = .floating
     }
 }
-

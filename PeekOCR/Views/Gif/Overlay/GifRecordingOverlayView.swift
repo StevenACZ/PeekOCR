@@ -26,10 +26,6 @@ final class GifRecordingOverlayView: NSView {
         didSet { needsDisplay = true }
     }
 
-    var remainingSeconds: Int? {
-        didSet { needsDisplay = true }
-    }
-
     var onSelection: ((CGRect, NSScreen) -> Void)?
     var onCancel: (() -> Void)?
 
@@ -42,7 +38,6 @@ final class GifRecordingOverlayView: NSView {
         dragStartInScreen = nil
         activeScreen = nil
         selectionRectInScreen = nil
-        remainingSeconds = nil
         needsDisplay = true
     }
 
@@ -121,9 +116,10 @@ final class GifRecordingOverlayView: NSView {
         if let rectInScreen = selectionRectInScreen {
             let rectInWindow = window.convertFromScreen(rectInScreen)
             let rectInView = convert(rectInWindow, from: nil)
+            let holeRect = (mode == .recording) ? rectInView.insetBy(dx: -2, dy: -2) : rectInView
 
             let path = NSBezierPath(rect: bounds)
-            path.appendRect(rectInView)
+            path.appendRect(holeRect)
             path.windingRule = .evenOdd
             overlayColor.setFill()
             path.fill()
@@ -135,9 +131,7 @@ final class GifRecordingOverlayView: NSView {
                 border.stroke()
             }
 
-            if mode == .recording {
-                drawRecordingHud(in: rectInView)
-            } else {
+            if mode == .selecting {
                 drawSelectionHud(in: rectInView)
             }
         } else {
@@ -181,12 +175,6 @@ final class GifRecordingOverlayView: NSView {
     private func drawSelectionHud(in selectionRect: CGRect) {
         let text = "Suelta para empezar a grabar"
         drawPill(text: text, in: selectionRect, color: NSColor.black.withAlphaComponent(0.55))
-    }
-
-    private func drawRecordingHud(in selectionRect: CGRect) {
-        let remaining = max(0, remainingSeconds ?? 0)
-        let text = "● REC  \(remaining)s   ⌘⇧6 para detener"
-        drawPill(text: text, in: selectionRect, color: NSColor.black.withAlphaComponent(0.65))
     }
 
     private func drawPill(text: String, in selectionRect: CGRect, color: NSColor) {

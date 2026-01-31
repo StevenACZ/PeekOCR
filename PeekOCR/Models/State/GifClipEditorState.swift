@@ -28,12 +28,12 @@ final class GifClipEditorState: NSObject, ObservableObject {
 
     @Published private(set) var currentSeconds: Double = 0
     @Published var isPreviewPlaying = false
+    @Published private(set) var sourceNominalFps: Double = 30
 
     // MARK: - Private Properties
 
     private var asset: AVURLAsset
     private var playbackTimer: Timer?
-    private var videoFrameRate: Double = 30
 
     // MARK: - Initialization
 
@@ -61,15 +61,15 @@ final class GifClipEditorState: NSObject, ObservableObject {
                 do {
                     let nominalFrameRate = try await track.load(.nominalFrameRate)
                     if nominalFrameRate.isFinite, nominalFrameRate > 0 {
-                        videoFrameRate = Double(nominalFrameRate)
+                        sourceNominalFps = Double(nominalFrameRate)
                     } else {
-                        videoFrameRate = 30
+                        sourceNominalFps = 30
                     }
                 } catch {
-                    videoFrameRate = 30
+                    sourceNominalFps = 30
                 }
             } else {
-                videoFrameRate = 30
+                sourceNominalFps = 30
             }
 
             let duration = try await asset.load(.duration)
@@ -79,6 +79,10 @@ final class GifClipEditorState: NSObject, ObservableObject {
             startSeconds = 0
             endSeconds = durationSeconds
             currentSeconds = 0
+
+            if sourceNominalFps < 55, let estimated = await Self.estimateSourceFrameRate(videoURL: videoURL) {
+                sourceNominalFps = estimated
+            }
         } catch {
             AppLogger.capture.error("Failed to load video duration: \(error.localizedDescription)")
             loadErrorMessage = "No se pudo cargar el video. Intenta grabar de nuevo."
@@ -133,7 +137,7 @@ final class GifClipEditorState: NSObject, ObservableObject {
 
     func stepFrame(delta: Int) {
         guard durationSeconds > 0 else { return }
-        let stepSeconds = 1.0 / max(1, videoFrameRate)
+        let stepSeconds = 1.0 / max(1, sourceNominalFps)
         let target = currentSeconds + (Double(delta) * stepSeconds)
         let clamped = max(0, min(target, durationSeconds))
 
@@ -179,5 +183,68 @@ final class GifClipEditorState: NSObject, ObservableObject {
         if current >= endSeconds {
             stopPlayback()
         }
+    }
+
+    private nonisolated static func estimateSourceFrameRate(videoURL: URL) async -> Double? {
+        return await Task.detached(priority: .utility) {
+            do {
+                let asset = AVURLAsset(url: videoURL)
+                let tracks = try await asset.loadTracks(withMediaType: .video)
+                guard let track = tracks.first else { return nil }
+
+                let reader = try AVAssetReader(asset: asset)
+                reader.timeRange = CMTimeRange(
+                    start: .zero,
+                    duration: CMTime(seconds: 2.0, preferredTimescale: 600)
+                )
+
+                let output = AVAssetReaderTrackOutput(track: track, outputSettings: nil)
+                output.alwaysCopiesSampleData = false
+
+                guard reader.canAdd(output) else { return nil }
+                reader.add(output)
+
+                guard reader.startReading() else { return nil }
+
+                var lastTimestamp: Double?
+                var deltas: [Double] = []
+
+                while deltas.count < 60, let sample = output.copyNextSampleBuffer() {
+                    let timestamp = CMSampleBufferGetPresentationTimeStamp(sample).seconds
+                    guard timestamp.isFinite else { continue }
+
+                    if let last = lastTimestamp {
+                        let delta = timestamp - last
+                        if delta > 0.001, delta < 0.1 {
+                            deltas.append(delta)
+                        }
+                    }
+                    lastTimestamp = timestamp
+                }
+
+                guard deltas.count >= 12 else { return nil }
+
+                let sorted = deltas.sorted()
+                let median = sorted[sorted.count / 2]
+                guard median > 0 else { return nil }
+
+                let fps = 1.0 / median
+                return normalizeEstimatedFps(fps)
+            } catch {
+                return nil
+            }
+        }.value
+    }
+
+    private nonisolated static func normalizeEstimatedFps(_ fps: Double) -> Double? {
+        guard fps.isFinite, fps >= 10, fps <= 120 else { return nil }
+
+        let candidates: [Double] = [60.0, 59.94, 30.0, 29.97, 24.0]
+        guard let best = candidates.min(by: { abs($0 - fps) < abs($1 - fps) }) else { return nil }
+
+        if abs(best - fps) <= 2.0 {
+            return best.rounded()
+        }
+        return nil
     }
 }

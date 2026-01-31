@@ -9,7 +9,7 @@ import AppKit
 
 /// Heads-up display shown while recording a GIF clip.
 final class GifRecordingHudView: NSView {
-    var remainingSeconds: Int = 0 {
+    var elapsedSeconds: Int = 0 {
         didSet { updateLabel() }
     }
 
@@ -74,8 +74,8 @@ final class GifRecordingHudView: NSView {
     }
 
     private func updateLabel() {
-        let remaining = max(0, remainingSeconds)
-        let text = "● REC  \(remaining)s"
+        let elapsed = max(0, elapsedSeconds)
+        let text = "● REC  \(elapsed)s"
 
         let attributed = NSMutableAttributedString(string: text, attributes: [
             .font: NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .semibold),

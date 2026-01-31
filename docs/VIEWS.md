@@ -11,7 +11,7 @@ PeekOCRApp
 │   ├── QuickActionsSection
 │   │   ├── MenuBarActionButton (OCR)
 │   │   ├── MenuBarActionButton (Screenshot)
-│   │   └── MenuBarActionButton (GIF Clip)
+│   │   └── MenuBarActionButton (Clip)
 │   ├── HistorySection
 │   │   ├── HistoryItemRow
 │   │   └── EmptyStateView
@@ -25,6 +25,7 @@ PeekOCRApp
 │   │   ├── ImageFormatSection
 │   │   ├── ImageScaleSection
 │   │   └── AnnotationDefaultsSection
+│   ├── ClipSettingsTab
 │   ├── HistorySettingsTab
 │   └── AboutTab
 │
@@ -52,7 +53,7 @@ PeekOCRApp
     │   └── GifClipTimelineReadoutView
     ├── GifClipPlaybackControlsView
     ├── GifClipSidebarView
-    └── GifExportLoadingOverlay
+    └── ClipExportOverlay
 ```
 
 ## Module Breakdown
