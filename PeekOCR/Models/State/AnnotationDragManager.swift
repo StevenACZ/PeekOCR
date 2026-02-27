@@ -55,7 +55,11 @@ final class AnnotationDragManager: ObservableObject {
     /// - Returns: True if the annotation was moved or resized
     func hasChanges(current: Annotation) -> Bool {
         guard let original = originalAnnotation else { return false }
-        return current.startPoint != original.startPoint || current.endPoint != original.endPoint
+        return current.startPoint != original.startPoint
+            || current.endPoint != original.endPoint
+            || current.points != original.points
+            || current.fontSize != original.fontSize
+            || current.text != original.text
     }
 
     /// Gets the original annotation for undo purposes

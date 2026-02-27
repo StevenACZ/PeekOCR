@@ -44,6 +44,10 @@ enum AnnotationTransformer {
         if annotation.tool == .text {
             return resizeText(annotation, handle: handle, dx: dx, dy: dy)
         }
+        // Freehand uses points as source of truth, so resize by transforming all points.
+        if annotation.tool == .freehand {
+            return resizeFreehand(annotation, handle: handle, dx: dx, dy: dy)
+        }
 
         var resized = annotation
 
@@ -96,6 +100,89 @@ enum AnnotationTransformer {
         resized.fontSize = newFontSize
 
         return resized
+    }
+
+    /// Resizes freehand annotations by remapping points from original bounds into resized bounds.
+    private static func resizeFreehand(_ annotation: Annotation, handle: ResizeHandle, dx: CGFloat, dy: CGFloat) -> Annotation {
+        guard !annotation.points.isEmpty else { return annotation }
+
+        let sourceRect = AnnotationGeometry.boundingRect(for: annotation)
+        guard !sourceRect.isEmpty else {
+            return move(annotation, dx: dx, dy: dy)
+        }
+
+        var left = sourceRect.minX
+        var right = sourceRect.maxX
+        var top = sourceRect.minY
+        var bottom = sourceRect.maxY
+
+        switch handle {
+        case .topLeft:
+            left += dx
+            top += dy
+        case .top:
+            top += dy
+        case .topRight:
+            right += dx
+            top += dy
+        case .left:
+            left += dx
+        case .right:
+            right += dx
+        case .bottomLeft:
+            left += dx
+            bottom += dy
+        case .bottom:
+            bottom += dy
+        case .bottomRight:
+            right += dx
+            bottom += dy
+        }
+
+        let minimumSize: CGFloat = 1
+        if abs(right - left) < minimumSize {
+            let midX = (left + right) / 2
+            left = midX - minimumSize / 2
+            right = midX + minimumSize / 2
+        }
+        if abs(bottom - top) < minimumSize {
+            let midY = (top + bottom) / 2
+            top = midY - minimumSize / 2
+            bottom = midY + minimumSize / 2
+        }
+
+        let destinationRect = CGRect(
+            x: min(left, right),
+            y: min(top, bottom),
+            width: abs(right - left),
+            height: abs(bottom - top)
+        )
+
+        var resized = annotation
+        resized.points = annotation.points.map { transformPoint($0, from: sourceRect, to: destinationRect) }
+        resized.startPoint = transformPoint(annotation.startPoint, from: sourceRect, to: destinationRect)
+        resized.endPoint = transformPoint(annotation.endPoint, from: sourceRect, to: destinationRect)
+        return resized
+    }
+
+    private static func transformPoint(_ point: CGPoint, from sourceRect: CGRect, to destinationRect: CGRect) -> CGPoint {
+        let x: CGFloat
+        if sourceRect.width > 0 {
+            let normalizedX = (point.x - sourceRect.minX) / sourceRect.width
+            x = destinationRect.minX + normalizedX * destinationRect.width
+        } else {
+            x = destinationRect.midX
+        }
+
+        let y: CGFloat
+        if sourceRect.height > 0 {
+            let normalizedY = (point.y - sourceRect.minY) / sourceRect.height
+            y = destinationRect.minY + normalizedY * destinationRect.height
+        } else {
+            y = destinationRect.midY
+        }
+
+        return CGPoint(x: x, y: y)
     }
 
     // MARK: - Scale
