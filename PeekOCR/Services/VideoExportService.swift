@@ -56,13 +56,7 @@ final class VideoExportService {
             throw VideoExportError.directoryCreationFailed(path: outputDirectory.path, underlying: error)
         }
 
-        let outputURL = outputDirectory
-            .appendingPathComponent(generateFilename())
-            .appendingPathExtension("mp4")
-
-        if FileManager.default.fileExists(atPath: outputURL.path) {
-            try? FileManager.default.removeItem(at: outputURL)
-        }
+        let outputURL = generateUniqueOutputURL(in: outputDirectory)
 
         return try await Task.detached(priority: .userInitiated) {
             try await Self.renderVideo(
@@ -292,9 +286,26 @@ final class VideoExportService {
 
     private func generateFilename() -> String {
         let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd_HH-mm-ss"
+        dateFormatter.dateFormat = "yyyy-MM-dd_HH-mm-ss-SSS"
         let timestamp = dateFormatter.string(from: Date())
         return "PeekOCR_\(timestamp)"
+    }
+
+    private func generateUniqueOutputURL(in outputDirectory: URL) -> URL {
+        let baseName = generateFilename()
+        var candidateURL = outputDirectory
+            .appendingPathComponent(baseName)
+            .appendingPathExtension("mp4")
+        var counter = 1
+
+        while FileManager.default.fileExists(atPath: candidateURL.path) {
+            candidateURL = outputDirectory
+                .appendingPathComponent("\(baseName)_\(counter)")
+                .appendingPathExtension("mp4")
+            counter += 1
+        }
+
+        return candidateURL
     }
 
     private static func estimateSourceFrameRate(asset: AVAsset, track: AVAssetTrack, timeRange: CMTimeRange) async -> Double? {
