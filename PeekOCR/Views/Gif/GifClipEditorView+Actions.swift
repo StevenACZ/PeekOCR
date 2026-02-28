@@ -36,11 +36,12 @@ extension GifClipEditorView {
     func exportSelectedFormat() async {
         guard exportOverlay == nil else { return }
         guard canExport else {
-            exportError = exportDisabledMessage ?? "No se puede exportar con la selección actual."
+            errorAlertTitle = "No se pudo exportar"
+            errorAlertMessage = exportDisabledMessage ?? "No se puede exportar con la selección actual."
             return
         }
 
-        exportError = nil
+        errorAlertMessage = nil
         exportOverlay = .exporting(format: exportFormat)
 
         do {
@@ -70,8 +71,44 @@ extension GifClipEditorView {
             onExport(ClipExportResult(url: url, format: exportFormat))
         } catch {
             AppLogger.capture.error("Clip export failed: \(error.localizedDescription)")
-            exportError = error.localizedDescription
+            errorAlertTitle = "No se pudo exportar"
+            errorAlertMessage = error.localizedDescription
             exportOverlay = nil
+        }
+    }
+
+    func captureCurrentFrame() async {
+        guard !isSavingFrame, exportOverlay == nil else { return }
+        guard state.isReady, state.durationSeconds > 0 else { return }
+
+        isSavingFrame = true
+        defer { isSavingFrame = false }
+
+        state.stopPlayback()
+
+        let settings = ScreenshotSettings.shared
+        let captureTime = max(0, min(state.currentSeconds, state.durationSeconds))
+
+        do {
+            let outputURL = try await VideoFrameCaptureService.shared.captureFrame(
+                videoURL: state.videoURL,
+                at: captureTime,
+                outputDirectory: saveDirectory,
+                format: settings.imageFormat,
+                quality: settings.imageQuality
+            )
+
+            HistoryManager.shared.addItem(CaptureItem(
+                text: outputURL.lastPathComponent,
+                captureType: .screenshot
+            ))
+
+            AppLogger.capture.info("Video frame captured: \(outputURL.lastPathComponent)")
+            showFrameCaptureMessage("Frame guardado: \(outputURL.lastPathComponent)")
+        } catch {
+            AppLogger.capture.error("Video frame capture failed: \(error.localizedDescription)")
+            errorAlertTitle = "No se pudo guardar la captura"
+            errorAlertMessage = error.localizedDescription
         }
     }
 
@@ -149,5 +186,16 @@ extension GifClipEditorView {
     private func formatSeconds(_ seconds: Double) -> String {
         guard seconds.isFinite else { return "0.0s" }
         return String(format: "%.1fs", max(0, seconds))
+    }
+
+    private func showFrameCaptureMessage(_ message: String) {
+        frameCaptureMessage = message
+
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 2_400_000_000)
+            if frameCaptureMessage == message {
+                frameCaptureMessage = nil
+            }
+        }
     }
 }

@@ -14,10 +14,12 @@ struct GifClipVideoPreviewView: View {
     let isPlaying: Bool
     let currentSeconds: Double
     let durationSeconds: Double
+    let isCaptureFrameDisabled: Bool
 
     var onTogglePlay: () -> Void
     var onStepBackward: () -> Void
     var onStepForward: () -> Void
+    var onCaptureFrame: () -> Void
 
     var body: some View {
         ZStack {
@@ -38,9 +40,11 @@ struct GifClipVideoPreviewView: View {
                     isPlaying: isPlaying,
                     currentSeconds: currentSeconds,
                     durationSeconds: durationSeconds,
+                    isCaptureDisabled: isCaptureFrameDisabled,
                     onTogglePlay: onTogglePlay,
                     onStepBackward: onStepBackward,
-                    onStepForward: onStepForward
+                    onStepForward: onStepForward,
+                    onCaptureFrame: onCaptureFrame
                 )
                 .frame(maxWidth: 420)
                 .padding(.bottom, 16)
@@ -68,10 +72,11 @@ struct GifClipVideoPreviewView: View {
         isPlaying: false,
         currentSeconds: 3.5,
         durationSeconds: 9.2,
+        isCaptureFrameDisabled: false,
         onTogglePlay: {},
         onStepBackward: {},
-        onStepForward: {}
+        onStepForward: {},
+        onCaptureFrame: {}
     )
     .frame(width: 720, height: 420)
 }
-

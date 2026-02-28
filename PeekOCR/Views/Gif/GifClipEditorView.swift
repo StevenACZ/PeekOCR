@@ -21,7 +21,10 @@ struct GifClipEditorView: View {
     @State var gifOptions: GifExportOptions
     @State var videoOptions: VideoExportOptions
     @State var exportOverlay: ClipExportOverlayState?
-    @State var exportError: String?
+    @State var errorAlertTitle = "Error"
+    @State var errorAlertMessage: String?
+    @State var isSavingFrame = false
+    @State var frameCaptureMessage: String?
     @State var keyboardHandler = GifClipKeyboardHandler()
 
     init(
@@ -71,13 +74,13 @@ struct GifClipEditorView: View {
             keyboardHandler.teardown()
             state.stopPlayback()
         }
-        .alert("No se pudo exportar", isPresented: Binding(
-            get: { exportError != nil },
-            set: { if !$0 { exportError = nil } }
+        .alert(errorAlertTitle, isPresented: Binding(
+            get: { errorAlertMessage != nil },
+            set: { if !$0 { errorAlertMessage = nil } }
         )) {
             Button("OK") {}
         } message: {
-            Text(exportError ?? "Error desconocido")
+            Text(errorAlertMessage ?? "Error desconocido")
         }
     }
 
@@ -104,9 +107,13 @@ struct GifClipEditorView: View {
                 isPlaying: state.isPreviewPlaying,
                 currentSeconds: state.currentSeconds,
                 durationSeconds: state.durationSeconds,
+                isCaptureFrameDisabled: isBlockingUI || isSavingFrame || !state.isReady || state.durationSeconds <= 0,
                 onTogglePlay: togglePlayPause,
                 onStepBackward: { stepFrame(-1) },
-                onStepForward: { stepFrame(1) }
+                onStepForward: { stepFrame(1) },
+                onCaptureFrame: {
+                    Task { await captureCurrentFrame() }
+                }
             )
             timelineSection
         }
@@ -168,6 +175,13 @@ struct GifClipEditorView: View {
             .buttonStyle(.bordered)
 
             VStack(alignment: .trailing, spacing: 4) {
+                if let message = frameCaptureMessage {
+                    Text(message)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+
                 Button {
                     Task { await exportSelectedFormat() }
                 } label: {
@@ -175,7 +189,7 @@ struct GifClipEditorView: View {
                         .frame(minWidth: 130)
                 }
                 .buttonStyle(.borderedProminent)
-                .disabled(isBlockingUI || !canExport)
+                .disabled(isBlockingUI || isSavingFrame || !canExport)
             }
         }
         .padding(16)
