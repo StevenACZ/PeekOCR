@@ -24,6 +24,8 @@ struct AnnotationDefaultsSection: View {
                 }
 
                 Slider(value: $appSettings.defaultAnnotationStrokeWidth, in: 1...10, step: 1)
+                    .labelsHidden()
+                    .frame(maxWidth: .infinity)
 
                 HStack {
                     Text("1 px")
@@ -39,6 +41,7 @@ struct AnnotationDefaultsSection: View {
                         .foregroundStyle(.tertiary)
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
 
             // Font Size Slider
             VStack(alignment: .leading, spacing: 8) {
@@ -51,6 +54,8 @@ struct AnnotationDefaultsSection: View {
                 }
 
                 Slider(value: $appSettings.defaultAnnotationFontSize, in: 12...48, step: 2)
+                    .labelsHidden()
+                    .frame(maxWidth: .infinity)
 
                 HStack {
                     Text("12 pt")
@@ -66,6 +71,7 @@ struct AnnotationDefaultsSection: View {
                         .foregroundStyle(.tertiary)
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         } header: {
             Text("Anotaciones")
         } footer: {
