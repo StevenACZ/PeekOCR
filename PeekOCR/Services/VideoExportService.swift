@@ -44,6 +44,15 @@ final class VideoExportService {
 
     private init() {}
 
+    /// Wraps non-Sendable reference types for use in @Sendable closures that stay on a controlled queue.
+    private final class UncheckedSendableBox<Value>: @unchecked Sendable {
+        let value: Value
+
+        init(_ value: Value) {
+            self.value = value
+        }
+    }
+
     func exportVideo(
         videoURL: URL,
         timeRange: CMTimeRange,
@@ -103,7 +112,7 @@ final class VideoExportService {
         let requestedFps = max(1, options.fps)
         let effectiveFps = Int(min(Double(requestedFps), sourceFps.rounded(.down)))
 
-        let (renderSize, transform) = computeRenderSizeAndTransform(
+        let (renderSize, transform) = try await computeRenderSizeAndTransform(
             track: sourceVideoTrack,
             maxSize: options.resolution.maxSize
         )
@@ -190,6 +199,11 @@ final class VideoExportService {
         }
         writer.startSession(atSourceTime: .zero)
 
+        let writerInputBox = UncheckedSendableBox(writerInput)
+        let readerOutputBox = UncheckedSendableBox(readerOutput)
+        let readerBox = UncheckedSendableBox(reader)
+        let writerBox = UncheckedSendableBox(writer)
+
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             let queue = DispatchQueue(label: "PeekOCR.videoExport.writer")
 
@@ -197,7 +211,12 @@ final class VideoExportService {
             var nextAllowed = CMTime.zero
             var frameIndex: Int64 = 0
 
-            writerInput.requestMediaDataWhenReady(on: queue) {
+            writerInputBox.value.requestMediaDataWhenReady(on: queue) {
+                let writerInput = writerInputBox.value
+                let readerOutput = readerOutputBox.value
+                let reader = readerBox.value
+                let writer = writerBox.value
+
                 while writerInput.isReadyForMoreMediaData {
                     if let sampleBuffer = readerOutput.copyNextSampleBuffer() {
                         let pts = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
@@ -254,9 +273,11 @@ final class VideoExportService {
         }
     }
 
-    private static func computeRenderSizeAndTransform(track: AVAssetTrack, maxSize: CGSize) -> (CGSize, CGAffineTransform) {
-        let naturalSize = track.naturalSize
-        let preferredTransform = track.preferredTransform
+    private static func computeRenderSizeAndTransform(
+        track: AVAssetTrack,
+        maxSize: CGSize
+    ) async throws -> (CGSize, CGAffineTransform) {
+        let (naturalSize, preferredTransform) = try await track.load(.naturalSize, .preferredTransform)
 
         let naturalRect = CGRect(origin: .zero, size: naturalSize)
         let transformedRect = naturalRect.applying(preferredTransform)
