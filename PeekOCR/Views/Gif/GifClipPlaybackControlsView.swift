@@ -12,10 +12,12 @@ struct GifClipPlaybackControlsView: View {
     let isPlaying: Bool
     let currentSeconds: Double
     let durationSeconds: Double
+    let isCaptureDisabled: Bool
 
     var onTogglePlay: () -> Void
     var onStepBackward: () -> Void
     var onStepForward: () -> Void
+    var onCaptureFrame: () -> Void
 
     var body: some View {
         HStack(spacing: 10) {
@@ -47,6 +49,15 @@ struct GifClipPlaybackControlsView: View {
             }
             .buttonStyle(.plain)
             .help("Frame siguiente (→)")
+
+            Button(action: onCaptureFrame) {
+                Image(systemName: "camera")
+                    .font(.system(size: 13, weight: .semibold))
+                    .frame(width: 24, height: 24)
+            }
+            .buttonStyle(.plain)
+            .disabled(isCaptureDisabled)
+            .help("Capturar frame actual")
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
@@ -75,12 +86,13 @@ struct GifClipPlaybackControlsView: View {
             isPlaying: false,
             currentSeconds: 3.5,
             durationSeconds: 9.2,
+            isCaptureDisabled: false,
             onTogglePlay: {},
             onStepBackward: {},
-            onStepForward: {}
+            onStepForward: {},
+            onCaptureFrame: {}
         )
         .padding()
     }
     .frame(width: 420, height: 160)
 }
-

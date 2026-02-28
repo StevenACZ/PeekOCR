@@ -23,6 +23,8 @@ struct ImageScaleSection: View {
                 }
 
                 Slider(value: $settings.imageScale, in: 0.1...1.0, step: 0.1)
+                    .labelsHidden()
+                    .frame(maxWidth: .infinity)
 
                 HStack {
                     Text("10%")
@@ -34,6 +36,7 @@ struct ImageScaleSection: View {
                         .foregroundStyle(.tertiary)
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         } header: {
             Text("Tamano de Imagen")
         } footer: {

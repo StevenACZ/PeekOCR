@@ -24,22 +24,37 @@ struct ClipSettingsTab: View {
 
     private var durationSection: some View {
         Section {
-            HStack {
-                Text("Duración máxima")
-                Spacer()
-                Text("\(settings.maxDurationSeconds)s")
-                    .monospacedDigit()
-                    .foregroundStyle(.secondary)
-            }
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text("Duración máxima")
+                    Spacer()
+                    Text("\(settings.maxDurationSeconds)s")
+                        .monospacedDigit()
+                        .foregroundStyle(.secondary)
+                }
 
-            Slider(
-                value: Binding(
-                    get: { Double(settings.maxDurationSeconds) },
-                    set: { settings.maxDurationSeconds = Int($0.rounded()) }
-                ),
-                in: Double(Constants.Gif.maxDurationRange.lowerBound)...Double(Constants.Gif.maxDurationRange.upperBound),
-                step: 1
-            )
+                Slider(
+                    value: Binding(
+                        get: { Double(settings.maxDurationSeconds) },
+                        set: { settings.maxDurationSeconds = Int($0.rounded()) }
+                    ),
+                    in: Double(Constants.Gif.maxDurationRange.lowerBound)...Double(Constants.Gif.maxDurationRange.upperBound),
+                    step: 1
+                )
+                .labelsHidden()
+                .frame(maxWidth: .infinity)
+
+                HStack {
+                    Text("\(Constants.Gif.maxDurationRange.lowerBound)s")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                    Spacer()
+                    Text("\(Constants.Gif.maxDurationRange.upperBound)s")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         } header: {
             Text("Clip")
         } footer: {
