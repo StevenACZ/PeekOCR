@@ -38,7 +38,7 @@ enum Constants {
 
     /// App information
     enum App {
-        static let version = "1.3.0"
+        static let version = "1.5.0"
         static let minimumOSVersion = "macOS 13.0+"
     }
 

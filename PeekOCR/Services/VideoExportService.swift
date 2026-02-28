@@ -44,13 +44,9 @@ final class VideoExportService {
 
     private init() {}
 
-    /// Wraps non-Sendable reference types for use in @Sendable closures that stay on a controlled queue.
-    private final class UncheckedSendableBox<Value>: @unchecked Sendable {
+    /// Wraps non-Sendable values for use in @Sendable closures that stay on a controlled queue.
+    private struct UncheckedSendableBox<Value>: @unchecked Sendable {
         let value: Value
-
-        init(_ value: Value) {
-            self.value = value
-        }
     }
 
     func exportVideo(
@@ -199,10 +195,10 @@ final class VideoExportService {
         }
         writer.startSession(atSourceTime: .zero)
 
-        let writerInputBox = UncheckedSendableBox(writerInput)
-        let readerOutputBox = UncheckedSendableBox(readerOutput)
-        let readerBox = UncheckedSendableBox(reader)
-        let writerBox = UncheckedSendableBox(writer)
+        let writerInputBox = UncheckedSendableBox(value: writerInput)
+        let readerOutputBox = UncheckedSendableBox(value: readerOutput)
+        let readerBox = UncheckedSendableBox(value: reader)
+        let writerBox = UncheckedSendableBox(value: writer)
 
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             let queue = DispatchQueue(label: "PeekOCR.videoExport.writer")

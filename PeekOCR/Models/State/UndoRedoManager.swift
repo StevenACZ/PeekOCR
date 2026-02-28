@@ -6,14 +6,13 @@
 //
 
 import Foundation
-import Combine
 
 /// Generic manager for undo/redo operations with configurable history limit
-final class UndoRedoManager<T>: ObservableObject {
+struct UndoRedoManager<T> {
     // MARK: - Published Properties
 
-    @Published private(set) var canUndo: Bool = false
-    @Published private(set) var canRedo: Bool = false
+    private(set) var canUndo: Bool = false
+    private(set) var canRedo: Bool = false
 
     // MARK: - Private Properties
 
@@ -33,7 +32,7 @@ final class UndoRedoManager<T>: ObservableObject {
 
     /// Saves a state to the undo stack
     /// - Parameter state: The state to save
-    func saveState(_ state: T) {
+    mutating func saveState(_ state: T) {
         undoStack.append(state)
 
         // Trim history if needed
@@ -49,7 +48,7 @@ final class UndoRedoManager<T>: ObservableObject {
 
     /// Undoes the last action and returns the previous state
     /// - Returns: The previous state, or nil if undo stack is empty
-    func undo() -> T? {
+    mutating func undo() -> T? {
         guard let previousState = undoStack.popLast() else { return nil }
         updateFlags()
         return previousState
@@ -57,14 +56,14 @@ final class UndoRedoManager<T>: ObservableObject {
 
     /// Saves state to redo stack (call after undo with current state)
     /// - Parameter currentState: The current state before reverting
-    func pushToRedo(_ currentState: T) {
+    mutating func pushToRedo(_ currentState: T) {
         redoStack.append(currentState)
         updateFlags()
     }
 
     /// Redoes the last undone action
     /// - Returns: The next state, or nil if redo stack is empty
-    func redo() -> T? {
+    mutating func redo() -> T? {
         guard let nextState = redoStack.popLast() else { return nil }
         updateFlags()
         return nextState
@@ -72,13 +71,13 @@ final class UndoRedoManager<T>: ObservableObject {
 
     /// Saves state to undo stack (call after redo with current state)
     /// - Parameter currentState: The current state before redoing
-    func pushToUndo(_ currentState: T) {
+    mutating func pushToUndo(_ currentState: T) {
         undoStack.append(currentState)
         updateFlags()
     }
 
     /// Clears all history
-    func clear() {
+    mutating func clear() {
         undoStack.removeAll()
         redoStack.removeAll()
         updateFlags()
@@ -86,7 +85,7 @@ final class UndoRedoManager<T>: ObservableObject {
 
     // MARK: - Private Methods
 
-    private func updateFlags() {
+    private mutating func updateFlags() {
         canUndo = !undoStack.isEmpty
         canRedo = !redoStack.isEmpty
     }
