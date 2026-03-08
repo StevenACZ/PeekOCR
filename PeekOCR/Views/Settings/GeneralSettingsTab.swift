@@ -73,8 +73,7 @@ struct GeneralSettingsTab: View {
     // MARK: - Permission Checks
 
     private func checkScreenCapturePermission() -> Bool {
-        let windowList = CGWindowListCopyWindowInfo([.optionOnScreenOnly], kCGNullWindowID)
-        return windowList != nil
+        return CGPreflightScreenCaptureAccess()
     }
 
     private func checkAccessibilityPermission() -> Bool {
@@ -82,6 +81,7 @@ struct GeneralSettingsTab: View {
     }
 
     private func openScreenCaptureSettings() {
+        CGRequestScreenCaptureAccess()
         if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture") {
             NSWorkspace.shared.open(url)
         }

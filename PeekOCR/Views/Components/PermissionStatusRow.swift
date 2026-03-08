@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Combine
 
 /// A reusable row component for displaying permission status
 struct PermissionStatusRow: View {
@@ -46,6 +47,9 @@ struct PermissionStatusRow: View {
             }
         }
         .onAppear {
+            isGranted = checkPermission()
+        }
+        .onReceive(Timer.publish(every: 2, on: .main, in: .common).autoconnect()) { _ in
             isGranted = checkPermission()
         }
     }
