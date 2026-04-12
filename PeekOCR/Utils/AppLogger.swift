@@ -24,29 +24,29 @@ enum AppLogger {
     // MARK: - Subsystem Identifier
 
     /// The app's bundle identifier used as the logging subsystem
-    private static let subsystem = "com.peekocr"
+    nonisolated private static let subsystem = "com.peekocr"
 
     // MARK: - Category Loggers
 
     /// Logger for OCR (Optical Character Recognition) operations.
     /// Use for text recognition, language detection, and OCR processing events.
-    static let ocr = Logger(subsystem: subsystem, category: "ocr")
+    nonisolated static let ocr = Logger(subsystem: subsystem, category: "ocr")
 
     /// Logger for screen capture operations.
     /// Use for screenshot capture, image processing, and capture permission events.
-    static let capture = Logger(subsystem: subsystem, category: "capture")
+    nonisolated static let capture = Logger(subsystem: subsystem, category: "capture")
 
     /// Logger for history management operations.
     /// Use for saving, loading, deleting, and managing OCR history entries.
-    static let history = Logger(subsystem: subsystem, category: "history")
+    nonisolated static let history = Logger(subsystem: subsystem, category: "history")
 
     /// Logger for annotation editor operations.
     /// Use for drawing, text annotations, shapes, and editor state changes.
-    static let annotation = Logger(subsystem: subsystem, category: "annotation")
+    nonisolated static let annotation = Logger(subsystem: subsystem, category: "annotation")
 
     /// Logger for UI-related events.
     /// Use for view lifecycle, user interactions, and interface state changes.
-    static let ui = Logger(subsystem: subsystem, category: "ui")
+    nonisolated static let ui = Logger(subsystem: subsystem, category: "ui")
 
     // MARK: - Convenience Helper Functions
 
@@ -55,7 +55,7 @@ enum AppLogger {
     /// - Parameters:
     ///   - message: The message to log
     ///   - logger: The category logger to use
-    static func debug(_ message: String, logger: Logger) {
+    nonisolated static func debug(_ message: String, logger: Logger) {
         logger.debug("\(message, privacy: .public)")
     }
 
@@ -64,7 +64,7 @@ enum AppLogger {
     /// - Parameters:
     ///   - message: The message to log
     ///   - logger: The category logger to use
-    static func info(_ message: String, logger: Logger) {
+    nonisolated static func info(_ message: String, logger: Logger) {
         logger.info("\(message, privacy: .public)")
     }
 
@@ -73,7 +73,7 @@ enum AppLogger {
     /// - Parameters:
     ///   - message: The message to log
     ///   - logger: The category logger to use
-    static func warning(_ message: String, logger: Logger) {
+    nonisolated static func warning(_ message: String, logger: Logger) {
         logger.warning("\(message, privacy: .public)")
     }
 
@@ -82,7 +82,7 @@ enum AppLogger {
     /// - Parameters:
     ///   - message: The message to log
     ///   - logger: The category logger to use
-    static func error(_ message: String, logger: Logger) {
+    nonisolated static func error(_ message: String, logger: Logger) {
         logger.error("\(message, privacy: .public)")
     }
 
@@ -91,7 +91,7 @@ enum AppLogger {
     /// - Parameters:
     ///   - message: The message to log
     ///   - logger: The category logger to use
-    static func fault(_ message: String, logger: Logger) {
+    nonisolated static func fault(_ message: String, logger: Logger) {
         logger.fault("\(message, privacy: .public)")
     }
 }

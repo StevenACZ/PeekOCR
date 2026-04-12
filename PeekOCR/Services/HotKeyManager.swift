@@ -50,6 +50,8 @@ final class HotKeyManager {
     }
 
     private func installEventHandler() {
+        guard eventHandler == nil else { return }
+
         var eventSpec = EventTypeSpec(
             eventClass: OSType(kEventClassKeyboard),
             eventKind: UInt32(kEventHotKeyPressed)

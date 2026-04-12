@@ -7,15 +7,16 @@
 
 import AppKit
 import Foundation
+import ImageIO
 
 /// Service that uses macOS native screencapture command for high-quality, reliable captures
 final class NativeScreenCaptureService {
     static let shared = NativeScreenCaptureService()
-    
+
     private init() {}
-    
+
     // MARK: - Public Methods
-    
+
     /// Capture a screen region using macOS native screencapture tool
     /// This uses the interactive mode (-i) which provides a smooth, native experience
     /// - Returns: The captured image, or nil if cancelled or failed
@@ -24,39 +25,27 @@ final class NativeScreenCaptureService {
         let tempURL = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString)
             .appendingPathExtension("png")
-        
+
         // Run screencapture command
         let success = await runScreenCapture(outputPath: tempURL.path)
-        
-        guard success else { 
+
+        guard success else {
             // Clean up in case of failure
             try? FileManager.default.removeItem(at: tempURL)
-            return nil 
-        }
-        
-        // Load file data into memory BEFORE deleting the file
-        guard let imageData = try? Data(contentsOf: tempURL) else {
-            try? FileManager.default.removeItem(at: tempURL)
-            return nil
-        }
-        
-        // Clean up temp file now that we have the data in memory
-        try? FileManager.default.removeItem(at: tempURL)
-        
-        // Create image from in-memory data
-        guard let dataProvider = CGDataProvider(data: imageData as CFData),
-              let image = CGImage(
-                pngDataProviderSource: dataProvider,
-                decode: nil,
-                shouldInterpolate: true,
-                intent: .defaultIntent
-              ) else {
             return nil
         }
 
+        guard let imageData = try? Data(contentsOf: tempURL, options: .mappedIfSafe),
+              let image = Self.loadImage(from: imageData)
+        else {
+            try? FileManager.default.removeItem(at: tempURL)
+            return nil
+        }
+
+        try? FileManager.default.removeItem(at: tempURL)
         return image
     }
-    
+
     /// Capture a screen region and return the image data directly
     /// - Returns: PNG data of the captured image, or nil if cancelled
     func captureInteractiveAsData() async -> Data? {
@@ -64,24 +53,24 @@ final class NativeScreenCaptureService {
         let tempURL = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString)
             .appendingPathExtension("png")
-        
+
         // Run screencapture command
         let success = await runScreenCapture(outputPath: tempURL.path)
-        
-        guard success else { 
+
+        guard success else {
             try? FileManager.default.removeItem(at: tempURL)
-            return nil 
+            return nil
         }
-        
-        // Read the file data into memory
-        let data = try? Data(contentsOf: tempURL)
-        
+
+        // Read the file data into memory lazily to reduce peak allocations
+        let data = try? Data(contentsOf: tempURL, options: .mappedIfSafe)
+
         // Clean up temp file
         try? FileManager.default.removeItem(at: tempURL)
-        
+
         return data
     }
-    
+
     /// Capture to clipboard directly using native screencapture
     func captureToClipboard() async -> Bool {
         return await withCheckedContinuation { continuation in
@@ -89,11 +78,11 @@ final class NativeScreenCaptureService {
             process.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
             // -i: interactive mode, -c: capture to clipboard
             process.arguments = ["-i", "-c"]
-            
+
             process.terminationHandler = { process in
                 continuation.resume(returning: process.terminationStatus == 0)
             }
-            
+
             do {
                 try process.run()
             } catch {
@@ -102,16 +91,42 @@ final class NativeScreenCaptureService {
             }
         }
     }
-    
+
+    /// Capture a specific screen rect without showing the native picker.
+    /// - Parameters:
+    ///   - rectInScreen: Rect in AppKit global screen coordinates.
+    ///   - screen: The source screen containing the selection.
+    /// - Returns: The captured image or nil on failure.
+    func captureRegion(_ rectInScreen: CGRect, on screen: NSScreen) async -> CGImage? {
+        let rect = convertToCaptureRect(selectionRectInScreen: rectInScreen.integral, screen: screen)
+        guard rect.width > 0, rect.height > 0 else { return nil }
+
+        let tempURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension("png")
+
+        let success = await runScreenCapture(rectInScreen: rect, outputPath: tempURL.path)
+        guard success,
+              let imageData = try? Data(contentsOf: tempURL, options: .mappedIfSafe),
+              let image = Self.loadImage(from: imageData)
+        else {
+            try? FileManager.default.removeItem(at: tempURL)
+            return nil
+        }
+
+        try? FileManager.default.removeItem(at: tempURL)
+        return image
+    }
+
     /// Capture and save directly to a file
     /// - Parameter outputPath: Path where to save the image
     /// - Returns: True if capture was successful
     func captureToFile(outputPath: String) async -> Bool {
         return await runScreenCapture(outputPath: outputPath)
     }
-    
+
     // MARK: - Private Methods
-    
+
     private func runScreenCapture(outputPath: String) async -> Bool {
         return await withCheckedContinuation { continuation in
             let process = Process()
@@ -119,14 +134,14 @@ final class NativeScreenCaptureService {
             // -i: interactive mode
             // -s: only allow selection (not fullscreen/window)
             // -x: no sound
-            process.arguments = ["-i", "-s", outputPath]
-            
+            process.arguments = ["-i", "-s", "-x", outputPath]
+
             process.terminationHandler = { process in
                 // Check if file was created (user didn't cancel)
                 let fileExists = FileManager.default.fileExists(atPath: outputPath)
                 continuation.resume(returning: process.terminationStatus == 0 && fileExists)
             }
-            
+
             do {
                 try process.run()
             } catch {
@@ -134,5 +149,62 @@ final class NativeScreenCaptureService {
                 continuation.resume(returning: false)
             }
         }
+    }
+
+    private func runScreenCapture(rectInScreen: CGRect, outputPath: String) async -> Bool {
+        return await withCheckedContinuation { continuation in
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+            let rectArgument = String(
+                format: "-R%.0f,%.0f,%.0f,%.0f",
+                rectInScreen.minX,
+                rectInScreen.minY,
+                rectInScreen.width,
+                rectInScreen.height
+            )
+            process.arguments = [rectArgument, "-x", outputPath]
+
+            process.terminationHandler = { process in
+                let fileExists = FileManager.default.fileExists(atPath: outputPath)
+                continuation.resume(returning: process.terminationStatus == 0 && fileExists)
+            }
+
+            do {
+                try process.run()
+            } catch {
+                print("Failed to run screencapture: \(error)")
+                continuation.resume(returning: false)
+            }
+        }
+    }
+
+    private func convertToCaptureRect(selectionRectInScreen: CGRect, screen: NSScreen) -> CGRect {
+        guard let displayID = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID else {
+            return selectionRectInScreen
+        }
+
+        let displayBounds = CGDisplayBounds(displayID)
+        let localX = selectionRectInScreen.origin.x - screen.frame.origin.x
+        let localY = selectionRectInScreen.origin.y - screen.frame.origin.y
+        let yFromTop = screen.frame.height - localY - selectionRectInScreen.height
+
+        return CGRect(
+            x: displayBounds.origin.x + localX,
+            y: displayBounds.origin.y + yFromTop,
+            width: selectionRectInScreen.width,
+            height: selectionRectInScreen.height
+        )
+    }
+
+    private nonisolated static func loadImage(from data: Data) -> CGImage? {
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil) else {
+            return nil
+        }
+
+        return CGImageSourceCreateImageAtIndex(
+            source,
+            0,
+            [kCGImageSourceShouldCache: false] as CFDictionary
+        )
     }
 }

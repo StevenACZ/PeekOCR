@@ -9,8 +9,8 @@ import SwiftUI
 
 /// Keyboard shortcuts settings tab
 struct ShortcutsSettingsTab: View {
-    @StateObject private var settings = AppSettings.shared
-    @StateObject private var clipSettings = GifClipSettings.shared
+    @ObservedObject private var settings = AppSettings.shared
+    @ObservedObject private var clipSettings = GifClipSettings.shared
 
     var body: some View {
         Form {
@@ -40,8 +40,8 @@ struct ShortcutsSettingsTab: View {
                 )
 
                 ShortcutRecorderRow(
-                    title: "Captura con Anotacion",
-                    description: "Captura y abre el editor de anotaciones",
+                    title: "Captura con Anotación",
+                    description: "Overlay vivo: selecciona, ajusta y agrega flechas/texto/highlights antes de capturar",
                     icon: "pencil.and.scribble",
                     currentShortcut: settings.annotatedScreenshotHotKeyDisplayString(),
                     onRecord: { modifiers, keyCode in

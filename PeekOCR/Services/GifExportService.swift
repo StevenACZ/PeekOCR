@@ -67,13 +67,18 @@ final class GifExportService {
         )
 
         return try await Task.detached(priority: .userInitiated) {
-            try await Self.renderGif(
-                videoURL: videoURL,
-                timeRange: timeRange,
-                preset: preset,
-                outputURL: outputURL
-            )
-            return outputURL
+            do {
+                try await Self.renderGif(
+                    videoURL: videoURL,
+                    timeRange: timeRange,
+                    preset: preset,
+                    outputURL: outputURL
+                )
+                return outputURL
+            } catch {
+                try? FileManager.default.removeItem(at: outputURL)
+                throw error
+            }
         }.value
     }
 
@@ -163,9 +168,7 @@ final class GifExportService {
     }
 
     private func generateFilename() -> String {
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd_HH-mm-ss"
-        let timestamp = dateFormatter.string(from: Date())
+        let timestamp = AppDateFormatters.filenameTimestamp()
         return "PeekOCR_\(timestamp)"
     }
 }

@@ -14,9 +14,9 @@ enum ImageFormat: String, CaseIterable, Identifiable {
     case tiff = "tiff"
     case heic = "heic"
 
-    var id: String { rawValue }
+    nonisolated var id: String { rawValue }
 
-    var displayName: String {
+    nonisolated var displayName: String {
         switch self {
         case .png: return "PNG"
         case .jpg: return "JPG"
@@ -25,11 +25,11 @@ enum ImageFormat: String, CaseIterable, Identifiable {
         }
     }
 
-    var fileExtension: String {
+    nonisolated var fileExtension: String {
         return rawValue
     }
 
-    var description: String {
+    nonisolated var description: String {
         switch self {
         case .png: return "Sin pérdida, transparencia"
         case .jpg: return "Comprimido, más ligero"

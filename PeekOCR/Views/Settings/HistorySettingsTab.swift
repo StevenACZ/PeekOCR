@@ -9,7 +9,7 @@ import SwiftUI
 
 /// History settings tab
 struct HistorySettingsTab: View {
-    @StateObject private var historyManager = HistoryManager.shared
+    @ObservedObject private var historyManager = HistoryManager.shared
     @State private var showClearConfirmation = false
     
     var body: some View {

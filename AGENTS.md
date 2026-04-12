@@ -4,6 +4,10 @@
 
 PeekOCR is a native macOS Menu Bar application for OCR text capture, QR code detection, screenshots, **GIF clip recording**, and **annotation editing**. Built with Swift 5.9, SwiftUI, and AppKit.
 
+Important:
+- this repository is public
+- never add local absolute paths, private machine details, or personal environment data to committed docs/code
+
 ## Documentation Index
 
 | Document | Description |
@@ -47,6 +51,7 @@ PeekOCR/
 │   ├── Annotations/                  # Annotation data types
 │   │   ├── Annotation.swift          # Single annotation model
 │   │   ├── AnnotationTool.swift      # Tool enum (arrow, text, etc.)
+│   │   ├── LiveAnnotation.swift      # Lightweight pre-capture annotation model
 │   │   └── ResizeHandle.swift        # Resize handle positions
 │   │
 │   ├── State/                        # State managers
@@ -81,6 +86,8 @@ PeekOCR/
 │   │
 │   ├── AnnotationWindowController.swift   # Window lifecycle
 │   ├── CaptureCoordinator.swift           # Capture orchestration
+│   ├── LiveAnnotationOverlayWindowController.swift # Live pre-capture overlay window lifecycle
+│   ├── LiveAnnotationRenderer.swift       # Shared live overlay/export renderer
 │   ├── GifClipWindowController.swift      # GIF editor window lifecycle
 │   ├── GifClipWindowFactory.swift         # GIF editor window creation
 │   ├── GifExportService.swift             # Video -> GIF export
@@ -113,7 +120,9 @@ PeekOCR/
 │   │   │   └── ShortcutKeyBadge.swift        # Shortcut display
 │   │   │
 │   │   ├── ColorPaletteView.swift
-│   │   └── StrokeWidthPicker.swift
+│   │   ├── StrokeWidthPicker.swift
+│   │   └── Overlay/
+│   │       └── LiveAnnotationOverlayView.swift # Full-screen live pre-capture overlay
 │   │
 │   ├── MenuBar/
 │   │   ├── MenuBarPopoverView.swift          # Main popover (~179 lines)
@@ -179,6 +188,16 @@ PeekOCR/
 
 ```
 
+## Performance Focus
+
+PeekOCR is expected to behave well as a long-lived menu bar app. When changing runtime-sensitive code, prefer:
+
+- background OCR/image/export work over main-thread processing
+- ImageIO/CoreGraphics for background-safe image encoding/decoding
+- explicit cleanup for monitors, timers, observers, and temporary files
+- event-driven permission refreshes instead of perpetual polling
+- `@ObservedObject` for shared singletons owned outside the view lifecycle
+
 ## Key Architecture
 
 ### Patterns Used
@@ -216,7 +235,7 @@ PeekOCR/
 |------|--------|--------|
 | OCR | `⇧ Space` | Extract text, copy to clipboard |
 | Screenshot | `⌘⇧4` | Save image to file |
-| Annotated | `⌘⇧5` | Open annotation editor, then save |
+| Annotated | `⌘⇧5` | Live overlay: select, adjust, annotate, then save |
 | GIF Clip | `⌘⇧6` | Select region, record up to 10s, export as GIF |
 
 ## Common Tasks
@@ -276,9 +295,10 @@ PeekOCR/
 
 - [ ] Menu bar icon appears
 - [ ] Hotkeys trigger capture
-- [ ] Annotation editor opens for `⌘⇧5`
+- [ ] Live annotation overlay opens for `⌘⇧5`
+- [ ] Selection can be created, moved, and resized before capture
+- [ ] Overlay tools work for arrow, text, and highlight before capture
 - [ ] GIF clip capture opens for `⌘⇧6` (select → record → editor)
-- [ ] Drawing tools work (arrow, text, freehand, rectangle, oval)
 - [ ] Undo/redo works
 - [ ] Selection and resize works
 - [ ] Save exports image correctly

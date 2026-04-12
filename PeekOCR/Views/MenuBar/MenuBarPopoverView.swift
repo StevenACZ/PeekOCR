@@ -10,8 +10,8 @@ import SwiftUI
 /// Main popover view shown from menu bar
 struct MenuBarPopoverView: View {
     @EnvironmentObject var appState: AppState
-    @StateObject private var historyManager = HistoryManager.shared
-    @StateObject private var settings = AppSettings.shared
+    @ObservedObject private var historyManager = HistoryManager.shared
+    @ObservedObject private var settings = AppSettings.shared
 
     var body: some View {
         VStack(spacing: 0) {

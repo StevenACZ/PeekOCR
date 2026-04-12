@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Carbon
 
 /// A reusable row component for recording keyboard shortcuts
 struct ShortcutRecorderRow: View {
@@ -16,6 +17,8 @@ struct ShortcutRecorderRow: View {
     let onRecord: (UInt32, UInt32) -> Void
 
     @State private var isRecording = false
+    @State private var keyMonitor: Any?
+    @State private var recordingTimeoutWorkItem: DispatchWorkItem?
 
     var body: some View {
         HStack {
@@ -42,6 +45,9 @@ struct ShortcutRecorderRow: View {
             }
         }
         .padding(.vertical, 4)
+        .onDisappear {
+            stopRecording()
+        }
     }
 
     // MARK: - Subviews
@@ -76,28 +82,53 @@ struct ShortcutRecorderRow: View {
     // MARK: - Actions
 
     private func startRecording() {
+        stopRecording()
         isRecording = true
 
-        // Monitor for key events
-        NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-            if isRecording {
-                let modifiers = HotKeyDisplay.carbonModifiers(from: event.modifierFlags)
-                let keyCode = UInt32(event.keyCode)
-
-                // Require at least one modifier
-                if modifiers != 0 {
-                    onRecord(modifiers, keyCode)
-                    isRecording = false
-                }
-
-                return nil // Consume the event
+        keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            guard isRecording else {
+                return event
             }
-            return event
+
+            if event.keyCode == UInt16(kVK_Escape) {
+                DispatchQueue.main.async {
+                    stopRecording()
+                }
+                return nil
+            }
+
+            let modifiers = HotKeyDisplay.carbonModifiers(from: event.modifierFlags)
+            let keyCode = UInt32(event.keyCode)
+
+            // Require at least one modifier
+            guard modifiers != 0 else {
+                return nil // Consume the event while recording
+            }
+
+            DispatchQueue.main.async {
+                stopRecording()
+                onRecord(modifiers, keyCode)
+            }
+
+            return nil // Consume the event
         }
 
-        // Cancel on escape or after timeout
-        DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
-            isRecording = false
+        let timeout = DispatchWorkItem {
+            stopRecording()
         }
+        recordingTimeoutWorkItem = timeout
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5, execute: timeout)
+    }
+
+    private func stopRecording() {
+        isRecording = false
+
+        if let keyMonitor {
+            NSEvent.removeMonitor(keyMonitor)
+            self.keyMonitor = nil
+        }
+
+        recordingTimeoutWorkItem?.cancel()
+        recordingTimeoutWorkItem = nil
     }
 }

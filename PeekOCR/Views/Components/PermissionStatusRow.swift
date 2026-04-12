@@ -7,6 +7,7 @@
 
 import SwiftUI
 import Combine
+import AppKit
 
 /// A reusable row component for displaying permission status
 struct PermissionStatusRow: View {
@@ -42,15 +43,20 @@ struct PermissionStatusRow: View {
             } else {
                 Button("Activar") {
                     openSettings()
+                    refreshPermissionStatus()
                 }
                 .buttonStyle(.link)
             }
         }
         .onAppear {
-            isGranted = checkPermission()
+            refreshPermissionStatus()
         }
-        .onReceive(Timer.publish(every: 2, on: .main, in: .common).autoconnect()) { _ in
-            isGranted = checkPermission()
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            refreshPermissionStatus()
         }
+    }
+
+    private func refreshPermissionStatus() {
+        isGranted = checkPermission()
     }
 }

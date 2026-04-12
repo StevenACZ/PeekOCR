@@ -20,6 +20,9 @@ final class HistoryManager: ObservableObject {
     private let maxItems: Int
     private let storageKey: String
     private let defaults: UserDefaults
+    private let encoder = JSONEncoder()
+    private let decoder = JSONDecoder()
+    private let persistenceQueue = DispatchQueue(label: "PeekOCR.history.persistence", qos: .utility)
 
     // MARK: - Initialization
 
@@ -108,7 +111,7 @@ final class HistoryManager: ObservableObject {
         }
 
         do {
-            let decoded = try JSONDecoder().decode([CaptureItem].self, from: data)
+            let decoded = try decoder.decode([CaptureItem].self, from: data)
             items = decoded
             AppLogger.history.info("Loaded \(decoded.count) items from history")
         } catch let error as DecodingError {
@@ -121,12 +124,19 @@ final class HistoryManager: ObservableObject {
     }
 
     private func saveItems() {
-        do {
-            let encoded = try JSONEncoder().encode(items)
-            defaults.set(encoded, forKey: storageKey)
-            AppLogger.history.debug("Saved \(self.items.count) items to UserDefaults (\(encoded.count) bytes)")
-        } catch {
-            AppLogger.history.error("Failed to save history: \(error.localizedDescription)")
+        let itemsSnapshot = items
+        let defaults = self.defaults
+        let storageKey = self.storageKey
+        let encoder = self.encoder
+
+        persistenceQueue.async {
+            do {
+                let encoded = try encoder.encode(itemsSnapshot)
+                defaults.set(encoded, forKey: storageKey)
+                AppLogger.history.debug("Saved \(itemsSnapshot.count) items to UserDefaults (\(encoded.count) bytes)")
+            } catch {
+                AppLogger.history.error("Failed to save history: \(error.localizedDescription)")
+            }
         }
     }
 
