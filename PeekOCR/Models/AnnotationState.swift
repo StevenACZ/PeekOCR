@@ -11,6 +11,7 @@ import Combine
 
 /// Main state manager for the annotation editor
 final class AnnotationState: ObservableObject {
+    private var cancellables: Set<AnyCancellable> = []
     // MARK: - Managers (Composition)
 
     let undoManager = AnnotationUndoManager()
@@ -64,6 +65,27 @@ final class AnnotationState: ObservableObject {
         let settings = AppSettings.shared
         self.strokeWidth = settings.defaultAnnotationStrokeWidth
         self.fontSize = settings.defaultAnnotationFontSize
+
+        textManager.objectWillChange
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
+
+        dragManager.objectWillChange
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
+
+        undoManager.objectWillChange
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
     }
 
     // MARK: - Drawing Methods

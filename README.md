@@ -27,7 +27,7 @@ PeekOCR is a macOS menu bar app that lets you quickly **select an area of your s
 | 📸 **OCR Capture**       | Select an area and copy the extracted text         |
 | 🔗 **QR Detection**      | Detect and copy QR contents                        |
 | 📷 **Screenshots**       | Save images with configurable format/quality/scale |
-| ✍️ **Annotation Editor** | Capture with annotations, then export              |
+| ✍️ **Live Annotation Capture** | Select, adjust, annotate in-place, then export      |
 | 🎞️ **GIF Clip Capture**  | Record up to 10s, trim, preview, and export as GIF |
 | 🕘 **History**           | Quickly access your last 6 captures                |
 | ⌨️ **Hotkeys**           | Customize global shortcuts in Settings             |
@@ -63,6 +63,16 @@ All shortcuts can be changed in Settings.
 1. Press `⇧ Space`
 2. Drag to select a region
 3. The extracted text is copied to your clipboard
+
+**Annotated screenshot**
+
+1. Press `⌘⇧5`
+2. Drag to create the capture area
+3. Adjust the selection by dragging corners or moving the region
+4. Add arrows, text, or highlights directly on the live overlay
+5. Move existing annotations inline, resize highlight boxes, and edit text with double click
+6. Use `⌘Z` to undo the last live annotation change
+7. Press `Enter` to capture and export the final annotated image
 
 **GIF Clip**
 

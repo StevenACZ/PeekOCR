@@ -11,6 +11,8 @@ Orchestrates the capture workflow.
 
 **Responsibilities:**
 - Start capture with a specified mode (OCR, screenshot, annotated screenshot, GIF clip)
+- Route OCR + plain screenshots through native `screencapture`
+- Route annotated screenshots through the live pre-capture overlay flow
 - Coordinate with native capture/recording services
 - Route results to clipboard / file export
 - Add items to history
@@ -29,9 +31,31 @@ Interfaces with macOS `screencapture` (image).
 **Location:** `Services/NativeScreenCaptureService.swift`
 
 **Responsibilities:**
-- Execute native screenshot capture
+- Execute native interactive screenshot capture
+- Execute direct rect capture for the live annotation overlay finalization step
 - Handle temporary file management
 - Return captured `CGImage`
+
+### LiveAnnotationOverlayWindowController
+Presents the full-screen pre-capture annotation overlay used by `⌘⇧5`.
+
+**Location:** `Services/LiveAnnotationOverlayWindowController.swift`
+
+**Responsibilities:**
+- Present a full-screen live overlay on all displays
+- Return the selected rect plus lightweight overlay annotations
+- Keep transient overlay interactions local to the session (selection, inline text editing, undo stack)
+- Keep the fast plain screenshot flow separate from the annotated flow
+
+### LiveAnnotationRenderer
+Draws lightweight live annotations on-screen and burns them into the final captured image.
+
+**Location:** `Services/LiveAnnotationRenderer.swift`
+
+**Responsibilities:**
+- Render arrows, text, and highlight boxes in the overlay
+- Render the same annotations into the exported `CGImage`
+- Respect live overlay stroke width / font defaults so preview and exported output stay visually aligned with Settings
 
 ### NativeScreenRecordingService
 Low-level wrapper for macOS `screencapture` (video).

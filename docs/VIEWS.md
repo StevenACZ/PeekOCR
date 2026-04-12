@@ -29,7 +29,7 @@ PeekOCRApp
 │   ├── HistorySettingsTab
 │   └── AboutTab
 │
-├── AnnotationEditorView       # Screenshot editor
+├── AnnotationEditorView       # Legacy post-capture screenshot editor
 │   ├── AnnotationToolbar
 │   │   ├── ToolsSection
 │   │   │   └── ToolButton
@@ -44,6 +44,8 @@ PeekOCRApp
 │       │   └── AnnotationRenderer
 │       ├── SelectionHandlesView
 │       └── TextInputOverlay
+│
+├── LiveAnnotationOverlayView  # Full-screen pre-capture annotation overlay
 │
 └── GifClipEditorView (window) # GIF post-record editor
     ├── GifClipVideoPreviewView
@@ -90,6 +92,11 @@ PeekOCRApp
 | `ToolButton` | Tool selection button |
 | `ActionIconButton` | Action button |
 | `ShortcutKeyBadge` | Shortcut display |
+
+**Overlay** (`Overlay/`)
+| View | Description |
+|------|-------------|
+| `LiveAnnotationOverlayView` | Full-screen live pre-capture annotation surface with inline move/edit/resize, contextual cursor handling, and lightweight undo |
 
 ### Settings (`Views/Settings/`)
 

@@ -75,12 +75,14 @@ final class CaptureCoordinator: ObservableObject {
 
         AppLogger.capture.info("Starting capture - mode: \(mode.description)")
 
-        // Use native macOS screencapture for all modes
+        // Use native macOS screencapture for the fast modes and a custom live overlay for annotated capture.
         Task { @MainActor in
             switch mode {
             case .gifClip:
                 await captureGifClipWithNativeRecorder()
-            case .ocr, .screenshot, .annotatedScreenshot:
+            case .annotatedScreenshot:
+                await captureAnnotatedScreenshotWithLiveOverlay()
+            case .ocr, .screenshot:
                 await captureWithNativeScreenshot()
             }
         }
@@ -104,7 +106,7 @@ final class CaptureCoordinator: ObservableObject {
 
     // MARK: - Private Methods
 
-    /// Use native macOS screencapture for all capture modes
+    /// Use native macOS screencapture for OCR/plain screenshots.
     private func captureWithNativeScreenshot() async {
         AppLogger.capture.debug("Invoking native screen capture")
 
@@ -190,7 +192,7 @@ final class CaptureCoordinator: ObservableObject {
     private func processAnnotatedScreenshot(image: CGImage) async {
         AppLogger.capture.debug("Opening annotation editor")
 
-        // Show the annotation editor and wait for result
+        // Legacy post-capture editor path kept for compatibility/testing.
         guard let annotatedImage = await AnnotationWindowController.shared.showEditor(with: image) else {
             // User cancelled the annotation editor
             AppLogger.capture.info("Annotation editor cancelled by user")
@@ -201,6 +203,53 @@ final class CaptureCoordinator: ObservableObject {
 
         // Process the annotated image as a regular screenshot
         await processScreenshot(image: annotatedImage)
+    }
+
+    @MainActor
+    private func captureAnnotatedScreenshotWithLiveOverlay() async {
+        AppLogger.capture.debug("Opening live annotation overlay")
+
+        let overlayController = LiveAnnotationOverlayWindowController()
+        guard let session = await overlayController.runSession() else {
+            AppLogger.capture.info("Live annotation overlay cancelled by user")
+            isCapturing = false
+            return
+        }
+
+        // Give the overlay window a beat to disappear before the pixel capture happens.
+        try? await Task.sleep(nanoseconds: 120_000_000)
+
+        AppLogger.capture.debug("Capturing selected region from live overlay")
+        guard let capturedImage = await nativeScreenCapture.captureRegion(session.selectionRect, on: session.screen) else {
+            AppLogger.capture.error("Failed to capture selected region after live overlay")
+            isCapturing = false
+            return
+        }
+
+        let visibleAnnotations = session.annotations.filter { annotation in
+            switch annotation.tool {
+            case .text:
+                return session.selectionRect.contains(annotation.startPoint)
+            case .arrow, .highlight:
+                return session.selectionRect.intersects(annotation.bounds)
+            case .select:
+                return false
+            }
+        }
+
+        let finalImage = LiveAnnotationRenderer.render(
+            image: capturedImage,
+            selectionRectInScreen: session.selectionRect,
+            scaleFactor: session.screen.backingScaleFactor,
+            annotations: visibleAnnotations
+        ) ?? capturedImage
+
+        AppLogger.capture.info("Live annotation capture completed - processing final image")
+        await processScreenshot(image: finalImage)
+
+        let elapsed = CFAbsoluteTimeGetCurrent() - captureStartTime
+        AppLogger.capture.info("Capture flow complete - mode: \(self.currentMode.description), total time: \(String(format: "%.2f", elapsed))s")
+        isCapturing = false
     }
 
     // MARK: - GIF Clip Processing

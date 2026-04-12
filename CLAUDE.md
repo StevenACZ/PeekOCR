@@ -23,10 +23,11 @@ xcodebuild -project PeekOCR.xcodeproj -scheme PeekOCR -configuration Debug build
 2. Avoid unnecessary main-thread image processing.
 3. Optimize for long-lived resident execution on macOS.
 4. Minimize transient image/video memory spikes.
-5. Preserve current UX while improving structure and internals.
+5. Preserve current UX while improving structure and internals, except when a capture mode intentionally upgrades to a lower-friction overlay flow.
 
 ## Runtime conventions
 
+- This is a public repo: never commit local absolute paths, machine-specific secrets, or private environment details.
 - Heavy OCR, scaling, encoding, and file I/O should stay off the UI-critical path whenever possible.
 - Prefer ImageIO/CoreGraphics over AppKit wrappers for background-safe image encoding/decoding.
 - Treat menu bar and settings views as long-lived surfaces: avoid polling timers and leaked monitors.
@@ -36,6 +37,9 @@ xcodebuild -project PeekOCR.xcodeproj -scheme PeekOCR -configuration Debug build
 ## Files worth checking first
 
 - `PeekOCR/Services/CaptureCoordinator.swift`
+- `PeekOCR/Services/LiveAnnotationOverlayWindowController.swift`
+- `PeekOCR/Services/LiveAnnotationRenderer.swift`
+- `PeekOCR/Views/Annotation/Overlay/LiveAnnotationOverlayView.swift`
 - `PeekOCR/Services/OCRService.swift`
 - `PeekOCR/Services/ScreenshotService.swift`
 - `PeekOCR/Services/GifExportService.swift`
