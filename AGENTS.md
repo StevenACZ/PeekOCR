@@ -179,6 +179,16 @@ PeekOCR/
 
 ```
 
+## Performance Focus
+
+PeekOCR is expected to behave well as a long-lived menu bar app. When changing runtime-sensitive code, prefer:
+
+- background OCR/image/export work over main-thread processing
+- ImageIO/CoreGraphics for background-safe image encoding/decoding
+- explicit cleanup for monitors, timers, observers, and temporary files
+- event-driven permission refreshes instead of perpetual polling
+- `@ObservedObject` for shared singletons owned outside the view lifecycle
+
 ## Key Architecture
 
 ### Patterns Used

@@ -104,9 +104,7 @@ final class VideoFrameCaptureService {
     }
 
     private func generateFilename() -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd_HH-mm-ss-SSS"
-        let timestamp = formatter.string(from: Date())
+        let timestamp = AppDateFormatters.highPrecisionFilenameTimestamp()
         return "PeekOCR_Frame_\(timestamp)"
     }
 

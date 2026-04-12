@@ -97,9 +97,21 @@ PeekOCR needs two permissions to work properly:
 
 ---
 
+## ⚡ Performance and Stability
+
+PeekOCR is designed to live in the macOS menu bar for long periods, so the project now prioritizes:
+
+- OCR and image processing off the UI-critical path
+- lower transient memory usage during screenshot save/export
+- cleanup of temporary/partial export files on failures
+- no leaked keyboard event monitors in settings
+- fewer long-running polling timers in resident UI
+
 ## 📚 Documentation
 
 - `AGENTS.md` (project map + conventions)
+- `CLAUDE.md` (runtime and implementation guardrails)
+- `CHANGELOG.md`
 - `docs/ARCHITECTURE.md`
 - `docs/SERVICES.md`
 - `docs/MODELS.md`

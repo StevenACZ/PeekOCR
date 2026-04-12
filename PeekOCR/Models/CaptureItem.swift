@@ -38,9 +38,7 @@ struct CaptureItem: Identifiable, Codable, Equatable {
     }
     
     var formattedTime: String {
-        let formatter = RelativeDateTimeFormatter()
-        formatter.unitsStyle = .abbreviated
-        return formatter.localizedString(for: timestamp, relativeTo: Date())
+        AppDateFormatters.relativeTimestamp(for: timestamp)
     }
     
     var icon: String {

@@ -33,7 +33,7 @@ final class GifClipEditorState: NSObject, ObservableObject {
     // MARK: - Private Properties
 
     private var asset: AVURLAsset
-    private var playbackTimer: Timer?
+    private var playbackTimeObserver: Any?
 
     // MARK: - Initialization
 
@@ -46,7 +46,9 @@ final class GifClipEditorState: NSObject, ObservableObject {
     }
 
     deinit {
-        playbackTimer?.invalidate()
+        if let playbackTimeObserver {
+            player.removeTimeObserver(playbackTimeObserver)
+        }
     }
 
     // MARK: - Public Methods
@@ -154,35 +156,30 @@ final class GifClipEditorState: NSObject, ObservableObject {
     // MARK: - Private Methods
 
     private func startPlaybackMonitor() {
-        stopPlaybackMonitor()
+        guard playbackTimeObserver == nil else { return }
 
-        playbackTimer = Timer.scheduledTimer(
-            timeInterval: 0.05,
-            target: self,
-            selector: #selector(handlePlaybackTimer),
-            userInfo: nil,
-            repeats: true
-        )
+        let interval = CMTime(seconds: 0.05, preferredTimescale: 600)
+        playbackTimeObserver = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                guard self.isPreviewPlaying else { return }
 
-        RunLoop.main.add(playbackTimer!, forMode: .common)
+                let current = time.seconds
+                if current.isFinite {
+                    self.currentSeconds = current
+                }
+
+                if current >= self.endSeconds {
+                    self.stopPlayback()
+                }
+            }
+        }
     }
 
     private func stopPlaybackMonitor() {
-        playbackTimer?.invalidate()
-        playbackTimer = nil
-    }
-
-    @objc
-    private func handlePlaybackTimer(_ timer: Timer) {
-        guard isPreviewPlaying else { return }
-        let current = player.currentTime().seconds
-        if current.isFinite {
-            currentSeconds = current
-        }
-
-        if current >= endSeconds {
-            stopPlayback()
-        }
+        guard let playbackTimeObserver else { return }
+        player.removeTimeObserver(playbackTimeObserver)
+        self.playbackTimeObserver = nil
     }
 
     private nonisolated static func estimateSourceFrameRate(videoURL: URL) async -> Double? {

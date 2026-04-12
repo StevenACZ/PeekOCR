@@ -12,13 +12,24 @@ import os
 final class NativeScreenRecordingService {
     static let shared = NativeScreenRecordingService()
 
+    private let supportCacheLock = NSLock()
+    private var cachedInteractiveVideoCaptureSupport: Bool?
+
     private init() {}
 
     // MARK: - Public Methods
 
     /// Returns true if the current OS supports `screencapture` video flags.
     func supportsInteractiveVideoCapture() async -> Bool {
-        return await Task.detached(priority: .utility) {
+        supportCacheLock.lock()
+        let cachedSupport = cachedInteractiveVideoCaptureSupport
+        supportCacheLock.unlock()
+
+        if let cachedSupport {
+            return cachedSupport
+        }
+
+        let isSupported = await Task.detached(priority: .utility) {
             let process = Process()
             process.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
             process.arguments = ["-h"]
@@ -39,6 +50,12 @@ final class NativeScreenRecordingService {
             let text = String(data: data, encoding: .utf8) ?? ""
             return text.contains("-v")
         }.value
+
+        supportCacheLock.lock()
+        cachedInteractiveVideoCaptureSupport = isSupported
+        supportCacheLock.unlock()
+
+        return isSupported
     }
 
     /// Record a user-selected screen region to a temporary `.mov` file.

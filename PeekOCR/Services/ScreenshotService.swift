@@ -37,6 +37,20 @@ final class ScreenshotService {
 
     private let settings = ScreenshotSettings.shared
 
+    private struct SettingsSnapshot: Sendable {
+        let imageScale: Double
+        let copyToClipboard: Bool
+        let saveToFile: Bool
+        let saveDirectoryURL: URL
+        let imageFormat: ImageFormat
+        let imageQuality: Double
+    }
+
+    private struct ProcessedScreenshot: @unchecked Sendable {
+        let image: CGImage
+        let savedURL: URL?
+    }
+
     // MARK: - Initialization
 
     private init() {
@@ -52,65 +66,80 @@ final class ScreenshotService {
     func processScreenshot(_ image: CGImage) async -> URL? {
         AppLogger.capture.info("Processing screenshot - dimensions: \(image.width)x\(image.height)")
 
-        // Apply scale if needed
-        let processedImage: CGImage
-        if settings.imageScale < 1.0 {
-            AppLogger.capture.debug("Applying scale factor: \(self.settings.imageScale)")
-            processedImage = ImageScalingService.scaleImage(image, scale: settings.imageScale)
-        } else {
-            processedImage = image
-        }
+        let snapshot = makeSettingsSnapshot()
+        let processed = await Self.processImage(image, using: snapshot)
 
-        // Copy to clipboard if enabled
-        if settings.copyToClipboard {
+        if snapshot.copyToClipboard {
             AppLogger.capture.debug("Copying image to clipboard")
-            copyImageToClipboard(processedImage)
+            copyImageToClipboard(processed.image)
             AppLogger.capture.info("Image copied to clipboard successfully")
         }
 
-        // Save to file if enabled
-        if settings.saveToFile {
-            AppLogger.capture.debug("Save to file enabled, attempting to save")
-            let result = saveImageToFile(processedImage)
-            if let url = result {
-                AppLogger.capture.info("Screenshot processing complete - saved to: \(url.lastPathComponent)")
-            } else {
-                AppLogger.capture.warning("Screenshot processing complete - save to file failed")
-            }
-            return result
+        if let url = processed.savedURL {
+            AppLogger.capture.info("Screenshot processing complete - saved to: \(url.lastPathComponent)")
+        } else if snapshot.saveToFile {
+            AppLogger.capture.warning("Screenshot processing complete - save to file failed")
+        } else {
+            AppLogger.capture.info("Screenshot processing complete - clipboard only")
         }
 
-        AppLogger.capture.info("Screenshot processing complete - clipboard only")
-        return nil
+        return processed.savedURL
     }
 
     /// Copy image to clipboard with maximum quality
     func copyImageToClipboard(_ image: CGImage) {
-        let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
+        autoreleasepool {
+            let pasteboard = NSPasteboard.general
+            pasteboard.clearContents()
 
-        let nsImage = createHighQualityNSImage(from: image)
-        let success = pasteboard.writeObjects([nsImage])
+            let nsImage = createHighQualityNSImage(from: image)
+            let success = pasteboard.writeObjects([nsImage])
 
-        if success {
-            AppLogger.capture.debug("Clipboard write successful")
-        } else {
-            AppLogger.capture.error("Clipboard write failed")
+            if success {
+                AppLogger.capture.debug("Clipboard write successful")
+            } else {
+                AppLogger.capture.error("Clipboard write failed")
+            }
         }
     }
 
     /// Save image to file with configured format and quality
     func saveImageToFile(_ image: CGImage) -> URL? {
-        let directory = settings.saveDirectoryURL
-        let filename = generateFilename()
-        let fileURL = directory.appendingPathComponent(filename)
+        Self.saveImageToFile(image, using: makeSettingsSnapshot())
+    }
 
-        AppLogger.capture.debug("Attempting to save to: \(fileURL.path)")
+    // MARK: - Private Methods
+
+    private func makeSettingsSnapshot() -> SettingsSnapshot {
+        SettingsSnapshot(
+            imageScale: settings.imageScale,
+            copyToClipboard: settings.copyToClipboard,
+            saveToFile: settings.saveToFile,
+            saveDirectoryURL: settings.saveDirectoryURL,
+            imageFormat: settings.imageFormat,
+            imageQuality: settings.imageQuality
+        )
+    }
+
+    nonisolated private static func processImage(_ image: CGImage, using snapshot: SettingsSnapshot) async -> ProcessedScreenshot {
+        await Task.detached(priority: .userInitiated) {
+            let processedImage = snapshot.imageScale < 1.0
+                ? ImageScalingService.scaleImage(image, scale: snapshot.imageScale)
+                : image
+
+            let savedURL = snapshot.saveToFile ? Self.saveImageToFile(processedImage, using: snapshot) : nil
+            return ProcessedScreenshot(image: processedImage, savedURL: savedURL)
+        }.value
+    }
+
+    nonisolated private static func saveImageToFile(_ image: CGImage, using snapshot: SettingsSnapshot) -> URL? {
+        let directory = snapshot.saveDirectoryURL
+        let filename = generateFilename(for: snapshot.imageFormat)
+        let fileURL = directory.appendingPathComponent(filename)
 
         // Ensure directory exists
         do {
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-            AppLogger.capture.debug("Directory verified/created: \(directory.path)")
         } catch {
             AppLogger.capture.error("Failed to create directory: \(directory.path) - \(error.localizedDescription)")
             return nil
@@ -119,18 +148,16 @@ final class ScreenshotService {
         // Encode image using the service
         guard let imageData = ImageEncodingService.encode(
             image,
-            format: settings.imageFormat,
-            quality: settings.imageQuality
+            format: snapshot.imageFormat,
+            quality: snapshot.imageQuality
         ) else {
-            AppLogger.capture.error("Image encoding failed - format: \(self.settings.imageFormat.fileExtension), quality: \(self.settings.imageQuality)")
+            AppLogger.capture.error("Image encoding failed - format: \(snapshot.imageFormat.fileExtension), quality: \(snapshot.imageQuality)")
             return nil
         }
 
-        AppLogger.capture.debug("Image encoded successfully - size: \(imageData.count) bytes, format: \(self.settings.imageFormat.fileExtension)")
-
         // Write to file
         do {
-            try imageData.write(to: fileURL)
+            try imageData.write(to: fileURL, options: .atomic)
             AppLogger.capture.info("Screenshot saved: \(filename) (\(imageData.count) bytes)")
             return fileURL
         } catch {
@@ -139,8 +166,6 @@ final class ScreenshotService {
         }
     }
 
-    // MARK: - Private Methods
-
     private func createHighQualityNSImage(from cgImage: CGImage) -> NSImage {
         let size = NSSize(width: cgImage.width, height: cgImage.height)
         let nsImage = NSImage(size: size)
@@ -148,10 +173,8 @@ final class ScreenshotService {
         return nsImage
     }
 
-    private func generateFilename() -> String {
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd_HH-mm-ss"
-        let timestamp = dateFormatter.string(from: Date())
-        return "PeekOCR_\(timestamp).\(settings.imageFormat.fileExtension)"
+    nonisolated private static func generateFilename(for format: ImageFormat) -> String {
+        let timestamp = AppDateFormatters.filenameTimestamp()
+        return "PeekOCR_\(timestamp).\(format.fileExtension)"
     }
 }

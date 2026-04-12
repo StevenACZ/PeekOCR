@@ -64,13 +64,18 @@ final class VideoExportService {
         let outputURL = generateUniqueOutputURL(in: outputDirectory)
 
         return try await Task.detached(priority: .userInitiated) {
-            try await Self.renderVideo(
-                videoURL: videoURL,
-                timeRange: timeRange,
-                outputURL: outputURL,
-                options: options
-            )
-            return outputURL
+            do {
+                try await Self.renderVideo(
+                    videoURL: videoURL,
+                    timeRange: timeRange,
+                    outputURL: outputURL,
+                    options: options
+                )
+                return outputURL
+            } catch {
+                try? FileManager.default.removeItem(at: outputURL)
+                throw error
+            }
         }.value
     }
 
@@ -302,9 +307,7 @@ final class VideoExportService {
     }
 
     private func generateFilename() -> String {
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd_HH-mm-ss-SSS"
-        let timestamp = dateFormatter.string(from: Date())
+        let timestamp = AppDateFormatters.highPrecisionFilenameTimestamp()
         return "PeekOCR_\(timestamp)"
     }
 
