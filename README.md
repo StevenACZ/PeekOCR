@@ -83,8 +83,6 @@ All shortcuts can be changed in Settings.
 
 ---
 
-## 🔐 Permisos
-
 ## 🔐 Permissions
 
 PeekOCR needs two permissions to work properly:
@@ -97,8 +95,6 @@ PeekOCR needs two permissions to work properly:
 > Tip: PeekOCR will guide you to enable these the first time you use a capture mode.
 
 ---
-
-## 💻 Requisitos
 
 ## 💻 Requirements
 
@@ -127,8 +123,6 @@ PeekOCR is designed to live in the macOS menu bar for long periods, so the proje
 - `docs/MODELS.md`
 - `docs/VIEWS.md`
 - `docs/GIF_CLIP.md`
-
-## 📝 Licencia
 
 ## 📝 License
 
