@@ -21,9 +21,7 @@ final class NativeScreenRecordingService {
 
     /// Returns true if the current OS supports `screencapture` video flags.
     func supportsInteractiveVideoCapture() async -> Bool {
-        supportCacheLock.lock()
-        let cachedSupport = cachedInteractiveVideoCaptureSupport
-        supportCacheLock.unlock()
+        let cachedSupport = supportCacheLock.withLock { cachedInteractiveVideoCaptureSupport }
 
         if let cachedSupport {
             return cachedSupport
@@ -51,9 +49,9 @@ final class NativeScreenRecordingService {
             return text.contains("-v")
         }.value
 
-        supportCacheLock.lock()
-        cachedInteractiveVideoCaptureSupport = isSupported
-        supportCacheLock.unlock()
+        supportCacheLock.withLock {
+            cachedInteractiveVideoCaptureSupport = isSupported
+        }
 
         return isSupported
     }

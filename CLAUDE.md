@@ -4,8 +4,8 @@
 
 PeekOCR is a native macOS menu bar app for OCR text capture, screenshots, annotations, GIF clips, and short video exports.
 
-Repo path:
-- `/Users/steven/Desktop/Proyectos/PeekOCR`
+Repository:
+- public PeekOCR macOS app repo
 
 Main app target:
 - `PeekOCR.xcodeproj`
