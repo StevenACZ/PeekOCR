@@ -7,6 +7,8 @@ and this project loosely follows Semantic Versioning.
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-04-11
+
 ### Improved
 - Replaced the `⌘⇧5` post-capture annotation editor flow with a live overlay that lets you select, resize, move, and annotate before the screenshot is taken.
 - Added lightweight pre-capture annotation tools for arrows, text labels, and highlight boxes directly on the live screen overlay.
