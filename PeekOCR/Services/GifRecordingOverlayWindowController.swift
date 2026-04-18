@@ -2,15 +2,20 @@
 //  GifRecordingOverlayWindowController.swift
 //  PeekOCR
 //
-//  Manages the full-screen overlay used for selecting and recording a GIF region.
+//  Manages one overlay window per active display for selecting and recording a GIF region.
 //
 
 import AppKit
 
-/// Window controller for the full-screen GIF recording overlay.
 @MainActor
 final class GifRecordingOverlayWindowController: NSWindowController {
-    private let overlayView = GifRecordingOverlayView()
+    private struct Overlay {
+        let window: NSWindow
+        let view: GifRecordingOverlayView
+    }
+
+    private var overlays: [CGDirectDisplayID: Overlay] = [:]
+    private var activeDisplayID: CGDirectDisplayID?
     private var selectionContinuation: CheckedContinuation<(CGRect, NSScreen)?, Never>?
     private var hudController: GifRecordingHudWindowController?
 
@@ -24,32 +29,25 @@ final class GifRecordingOverlayWindowController: NSWindowController {
     }
 
     func runSelection() async -> (rect: CGRect, screen: NSScreen)? {
-        let window = createOverlayWindow()
-        self.window = window
+        let screens = DisplayEnumerator.activeScreens()
+        guard !screens.isEmpty else { return nil }
 
-        overlayView.mode = .selecting
-        overlayView.resetInteractionState()
+        overlays = [:]
+        activeDisplayID = nil
 
-        overlayView.onCancel = { [weak self] in
-            self?.finishSelection(nil)
+        for (displayID, screen) in screens {
+            let overlay = makeOverlay(for: screen, displayID: displayID)
+            overlays[displayID] = overlay
+            overlay.window.makeKeyAndOrderFront(nil)
+            overlay.window.makeFirstResponder(overlay.view)
         }
-        overlayView.onSelection = { [weak self] rect, screen in
-            self?.finishSelection((rect, screen))
-        }
 
-        window.contentView = overlayView
-        overlayView.frame = window.contentView?.bounds ?? .zero
-        overlayView.autoresizingMask = [.width, .height]
-
-        window.makeKeyAndOrderFront(nil)
-        window.makeFirstResponder(overlayView)
+        self.window = overlays.values.first?.window
         NSApp.activate(ignoringOtherApps: true)
 
         return await withCheckedContinuation { continuation in
             selectionContinuation = continuation
-        }.map { rect, screen in
-            (rect: rect, screen: screen)
-        }
+        }.map { rect, screen in (rect: rect, screen: screen) }
     }
 
     func beginRecording(
@@ -59,11 +57,11 @@ final class GifRecordingOverlayWindowController: NSWindowController {
         onStop: @escaping () -> Void,
         onCancel: @escaping () -> Void
     ) {
-        guard let window else { return }
-        overlayView.mode = .recording
-        overlayView.selectionRectInScreen = selectionRectInScreen
-        overlayView.onCancel = onCancel
-        window.ignoresMouseEvents = true
+        guard let activeID = activeDisplayID, let activeOverlay = overlays[activeID] else { return }
+        activeOverlay.view.mode = .recording
+        activeOverlay.view.selectionRectInScreen = selectionRectInScreen
+        activeOverlay.view.onCancel = onCancel
+        activeOverlay.window.ignoresMouseEvents = true
 
         let hud = GifRecordingHudWindowController()
         hud.show(
@@ -82,7 +80,11 @@ final class GifRecordingOverlayWindowController: NSWindowController {
     func closeOverlay() {
         hudController?.closeHud()
         hudController = nil
-        window?.orderOut(nil)
+        for overlay in overlays.values {
+            overlay.window.orderOut(nil)
+        }
+        overlays.removeAll()
+        activeDisplayID = nil
         window = nil
     }
 
@@ -92,43 +94,57 @@ final class GifRecordingOverlayWindowController: NSWindowController {
 
     // MARK: - Private
 
-    private func finishSelection(_ selection: (CGRect, NSScreen)?) {
-        selectionContinuation?.resume(returning: selection)
-        selectionContinuation = nil
-
-        if selection == nil {
-            closeOverlay()
-        }
-    }
-
-    private func createOverlayWindow() -> NSWindow {
-        let frame = unionFrameForAllScreens()
+    private func makeOverlay(for screen: NSScreen, displayID: CGDirectDisplayID) -> Overlay {
         let window = KeyableOverlayWindow(
-            contentRect: frame,
+            contentRect: screen.frame,
             styleMask: [.borderless],
             backing: .buffered,
-            defer: false
+            defer: false,
+            screen: screen
         )
 
         window.isOpaque = false
         window.backgroundColor = .clear
         window.hasShadow = false
         window.level = .screenSaver
-        window.collectionBehavior = [
-            .canJoinAllSpaces,
-            .fullScreenAuxiliary,
-            .ignoresCycle,
-            .stationary,
-        ]
+        window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .ignoresCycle, .stationary]
         window.ignoresMouseEvents = false
-        window.makeFirstResponder(overlayView)
 
-        return window
+        let view = GifRecordingOverlayView(screen: screen)
+        view.mode = .selecting
+        view.resetInteractionState()
+        view.onCancel = { [weak self] in
+            self?.finishSelection(nil)
+        }
+        view.onSelection = { [weak self] rect, completedScreen in
+            self?.finishSelection((rect, completedScreen))
+        }
+        view.onActivate = { [weak self] in
+            self?.handleActivation(displayID: displayID)
+        }
+
+        window.contentView = view
+        view.frame = window.contentView?.bounds ?? .zero
+        view.autoresizingMask = [.width, .height]
+        window.makeFirstResponder(view)
+
+        return Overlay(window: window, view: view)
     }
 
-    private func unionFrameForAllScreens() -> CGRect {
-        NSScreen.screens.reduce(into: CGRect.null) { result, screen in
-            result = result.union(screen.frame)
+    private func handleActivation(displayID: CGDirectDisplayID) {
+        guard activeDisplayID == nil else { return }
+        activeDisplayID = displayID
+        for (otherID, overlay) in overlays where otherID != displayID {
+            overlay.window.orderOut(nil)
+        }
+    }
+
+    private func finishSelection(_ selection: (CGRect, NSScreen)?) {
+        selectionContinuation?.resume(returning: selection)
+        selectionContinuation = nil
+
+        if selection == nil {
+            closeOverlay()
         }
     }
 }

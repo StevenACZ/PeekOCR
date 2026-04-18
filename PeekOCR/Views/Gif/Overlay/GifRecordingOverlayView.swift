@@ -29,6 +29,21 @@ final class GifRecordingOverlayView: NSView {
     var onSelection: ((CGRect, NSScreen) -> Void)?
     var onCancel: (() -> Void)?
 
+    let overlayScreen: NSScreen
+    var onActivate: (() -> Void)?
+
+    private var didActivate = false
+
+    init(screen: NSScreen) {
+        self.overlayScreen = screen
+        super.init(frame: .zero)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
     private var dragStartInScreen: CGPoint?
     private var activeScreen: NSScreen?
 
@@ -39,6 +54,7 @@ final class GifRecordingOverlayView: NSView {
         activeScreen = nil
         selectionRectInScreen = nil
         needsDisplay = true
+        didActivate = false
     }
 
     override func viewDidMoveToWindow() {
@@ -68,12 +84,12 @@ final class GifRecordingOverlayView: NSView {
 
         let pointInWindow = event.locationInWindow
         let startInScreen = window.convertToScreen(NSRect(origin: pointInWindow, size: .zero)).origin
-        guard let screen = Self.screen(containing: startInScreen) else { return }
-
+        let screen = overlayScreen
         activeScreen = screen
         dragStartInScreen = clamp(startInScreen, to: screen.frame)
         selectionRectInScreen = nil
         needsDisplay = true
+        notifyActivationIfNeeded()
     }
 
     override func mouseDragged(with event: NSEvent) {
@@ -259,7 +275,9 @@ final class GifRecordingOverlayView: NSView {
         )
     }
 
-    private static func screen(containing point: CGPoint) -> NSScreen? {
-        NSScreen.screens.first { $0.frame.contains(point) }
+    private func notifyActivationIfNeeded() {
+        guard !didActivate else { return }
+        didActivate = true
+        onActivate?()
     }
 }
