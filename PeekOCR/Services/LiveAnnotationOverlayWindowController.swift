@@ -2,7 +2,13 @@ import AppKit
 
 @MainActor
 final class LiveAnnotationOverlayWindowController: NSWindowController {
-    private let overlayView = LiveAnnotationOverlayView()
+    private struct Overlay {
+        let window: NSWindow
+        let view: LiveAnnotationOverlayView
+    }
+
+    private var overlays: [CGDirectDisplayID: Overlay] = [:]
+    private var activeDisplayID: CGDirectDisplayID?
     private var continuation: CheckedContinuation<(selectionRect: CGRect, screen: NSScreen, annotations: [LiveAnnotation])?, Never>?
 
     override init(window: NSWindow?) {
@@ -15,23 +21,20 @@ final class LiveAnnotationOverlayWindowController: NSWindowController {
     }
 
     func runSession() async -> (selectionRect: CGRect, screen: NSScreen, annotations: [LiveAnnotation])? {
-        let window = createOverlayWindow()
-        self.window = window
+        let screens = DisplayEnumerator.activeScreens()
+        guard !screens.isEmpty else { return nil }
 
-        overlayView.resetState()
-        overlayView.onCancel = { [weak self] in
-            self?.finish(with: nil)
+        overlays = [:]
+        activeDisplayID = nil
+
+        for (displayID, screen) in screens {
+            let overlay = makeOverlay(for: screen, displayID: displayID)
+            overlays[displayID] = overlay
+            overlay.window.makeKeyAndOrderFront(nil)
+            overlay.window.makeFirstResponder(overlay.view)
         }
-        overlayView.onComplete = { [weak self] selectionRect, screen, annotations in
-            self?.finish(with: (selectionRect, screen, annotations))
-        }
 
-        window.contentView = overlayView
-        overlayView.frame = window.contentView?.bounds ?? .zero
-        overlayView.autoresizingMask = [.width, .height]
-
-        window.makeKeyAndOrderFront(nil)
-        window.makeFirstResponder(overlayView)
+        self.window = overlays.values.first?.window
         NSApp.activate(ignoringOtherApps: true)
 
         return await withCheckedContinuation { continuation in
@@ -39,23 +42,15 @@ final class LiveAnnotationOverlayWindowController: NSWindowController {
         }
     }
 
-    private func finish(with result: (CGRect, NSScreen, [LiveAnnotation])?) {
-        window?.orderOut(nil)
-        window = nil
-        continuation?.resume(returning: result)
-        continuation = nil
-    }
+    // MARK: - Private
 
-    private func createOverlayWindow() -> NSWindow {
-        let frame = NSScreen.screens.reduce(into: CGRect.null) { partialResult, screen in
-            partialResult = partialResult.union(screen.frame)
-        }
-
+    private func makeOverlay(for screen: NSScreen, displayID: CGDirectDisplayID) -> Overlay {
         let window = LiveAnnotationOverlayWindow(
-            contentRect: frame,
+            contentRect: screen.frame,
             styleMask: [.borderless],
             backing: .buffered,
-            defer: false
+            defer: false,
+            screen: screen
         )
         window.isOpaque = false
         window.backgroundColor = .clear
@@ -63,7 +58,43 @@ final class LiveAnnotationOverlayWindowController: NSWindowController {
         window.level = .screenSaver
         window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .ignoresCycle, .stationary]
         window.ignoresMouseEvents = false
-        return window
+
+        let view = LiveAnnotationOverlayView(screen: screen)
+        view.resetState()
+        view.onCancel = { [weak self] in
+            self?.finish(with: nil)
+        }
+        view.onComplete = { [weak self] selectionRect, completedScreen, annotations in
+            self?.finish(with: (selectionRect, completedScreen, annotations))
+        }
+        view.onActivate = { [weak self] in
+            self?.handleActivation(displayID: displayID)
+        }
+
+        window.contentView = view
+        view.frame = window.contentView?.bounds ?? .zero
+        view.autoresizingMask = [.width, .height]
+
+        return Overlay(window: window, view: view)
+    }
+
+    private func handleActivation(displayID: CGDirectDisplayID) {
+        guard activeDisplayID == nil else { return }
+        activeDisplayID = displayID
+        for (otherID, overlay) in overlays where otherID != displayID {
+            overlay.window.orderOut(nil)
+        }
+    }
+
+    private func finish(with result: (CGRect, NSScreen, [LiveAnnotation])?) {
+        for overlay in overlays.values {
+            overlay.window.orderOut(nil)
+        }
+        overlays.removeAll()
+        activeDisplayID = nil
+        window = nil
+        continuation?.resume(returning: result)
+        continuation = nil
     }
 }
 

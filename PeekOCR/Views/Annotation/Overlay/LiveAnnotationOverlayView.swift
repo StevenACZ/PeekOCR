@@ -60,13 +60,30 @@ final class LiveAnnotationOverlayView: NSView {
     var onCancel: (() -> Void)?
     var onComplete: ((CGRect, NSScreen, [LiveAnnotation]) -> Void)?
 
+    /// The screen this overlay is rendering on. Set at construction.
+    let overlayScreen: NSScreen
+
+    /// Fires the first time the user mousedowns on this overlay, so the window controller can dismiss sibling overlays.
+    var onActivate: (() -> Void)?
+
+    private var didActivate = false
+
+    init(screen: NSScreen) {
+        self.overlayScreen = screen
+        super.init(frame: .zero)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
     private var interaction: Interaction = .none {
         didSet {
             needsDisplay = true
             refreshCursorAppearance()
         }
     }
-    private var activeScreen: NSScreen?
     private var pendingTextPoint: CGPoint?
     private var editingAnnotationID: UUID?
     private var textField: NSTextField?
@@ -88,13 +105,19 @@ final class LiveAnnotationOverlayView: NSView {
         selectedTool = .select
         annotations = []
         annotationHistory = []
-        activeScreen = nil
         interaction = .none
         pendingTextPoint = nil
         editingAnnotationID = nil
         selectedAnnotationID = nil
+        didActivate = false
         removeTextField(commit: false)
         needsDisplay = true
+    }
+
+    private func notifyActivationIfNeeded() {
+        guard !didActivate else { return }
+        didActivate = true
+        onActivate?()
     }
 
     override func viewDidMoveToWindow() {
@@ -169,9 +192,8 @@ final class LiveAnnotationOverlayView: NSView {
                 removeTextField(commit: true)
                 return
             }
-            guard let selectionRectInScreen,
-                  let screen = activeScreen ?? Self.screen(containing: selectionRectInScreen.center) else { return }
-            onComplete?(selectionRectInScreen, screen, annotations)
+            guard let selectionRectInScreen else { return }
+            onComplete?(selectionRectInScreen, overlayScreen, annotations)
         default:
             super.keyDown(with: event)
         }
@@ -201,6 +223,7 @@ final class LiveAnnotationOverlayView: NSView {
            let annotation = annotations.first(where: { $0.id == annotationID }),
            annotation.tool == .highlight,
            let handle = hitTestAnnotationResizeHandle(for: annotation, at: pointInScreen) {
+            notifyActivationIfNeeded()
             recordAnnotationSnapshot()
             interaction = .resizingAnnotation(id: annotationID, handle: handle, initialAnnotation: annotation)
             return
@@ -208,6 +231,7 @@ final class LiveAnnotationOverlayView: NSView {
 
         if let selectionRectInScreen,
            let handle = hitTestHandle(at: pointInScreen, selectionRectInScreen: selectionRectInScreen) {
+            notifyActivationIfNeeded()
             selectedAnnotationID = nil
             if !annotations.isEmpty {
                 recordAnnotationSnapshot()
@@ -219,6 +243,7 @@ final class LiveAnnotationOverlayView: NSView {
         if let selectionRectInScreen, selectionRectInScreen.contains(pointInScreen) {
             if let annotationID = hitTestAnnotation(at: pointInScreen),
                let annotation = annotations.first(where: { $0.id == annotationID }) {
+                notifyActivationIfNeeded()
                 selectedAnnotationID = annotationID
 
                 if annotation.tool == .text && event.clickCount >= 2 {
@@ -241,13 +266,16 @@ final class LiveAnnotationOverlayView: NSView {
 
             switch selectedTool {
             case .select:
+                notifyActivationIfNeeded()
                 if !annotations.isEmpty {
                     recordAnnotationSnapshot()
                 }
                 interaction = .movingSelection(origin: pointInScreen, initialRect: selectionRectInScreen, initialAnnotations: annotations)
             case .text:
+                notifyActivationIfNeeded()
                 beginTextInput(at: pointInScreen)
             case .arrow, .highlight:
+                notifyActivationIfNeeded()
                 let annotation = LiveAnnotation(
                     tool: selectedTool,
                     color: selectedTool == .highlight ? annotationColor : accentColor,
@@ -262,44 +290,34 @@ final class LiveAnnotationOverlayView: NSView {
             return
         }
 
-        if let screen = Self.screen(containing: pointInScreen) {
-            activeScreen = screen
-            selectedAnnotationID = nil
-            selectionRectInScreen = CGRect(origin: clamp(pointInScreen, to: screen.frame), size: .zero)
-            annotations = []
-            annotationHistory = []
-            selectedTool = .select
-            interaction = .creatingSelection(origin: clamp(pointInScreen, to: screen.frame))
-        }
+        let screen = overlayScreen
+        notifyActivationIfNeeded()
+        selectedAnnotationID = nil
+        selectionRectInScreen = CGRect(origin: clamp(pointInScreen, to: screen.frame), size: .zero)
+        annotations = []
+        annotationHistory = []
+        selectedTool = .select
+        interaction = .creatingSelection(origin: clamp(pointInScreen, to: screen.frame))
     }
 
     override func mouseDragged(with event: NSEvent) {
         guard let window else { return }
         let pointInScreen = screenPoint(from: event.locationInWindow, window: window)
 
-        if let screen = Self.screen(containing: pointInScreen) {
-            activeScreen = screen
-        }
-
         switch interaction {
         case .none:
             break
         case .creatingSelection(let origin):
-            guard let screen = activeScreen else { return }
+            let screen = overlayScreen
             selectionRectInScreen = normalizedRect(from: origin, to: clamp(pointInScreen, to: screen.frame))
         case .movingSelection(let origin, let initialRect, let initialAnnotations):
             let delta = CGPoint(x: pointInScreen.x - origin.x, y: pointInScreen.y - origin.y)
             let moved = initialRect.offsetBy(dx: delta.x, dy: delta.y)
-            let clampedRect: CGRect
-            if let screen = Self.screen(containing: moved.center) ?? activeScreen {
-                clampedRect = clamp(rect: moved, to: screen.frame)
-            } else {
-                clampedRect = moved
-            }
+            let clampedRect = clamp(rect: moved, to: overlayScreen.frame)
             selectionRectInScreen = clampedRect
             annotations = translated(initialAnnotations, dx: clampedRect.minX - initialRect.minX, dy: clampedRect.minY - initialRect.minY)
         case .resizingSelection(let handle, let initialRect, let initialAnnotations):
-            guard let screen = Self.screen(containing: pointInScreen) ?? activeScreen else { return }
+            let screen = overlayScreen
             let resizedRect = resize(initialRect: initialRect, handle: handle, point: clamp(pointInScreen, to: screen.frame))
             selectionRectInScreen = resizedRect
             annotations = transformed(initialAnnotations, from: initialRect, to: resizedRect)
@@ -950,9 +968,6 @@ final class LiveAnnotationOverlayView: NSView {
         return convert(rectInWindow, from: nil)
     }
 
-    private static func screen(containing point: CGPoint) -> NSScreen? {
-        NSScreen.screens.first { $0.frame.contains(point) }
-    }
 }
 
 private final class OverlayTextField: NSTextField {
@@ -972,8 +987,3 @@ private final class OverlayTextField: NSTextField {
     }
 }
 
-private extension CGRect {
-    var center: CGPoint {
-        CGPoint(x: midX, y: midY)
-    }
-}
