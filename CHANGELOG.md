@@ -13,6 +13,8 @@ and this project loosely follows Semantic Versioning.
 
 ### Fixed
 - Selection overlays for `⌘⇧5` and `⌘⇧6` were being clipped on secondary displays when macOS had "Displays have separate Spaces" enabled. Fixed by spawning one overlay window per active non-mirrored display, keyed to that display's `NSScreen`.
+- Fixed overlay windows landing off-screen on secondary displays: `NSWindow(contentRect:...:screen:)` doubles the content origin when a non-nil screen is passed. Switched to the 4-parameter init plus an explicit `setFrame(screen.frame, display: false)` so window placement uses global coordinates on every display.
+- Removed a hard-coded local path from a SwiftUI `#Preview` scaffold; preview now uses `FileManager.default.temporaryDirectory`.
 
 ### Internal
 - Added `DisplayEnumerator` utility wrapping `CGGetActiveDisplayList` with mirror-set filtering.
