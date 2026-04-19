@@ -99,9 +99,11 @@ final class GifRecordingOverlayWindowController: NSWindowController {
             contentRect: screen.frame,
             styleMask: [.borderless],
             backing: .buffered,
-            defer: false,
-            screen: screen
+            defer: false
         )
+        // Force global-coordinate frame: passing `screen:` to the initializer
+        // makes AppKit treat contentRect.origin as screen-relative and double it.
+        window.setFrame(screen.frame, display: false)
 
         window.isOpaque = false
         window.backgroundColor = .clear
