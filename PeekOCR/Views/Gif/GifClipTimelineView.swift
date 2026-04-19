@@ -26,9 +26,10 @@ struct GifClipTimelineView: View {
     var onScrub: (Double) -> Void
     var onBeginEditing: () -> Void
 
-    private let trackHeight: CGFloat = 54
-    private let cornerRadius: CGFloat = 12
-    private let handleWidth: CGFloat = 18
+    private let trackHeight: CGFloat = 40
+    private let cornerRadius: CGFloat = 8
+    private let handleWidth: CGFloat = 14
+    private let selectionInset: CGFloat = 2
 
     private struct DragState {
         let initialStartSeconds: Double
@@ -49,6 +50,8 @@ struct GifClipTimelineView: View {
 
             ZStack(alignment: .leading) {
                 trackBackground
+
+                tickMarks(width: width)
 
                 selectionHighlight(startX: startX, endX: endX)
 
@@ -97,32 +100,61 @@ struct GifClipTimelineView: View {
 
     private var trackBackground: some View {
         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-            .fill(Color.black.opacity(0.65))
+            .fill(Color.primary.opacity(0.08))
             .overlay(
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                    .stroke(Color.primary.opacity(0.10), lineWidth: 1)
             )
+    }
+
+    private func tickMarks(width: CGFloat) -> some View {
+        let seconds = max(0, durationSeconds)
+        guard seconds > 0 else { return AnyView(EmptyView()) }
+        let count = max(0, Int(seconds))
+        return AnyView(
+            ZStack(alignment: .leading) {
+                ForEach(1..<count + 1, id: \.self) { i in
+                    Rectangle()
+                        .fill(Color.primary.opacity(0.10))
+                        .frame(width: 1, height: 6)
+                        .offset(x: x(for: Double(i), width: width) - 0.5, y: trackHeight / 2 - 3)
+                }
+            }
+            .allowsHitTesting(false)
+        )
     }
 
     private func selectionHighlight(startX: CGFloat, endX: CGFloat) -> some View {
         let left = min(startX, endX)
         let right = max(startX, endX)
         return RoundedRectangle(cornerRadius: cornerRadius - 2, style: .continuous)
-            .fill(Color.yellow.opacity(0.85))
-            .frame(width: max(0, right - left), height: trackHeight - 10)
-            .padding(.vertical, 5)
+            .fill(Color.accentColor.opacity(0.42))
+            .overlay(
+                RoundedRectangle(cornerRadius: cornerRadius - 2, style: .continuous)
+                    .stroke(Color.accentColor, lineWidth: 1.5)
+            )
+            .frame(width: max(0, right - left), height: trackHeight - selectionInset * 2)
+            .padding(.vertical, selectionInset)
             .offset(x: left)
             .allowsHitTesting(false)
     }
 
     private func playhead(x: CGFloat) -> some View {
-        Rectangle()
-            .fill(Color.white.opacity(0.9))
-            .frame(width: 2, height: trackHeight - 10)
-            .padding(.vertical, 5)
-            .offset(x: x - 1)
-            .shadow(color: .black.opacity(0.2), radius: 2, x: 0, y: 1)
-            .allowsHitTesting(false)
+        ZStack {
+            Capsule(style: .continuous)
+                .fill(Color.white)
+                .frame(width: 3, height: trackHeight - 6)
+                .padding(.vertical, 3)
+                .shadow(color: .black.opacity(0.45), radius: 3, x: 0, y: 1)
+
+            Circle()
+                .fill(Color.white)
+                .frame(width: 8, height: 8)
+                .shadow(color: .black.opacity(0.4), radius: 2, x: 0, y: 1)
+                .offset(y: -(trackHeight / 2))
+        }
+        .offset(x: x - 1.5)
+        .allowsHitTesting(false)
     }
 
     private func handle(isLeading: Bool, x: CGFloat, width: CGFloat) -> some View {
@@ -130,20 +162,20 @@ struct GifClipTimelineView: View {
         let maxOffsetX = max(0, width - handleWidth)
         let clampedOffsetX = min(max(0, offsetX), maxOffsetX)
         return ZStack {
-            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .fill(Color.yellow.opacity(0.95))
+            RoundedRectangle(cornerRadius: 4, style: .continuous)
+                .fill(Color.accentColor)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .stroke(Color.black.opacity(0.15), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 4, style: .continuous)
+                        .stroke(Color.white.opacity(0.35), lineWidth: 0.5)
                 )
+                .shadow(color: .black.opacity(0.25), radius: 2, x: 0, y: 1)
 
-            HStack(spacing: 3) {
-                Rectangle().fill(Color.black.opacity(0.55)).frame(width: 2, height: 18)
-                Rectangle().fill(Color.black.opacity(0.55)).frame(width: 2, height: 18)
-            }
+            Rectangle()
+                .fill(Color.white.opacity(0.75))
+                .frame(width: 2, height: 12)
         }
-        .frame(width: handleWidth, height: trackHeight - 14)
-        .padding(.vertical, 7)
+        .frame(width: handleWidth, height: trackHeight - 2)
+        .padding(.vertical, 1)
         .contentShape(Rectangle())
         .offset(x: clampedOffsetX)
         .zIndex(10)
@@ -200,7 +232,7 @@ struct GifClipTimelineView: View {
     GifClipTimelinePreviewWrapper()
         .padding()
         .frame(width: 720)
-        .background(Color.black.opacity(0.2))
+        .background(Color(NSColor.windowBackgroundColor))
 }
 
 private struct GifClipTimelinePreviewWrapper: View {

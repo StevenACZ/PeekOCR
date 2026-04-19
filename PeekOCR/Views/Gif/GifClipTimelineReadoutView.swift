@@ -13,30 +13,51 @@ struct GifClipTimelineReadoutView: View {
     let endSeconds: Double
 
     var body: some View {
-        HStack {
-            timeChip(label: "In:", value: startSeconds)
+        HStack(spacing: 16) {
+            timeChip(label: "In", value: startSeconds)
             Spacer()
-            Text("Duración seleccionada: \(format(startSeconds: startSeconds, endSeconds: endSeconds))")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            durationBadge
             Spacer()
-            timeChip(label: "Out:", value: endSeconds)
+            timeChip(label: "Out", value: endSeconds)
         }
     }
 
     private func timeChip(label: String, value: Double) -> some View {
         HStack(spacing: 6) {
             Text(label)
-                .font(.caption)
+                .font(.system(size: 10, weight: .semibold))
                 .foregroundStyle(.secondary)
+                .tracking(0.5)
             Text(formatSeconds(value))
-                .font(.caption.weight(.semibold))
+                .font(.system(size: 12, weight: .semibold, design: .monospaced))
                 .monospacedDigit()
+                .foregroundStyle(.primary)
         }
         .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-        .background(Color.black.opacity(0.10))
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .padding(.vertical, 5)
+        .background(
+            RoundedRectangle(cornerRadius: 7, style: .continuous)
+                .fill(Color.primary.opacity(0.06))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 7, style: .continuous)
+                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+        )
+    }
+
+    private var durationBadge: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "scissors")
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(.secondary)
+            Text("Selección")
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+            Text(format(startSeconds: startSeconds, endSeconds: endSeconds))
+                .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                .monospacedDigit()
+                .foregroundStyle(.primary)
+        }
     }
 
     private func format(startSeconds: Double, endSeconds: Double) -> String {
@@ -58,4 +79,3 @@ struct GifClipTimelineReadoutView: View {
         .padding()
         .frame(width: 720)
 }
-

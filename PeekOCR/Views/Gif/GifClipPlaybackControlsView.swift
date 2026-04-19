@@ -20,44 +20,41 @@ struct GifClipPlaybackControlsView: View {
     var onCaptureFrame: () -> Void
 
     var body: some View {
-        HStack(spacing: 10) {
-            Button(action: onTogglePlay) {
-                Image(systemName: isPlaying ? "pause.fill" : "play.fill")
-                    .font(.system(size: 14, weight: .semibold))
-                    .frame(width: 28, height: 28)
-            }
-            .buttonStyle(.plain)
+        HStack(spacing: 12) {
+            playButton
 
             Text("\(format(currentSeconds)) / \(format(durationSeconds))")
                 .font(.system(size: 12, weight: .semibold, design: .monospaced))
                 .foregroundStyle(.primary)
+                .fixedSize()
 
-            Spacer(minLength: 12)
+            Spacer(minLength: 8)
 
-            Button(action: onStepBackward) {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 13, weight: .semibold))
-                    .frame(width: 24, height: 24)
+            HStack(spacing: 4) {
+                stepButton(
+                    symbol: "backward.frame.fill",
+                    action: onStepBackward,
+                    help: "Frame anterior  (←)"
+                )
+                stepButton(
+                    symbol: "forward.frame.fill",
+                    action: onStepForward,
+                    help: "Frame siguiente  (→)"
+                )
             }
-            .buttonStyle(.plain)
-            .help("Frame anterior (←)")
 
-            Button(action: onStepForward) {
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 13, weight: .semibold))
-                    .frame(width: 24, height: 24)
-            }
-            .buttonStyle(.plain)
-            .help("Frame siguiente (→)")
+            Divider()
+                .frame(height: 18)
+                .opacity(0.4)
 
             Button(action: onCaptureFrame) {
-                Image(systemName: "camera")
-                    .font(.system(size: 13, weight: .semibold))
-                    .frame(width: 24, height: 24)
+                Image(systemName: "camera.fill")
+                    .font(.system(size: 12, weight: .semibold))
+                    .frame(width: 28, height: 26)
             }
             .buttonStyle(.plain)
             .disabled(isCaptureDisabled)
-            .help("Capturar frame actual")
+            .help("Guardar frame actual como imagen")
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
@@ -65,9 +62,32 @@ struct GifClipPlaybackControlsView: View {
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                .stroke(Color.white.opacity(0.10), lineWidth: 1)
         )
-        .shadow(color: .black.opacity(0.18), radius: 8, x: 0, y: 4)
+        .shadow(color: .black.opacity(0.22), radius: 10, x: 0, y: 4)
+    }
+
+    private var playButton: some View {
+        Button(action: onTogglePlay) {
+            Image(systemName: isPlaying ? "pause.fill" : "play.fill")
+                .font(.system(size: 13, weight: .bold))
+                .frame(width: 30, height: 30)
+                .background(
+                    Circle().fill(Color.white.opacity(0.12))
+                )
+        }
+        .buttonStyle(.plain)
+        .help(isPlaying ? "Pausar  (Espacio)" : "Reproducir  (Espacio)")
+    }
+
+    private func stepButton(symbol: String, action: @escaping () -> Void, help: String) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.system(size: 13, weight: .semibold))
+                .frame(width: 28, height: 26)
+        }
+        .buttonStyle(.plain)
+        .help(help)
     }
 
     private func format(_ seconds: Double) -> String {
@@ -81,7 +101,7 @@ struct GifClipPlaybackControlsView: View {
 
 #Preview {
     ZStack {
-        Color.gray.opacity(0.3)
+        Color.black
         GifClipPlaybackControlsView(
             isPlaying: false,
             currentSeconds: 3.5,
@@ -94,5 +114,5 @@ struct GifClipPlaybackControlsView: View {
         )
         .padding()
     }
-    .frame(width: 420, height: 160)
+    .frame(width: 460, height: 160)
 }

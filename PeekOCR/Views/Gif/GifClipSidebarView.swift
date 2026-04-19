@@ -20,203 +20,253 @@ struct GifClipSidebarView: View {
     let exportDisabledMessage: String?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            header
-            formatSection
-            exportOptionsSection
-            if exportFormat == .gif {
-                loopSection
+        ScrollView(.vertical, showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 20) {
+                header
+                qualityCard
+                if exportFormat == .gif {
+                    loopCard
+                }
+                outputCard
+                estimationCard
             }
-            outputSection
-            estimationSection
-            Spacer()
+            .padding(.horizontal, 20)
+            .padding(.top, 20)
+            .padding(.bottom, 24)
         }
-        .padding(16)
         .frame(width: 320)
-        .background(Color.black.opacity(0.14))
+        .background(Color(NSColor.underPageBackgroundColor).opacity(0.6))
     }
 
     private var header: some View {
-        HStack {
+        HStack(spacing: 12) {
             Text("Exportación")
-                .font(.headline)
+                .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(.primary)
-            Spacer()
-        }
-        .contentShape(Rectangle())
-    }
 
-    private var formatSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            rowLabel("Formato")
+            Spacer(minLength: 8)
+
             Picker("", selection: $exportFormat) {
                 ForEach(ClipExportFormat.allCases) { format in
                     Text(format.displayName).tag(format)
                 }
             }
             .pickerStyle(.segmented)
+            .labelsHidden()
+            .fixedSize()
+            .controlSize(.small)
         }
-        .padding(12)
-        .background(.thinMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     @ViewBuilder
-    private var exportOptionsSection: some View {
+    private var qualityCard: some View {
         switch exportFormat {
         case .gif:
-            gifOptionsSection
+            gifQualityCard
         case .video:
-            videoOptionsSection
+            videoQualityCard
         }
     }
 
-    private var gifOptionsSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            rowLabel("Perfil")
-            Picker("", selection: Binding(
-                get: { gifOptions.profile },
-                set: { newValue in gifOptions.applyProfilePreset(newValue) }
-            )) {
-                ForEach(GifExportProfile.allCases) { profile in
-                    Text(profile.displayName).tag(profile)
+    private var gifQualityCard: some View {
+        cardSection(title: "Calidad") {
+            VStack(alignment: .leading, spacing: 14) {
+                fieldLabel("Perfil")
+                Picker("", selection: Binding(
+                    get: { gifOptions.profile },
+                    set: { newValue in gifOptions.applyProfilePreset(newValue) }
+                )) {
+                    ForEach(GifExportProfile.allCases) { profile in
+                        Text(profile.displayName).tag(profile)
+                    }
                 }
-            }
-            .pickerStyle(.segmented)
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .frame(maxWidth: .infinity)
 
-            rowLabel("FPS")
-            Picker("", selection: $gifOptions.fps) {
-                ForEach([1, 15, 20], id: \.self) { fps in
-                    Text("\(fps)").tag(fps)
+                fieldLabel("FPS")
+                Picker("", selection: $gifOptions.fps) {
+                    ForEach([1, 15, 20], id: \.self) { fps in
+                        Text("\(fps)").tag(fps)
+                    }
                 }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .frame(maxWidth: .infinity)
             }
-            .pickerStyle(.segmented)
         }
-        .padding(12)
-        .background(.thinMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
-    private var videoOptionsSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            rowLabel("Resolución")
-            Picker("", selection: $videoOptions.resolution) {
-                ForEach(VideoExportResolution.allCases) { resolution in
-                    Text(resolution.displayName).tag(resolution)
+    private var videoQualityCard: some View {
+        cardSection(title: "Calidad") {
+            VStack(alignment: .leading, spacing: 14) {
+                fieldLabel("Resolución")
+                Picker("", selection: $videoOptions.resolution) {
+                    ForEach(VideoExportResolution.allCases) { resolution in
+                        Text(resolution.displayName).tag(resolution)
+                    }
                 }
-            }
-            .pickerStyle(.segmented)
-            .help(videoOptions.resolution.helpText)
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .frame(maxWidth: .infinity)
+                .help(videoOptions.resolution.helpText)
 
-            rowLabel("FPS")
-            Text("30")
-                .font(.body.weight(.semibold))
-                .monospacedDigit()
+                fieldLabel("Codec")
+                Picker("", selection: $videoOptions.codec) {
+                    ForEach(VideoExportCodec.allCases) { codec in
+                        Text(codec.displayName).tag(codec)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .frame(maxWidth: .infinity)
+
+                HStack(spacing: 8) {
+                    Text("FPS")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Text("30 máximo")
+                        .font(.system(size: 12, weight: .semibold))
+                        .monospacedDigit()
+                        .foregroundStyle(.primary)
+                }
+                .padding(.top, 2)
                 .help("Se exporta a 30 FPS (o menos si la fuente es menor).")
 
-            if sourceNominalFps > 1, sourceNominalFps < 29 {
-                InlineNoticeView(
-                    style: .info,
-                    text: "Este clip se grabó a ~\(Int(sourceNominalFps.rounded())) FPS. Se exportará a ~\(Int(min(30.0, sourceNominalFps).rounded())) FPS."
+                if sourceNominalFps > 1, sourceNominalFps < 29 {
+                    InlineNoticeView(
+                        style: .info,
+                        text: "Este clip se grabó a ~\(Int(sourceNominalFps.rounded())) FPS. Se exportará a ~\(Int(min(30.0, sourceNominalFps).rounded())) FPS."
+                    )
+                }
+            }
+        }
+    }
+
+    private var loopCard: some View {
+        cardSection(title: "Opciones GIF") {
+            Toggle("Loop infinito", isOn: $gifOptions.isLoopEnabled)
+                .toggleStyle(.switch)
+                .help("Repite el GIF indefinidamente. Desactívalo para reproducir una sola vez.")
+        }
+    }
+
+    private var outputCard: some View {
+        cardSection(title: "Salida") {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 6) {
+                    Image(systemName: "folder.fill")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                    Text(friendlyDirectoryName())
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                    Spacer()
+                }
+
+                HStack(spacing: 12) {
+                    Button {
+                        NSWorkspace.shared.open(outputDirectory)
+                    } label: {
+                        Label("Abrir", systemImage: "folder.fill")
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+
+                    Button("Cambiar en Ajustes…") {
+                        NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+                    }
+                    .buttonStyle(.link)
+                    .controlSize(.small)
+
+                    Spacer()
+                }
+            }
+        }
+    }
+
+    private var estimationCard: some View {
+        cardSection(title: "Estimación") {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(estimateSummary())
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                if let message = exportDisabledMessage {
+                    InlineNoticeView(style: .warning, text: message)
+                }
+
+                estimationRow(label: "Duración", value: formatSeconds(selectionDurationSeconds))
+                if exportFormat == .gif {
+                    estimationRow(label: "Frames", value: "~\(estimatedGifFrames())")
+                    estimationRow(label: "Tamaño", value: "~\(formatBytes(estimatedGifSizeBytes()))")
+                } else {
+                    estimationRow(label: "Tamaño", value: "~\(formatBytes(estimatedVideoSizeBytes()))")
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func cardSection<Content: View>(
+        title: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            sectionTitle(title)
+            content()
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(14)
+                .background(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(Color.primary.opacity(0.05))
                 )
-            }
-
-            rowLabel("Codec")
-            Picker("", selection: $videoOptions.codec) {
-                ForEach(VideoExportCodec.allCases) { codec in
-                    Text(codec.displayName).tag(codec)
-                }
-            }
-            .pickerStyle(.segmented)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+                )
         }
-        .padding(12)
-        .background(.thinMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
-    private var loopSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            if exportFormat == .gif {
-                Text("Opciones")
-                    .font(.headline)
-
-                Toggle("Loop (infinito)", isOn: $gifOptions.isLoopEnabled)
-                    .help("Repite el GIF indefinidamente. Desactívalo para reproducir una sola vez.")
-            }
-        }
-        .padding(12)
-        .background(.thinMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-    }
-
-    private var outputSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Salida")
-                .font(.headline)
-
-            Text("Se guardará en: \(friendlyDirectoryName())")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
-            HStack(spacing: 10) {
-                Button("Cambiar en Ajustes…") {
-                    NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
-                }
-                .buttonStyle(.link)
-
-                Spacer()
-
-                Button("Abrir carpeta") {
-                    NSWorkspace.shared.open(outputDirectory)
-                }
-                .buttonStyle(.bordered)
-            }
-        }
-        .padding(12)
-        .background(.thinMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-    }
-
-    private var estimationSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Estimación")
-                .font(.headline)
-
-            Text(estimateSummary())
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-
-            if let message = exportDisabledMessage {
-                InlineNoticeView(style: .warning, text: message)
-            }
-
-            estimationRow(label: "Duración:", value: formatSeconds(selectionDurationSeconds))
-            if exportFormat == .gif {
-                estimationRow(label: "Frames:", value: "~\(estimatedGifFrames())")
-                estimationRow(label: "Tamaño:", value: "~\(formatBytes(estimatedGifSizeBytes()))")
-            } else {
-                estimationRow(label: "Tamaño:", value: "~\(formatBytes(estimatedVideoSizeBytes()))")
-            }
-        }
-        .padding(12)
-        .background(.thinMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-    }
-
-    private func rowLabel(_ text: String) -> some View {
+    private func fieldLabel(_ text: String) -> some View {
         Text(text)
-            .font(.subheadline.weight(.semibold))
+            .font(.system(size: 11, weight: .medium))
             .foregroundStyle(.secondary)
+    }
+
+    @ViewBuilder
+    private func sectionContainer<Content: View>(
+        title: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            sectionTitle(title)
+            content()
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private func sectionTitle(_ text: String) -> some View {
+        Text(text.uppercased())
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundStyle(.secondary)
+            .tracking(0.5)
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func estimationRow(label: String, value: String) -> some View {
         HStack {
             Text(label)
-                .font(.caption)
+                .font(.system(size: 11))
                 .foregroundStyle(.secondary)
             Spacer()
             Text(value)
-                .font(.caption.weight(.semibold))
+                .font(.system(size: 12, weight: .semibold))
                 .monospacedDigit()
         }
     }
@@ -225,6 +275,9 @@ struct GifClipSidebarView: View {
         let path = outputDirectory.path
         if path.contains("/Downloads") || path.contains("/Descargas") {
             return "Descargas"
+        }
+        if path.contains("/Desktop") || path.contains("/Escritorio") {
+            return "Escritorio"
         }
         return outputDirectory.lastPathComponent
     }
@@ -236,7 +289,6 @@ struct GifClipSidebarView: View {
     }
 
     private func estimatedGifSizeBytes() -> Int64 {
-        // Heuristic: roughly 0.05 bytes per pixel per frame for UI estimate.
         let frames = Double(estimatedGifFrames())
         let pixelsPerFrame = Double(gifOptions.maxPixelSize * gifOptions.maxPixelSize)
         let bytes = frames * pixelsPerFrame * 0.05

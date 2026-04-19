@@ -2,7 +2,7 @@
 //  GifClipVideoPreviewView.swift
 //  PeekOCR
 //
-//  Video preview container with a colorful background and playback controls overlay.
+//  Video preview container with playback controls overlay.
 //
 
 import AVKit
@@ -24,15 +24,19 @@ struct GifClipVideoPreviewView: View {
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(backgroundGradient)
+                .fill(Color.black)
                 .overlay(
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                        .fill(vignette)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(Color.white.opacity(0.06), lineWidth: 1)
                 )
 
             NonInteractiveVideoPlayer(player: player)
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                .padding(16)
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .padding(14)
 
             VStack {
                 Spacer()
@@ -46,22 +50,23 @@ struct GifClipVideoPreviewView: View {
                     onStepForward: onStepForward,
                     onCaptureFrame: onCaptureFrame
                 )
-                .frame(maxWidth: 420)
-                .padding(.bottom, 16)
+                .frame(maxWidth: 460)
+                .padding(.bottom, 14)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    private var backgroundGradient: LinearGradient {
-        LinearGradient(
+    private var vignette: RadialGradient {
+        RadialGradient(
             colors: [
-                Color(red: 0.95, green: 0.45, blue: 0.30),
-                Color(red: 0.25, green: 0.55, blue: 0.95),
-                Color(red: 0.60, green: 0.25, blue: 0.85),
+                Color.white.opacity(0.04),
+                Color.black.opacity(0.0),
+                Color.black.opacity(0.25)
             ],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
+            center: .center,
+            startRadius: 0,
+            endRadius: 900
         )
     }
 }
