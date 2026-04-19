@@ -7,6 +7,8 @@ and this project loosely follows Semantic Versioning.
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-04-18
+
 ### Added
 - `⌘⇧5` (annotated screenshot) and `⌘⇧6` (GIF recording) overlays now span every connected display, so you can start a selection on any monitor — not just the main one.
 - Capture feedback sound with on/off toggle and volume slider under Settings → General → Sonido. The sound plays after successful screenshot save, GIF export, and video export.
