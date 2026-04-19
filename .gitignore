@@ -80,6 +80,9 @@ secrets/
 # Claude Plans (temporary)
 .claude/plans/
 
+# Superpowers specs (internal planning docs)
+docs/superpowers/
+
 # Logs
 *.log
 logs/

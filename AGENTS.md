@@ -68,6 +68,7 @@ PeekOCR/
 │   ├── AppSettings.swift             # User preferences
 │   ├── AnnotationSettings.swift      # Annotation defaults
 │   ├── ScreenshotSettings.swift      # Screenshot options
+│   ├── SoundSettings.swift           # Capture-sound preferences (enable + volume)
 │   ├── CaptureItem.swift             # History item
 │   ├── GifExportOptions.swift         # GIF export presets/options
 │   └── SaveLocation.swift            # Save location enum
@@ -86,14 +87,16 @@ PeekOCR/
 │   │
 │   ├── AnnotationWindowController.swift   # Window lifecycle
 │   ├── CaptureCoordinator.swift           # Capture orchestration
-│   ├── LiveAnnotationOverlayWindowController.swift # Live pre-capture overlay window lifecycle
+│   ├── CaptureSoundService.swift          # Shutter sound playback (async AVAudioPlayer)
+│   ├── DisplayEnumerator.swift            # Active non-mirror displays → NSScreen pairs
+│   ├── LiveAnnotationOverlayWindowController.swift # Per-display live pre-capture overlays
 │   ├── LiveAnnotationRenderer.swift       # Shared live overlay/export renderer
 │   ├── GifClipWindowController.swift      # GIF editor window lifecycle
 │   ├── GifClipWindowFactory.swift         # GIF editor window creation
 │   ├── GifExportService.swift             # Video -> GIF export
 │   ├── GifRecordingController.swift       # Selection + recording orchestration
 │   ├── GifRecordingHudWindowController.swift     # Countdown + stop HUD
-│   ├── GifRecordingOverlayWindowController.swift # Full-screen selection overlay
+│   ├── GifRecordingOverlayWindowController.swift # Per-display selection overlay
 │   ├── ScreenshotService.swift            # Screenshot processing
 │   ├── NativeScreenCaptureService.swift   # Native capture
 │   ├── NativeScreenRecordingService.swift # Native video capture support checks
@@ -174,6 +177,10 @@ PeekOCR/
 │
 ├── Managers/
 │   └── HistoryManager.swift                  # Capture history (singleton)
+│
+├── Resources/
+│   ├── capture-shutter.m4a                   # Bundled shutter sound
+│   └── ATTRIBUTIONS.md                       # Third-party asset licenses
 │
 ├── Utils/
 │   └── AppLogger.swift                       # Centralized logging (OSLog)
@@ -299,6 +306,9 @@ PeekOCR is expected to behave well as a long-lived menu bar app. When changing r
 - [ ] Selection can be created, moved, and resized before capture
 - [ ] Overlay tools work for arrow, text, and highlight before capture
 - [ ] GIF clip capture opens for `⌘⇧6` (select → record → editor)
+- [ ] Overlays for `⌘⇧5` and `⌘⇧6` appear on every connected display and selection works on secondary monitors
+- [ ] Capture sound plays on screenshot save, GIF export, and video export (and not on OCR)
+- [ ] Sound toggle and volume slider in Settings → General → Sonido take effect and persist
 - [ ] Undo/redo works
 - [ ] Selection and resize works
 - [ ] Save exports image correctly

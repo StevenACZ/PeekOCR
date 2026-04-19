@@ -24,7 +24,7 @@ struct GifClipEditorView: View {
     @State var errorAlertTitle = "Error"
     @State var errorAlertMessage: String?
     @State var isSavingFrame = false
-    @State var frameCaptureMessage: String?
+    @State var frameCaptureFeedback: GifClipActionFeedback?
     @State var keyboardHandler = GifClipKeyboardHandler()
 
     init(
@@ -101,7 +101,7 @@ struct GifClipEditorView: View {
     }
 
     private var leftPane: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: 16) {
             GifClipVideoPreviewView(
                 player: state.player,
                 isPlaying: state.isPreviewPlaying,
@@ -117,7 +117,7 @@ struct GifClipEditorView: View {
             )
             timelineSection
         }
-        .padding(18)
+        .padding(20)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
 
@@ -158,7 +158,7 @@ struct GifClipEditorView: View {
     }
 
     private var bottomBar: some View {
-        HStack(spacing: 12) {
+        HStack(alignment: .center, spacing: 12) {
             Button("Cancelar", role: .cancel) {
                 let finalVideoURL = state.videoURL
                 state.stopPlayback()
@@ -166,21 +166,26 @@ struct GifClipEditorView: View {
                 onCancel()
             }
             .keyboardShortcut(.cancelAction)
+            .controlSize(.large)
 
             Spacer()
 
-            Button("Regrabar") {
-                Task { await reRecord() }
+            if let feedback = frameCaptureFeedback {
+                GifClipActionFeedbackView(feedback: feedback)
+                    .frame(maxWidth: 320)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
             }
-            .buttonStyle(.bordered)
 
-            VStack(alignment: .trailing, spacing: 4) {
-                if let message = frameCaptureMessage {
-                    Text(message)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
+            HStack(spacing: 10) {
+                Button {
+                    Task { await reRecord() }
+                } label: {
+                    Label("Regrabar", systemImage: "arrow.clockwise")
+                        .labelStyle(.titleAndIcon)
                 }
+                .buttonStyle(.bordered)
+                .controlSize(.large)
+                .disabled(isBlockingUI || isSavingFrame)
 
                 Button {
                     Task { await exportSelectedFormat() }
@@ -189,9 +194,13 @@ struct GifClipEditorView: View {
                         .frame(minWidth: 130)
                 }
                 .buttonStyle(.borderedProminent)
+                .controlSize(.large)
                 .disabled(isBlockingUI || isSavingFrame || !canExport)
+                .keyboardShortcut(.defaultAction)
             }
         }
-        .padding(16)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 14)
+        .animation(.spring(response: 0.28, dampingFraction: 0.86), value: frameCaptureFeedback)
     }
 }

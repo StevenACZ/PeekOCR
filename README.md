@@ -29,6 +29,7 @@ PeekOCR is a macOS menu bar app that lets you quickly **select an area of your s
 | 📷 **Screenshots**       | Save images with configurable format/quality/scale |
 | ✍️ **Live Annotation Capture** | Select, adjust, annotate in-place, then export      |
 | 🎞️ **GIF Clip Capture**  | Record up to 10s, trim, preview, and export as GIF |
+| 🔊 **Capture sound**     | Optional shutter feedback on save (toggle + volume in Settings) |
 | 🕘 **History**           | Quickly access your last 6 captures                |
 | ⌨️ **Hotkeys**           | Customize global shortcuts in Settings             |
 

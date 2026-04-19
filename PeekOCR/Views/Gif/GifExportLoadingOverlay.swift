@@ -9,8 +9,8 @@ import SwiftUI
 
 /// Overlay state shown during clip export.
 enum ClipExportOverlayState: Equatable {
-    case exporting(format: ClipExportFormat)
-    case success(format: ClipExportFormat)
+    case exporting(format: ClipExportFormat, destinationName: String)
+    case success(format: ClipExportFormat, destinationName: String)
 }
 
 /// Full-screen overlay displayed during clip export.
@@ -19,30 +19,34 @@ struct ClipExportOverlay: View {
 
     var body: some View {
         ZStack {
-            Color.black.opacity(0.25)
+            Color.black.opacity(0.28)
                 .ignoresSafeArea()
 
-            VStack(spacing: 10) {
-                switch state {
-                case .exporting(let format):
-                    ProgressView()
-                        .controlSize(.large)
-                    Text(exportTitle(format: format))
-                        .font(.headline)
-                    Text("Esto puede tardar unos segundos")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                case .success(let format):
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 36, weight: .semibold))
-                        .foregroundStyle(.green)
-                    Text(successTitle(format: format))
-                        .font(.headline)
-                }
-            }
-            .padding(20)
-            .background(.ultraThickMaterial)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+            GifClipActionFeedbackView(
+                feedback: feedback,
+                layout: .prominent
+            )
+            .frame(maxWidth: 340)
+            .padding(24)
+        }
+    }
+
+    private var feedback: GifClipActionFeedback {
+        switch state {
+        case .exporting(let format, let destinationName):
+            return GifClipActionFeedback(
+                tone: .progress,
+                title: exportTitle(format: format),
+                message: "Guardando en \(destinationName). Esto puede tardar unos segundos.",
+                badgeText: exportBadge(format: format)
+            )
+        case .success(let format, let destinationName):
+            return GifClipActionFeedback(
+                tone: .success,
+                title: successTitle(format: format),
+                message: "Archivo listo en \(destinationName).",
+                badgeText: exportBadge(format: format)
+            )
         }
     }
 
@@ -51,7 +55,7 @@ struct ClipExportOverlay: View {
         case .gif:
             return "Exportando GIF…"
         case .video:
-            return "Exportando Video…"
+            return "Exportando MP4…"
         }
     }
 
@@ -60,12 +64,21 @@ struct ClipExportOverlay: View {
         case .gif:
             return "GIF listo"
         case .video:
-            return "Video listo"
+            return "MP4 listo"
+        }
+    }
+
+    private func exportBadge(format: ClipExportFormat) -> String {
+        switch format {
+        case .gif:
+            return "GIF"
+        case .video:
+            return "MP4"
         }
     }
 }
 
 #Preview {
-    ClipExportOverlay(state: .exporting(format: .gif))
+    ClipExportOverlay(state: .exporting(format: .gif, destinationName: "Descargas"))
         .frame(width: 720, height: 520)
 }

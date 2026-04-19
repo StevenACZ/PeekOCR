@@ -22,7 +22,7 @@ private struct GifClipSidebarPreviewWrapper: View {
             exportFormat: $exportFormat,
             gifOptions: $gifOptions,
             videoOptions: $videoOptions,
-            outputDirectory: URL(fileURLWithPath: "/Users/steven/Downloads"),
+            outputDirectory: FileManager.default.temporaryDirectory,
             selectionDurationSeconds: 4.2,
             sourceNominalFps: 60,
             exportDisabledMessage: nil

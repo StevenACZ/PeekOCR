@@ -185,6 +185,7 @@ final class CaptureCoordinator: ObservableObject {
         )
         historyManager.addItem(item)
         AppLogger.capture.debug("Screenshot added to history")
+        CaptureSoundService.shared.play()
     }
 
     // MARK: - Annotated Screenshot Processing

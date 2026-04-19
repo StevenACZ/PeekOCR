@@ -42,7 +42,9 @@ extension GifClipEditorView {
         }
 
         errorAlertMessage = nil
-        exportOverlay = .exporting(format: exportFormat)
+        frameCaptureFeedback = nil
+        let destinationName = friendlySaveDirectoryName()
+        exportOverlay = .exporting(format: exportFormat, destinationName: destinationName)
 
         do {
             let finalVideoURL = state.videoURL
@@ -66,7 +68,7 @@ extension GifClipEditorView {
 
             state.stopPlayback()
             try? FileManager.default.removeItem(at: finalVideoURL)
-            exportOverlay = .success(format: exportFormat)
+            exportOverlay = .success(format: exportFormat, destinationName: destinationName)
             try? await Task.sleep(nanoseconds: 900_000_000)
             onExport(ClipExportResult(url: url, format: exportFormat))
         } catch {
@@ -88,6 +90,7 @@ extension GifClipEditorView {
 
         let settings = ScreenshotSettings.shared
         let captureTime = max(0, min(state.currentSeconds, state.durationSeconds))
+        frameCaptureFeedback = makeFrameCaptureProgressFeedback(format: settings.imageFormat)
 
         do {
             let outputURL = try await VideoFrameCaptureService.shared.captureFrame(
@@ -103,10 +106,13 @@ extension GifClipEditorView {
                 captureType: .screenshot
             ))
 
+            CaptureSoundService.shared.play()
+
             AppLogger.capture.info("Video frame captured: \(outputURL.lastPathComponent)")
-            showFrameCaptureMessage("Frame guardado: \(outputURL.lastPathComponent)")
+            showFrameCaptureFeedback(makeFrameCaptureSuccessFeedback(outputURL: outputURL, format: settings.imageFormat))
         } catch {
             AppLogger.capture.error("Video frame capture failed: \(error.localizedDescription)")
+            frameCaptureFeedback = nil
             errorAlertTitle = "No se pudo guardar la captura"
             errorAlertMessage = error.localizedDescription
         }
@@ -114,6 +120,7 @@ extension GifClipEditorView {
 
     func reRecord() async {
         state.stopPlayback()
+        frameCaptureFeedback = nil
 
         let windowToHide = NSApp.keyWindow
         windowToHide?.orderOut(nil)
@@ -179,7 +186,7 @@ extension GifClipEditorView {
         case .gif:
             return "Exportar GIF"
         case .video:
-            return "Exportar Video"
+            return "Exportar MP4"
         }
     }
 
@@ -188,14 +195,43 @@ extension GifClipEditorView {
         return String(format: "%.1fs", max(0, seconds))
     }
 
-    private func showFrameCaptureMessage(_ message: String) {
-        frameCaptureMessage = message
+    private func makeFrameCaptureProgressFeedback(format: ImageFormat) -> GifClipActionFeedback {
+        GifClipActionFeedback(
+            tone: .progress,
+            title: "Guardando frame…",
+            message: "Se guardará como \(format.displayName) en \(friendlySaveDirectoryName()).",
+            badgeText: format.displayName
+        )
+    }
+
+    private func makeFrameCaptureSuccessFeedback(outputURL: URL, format: ImageFormat) -> GifClipActionFeedback {
+        GifClipActionFeedback(
+            tone: .success,
+            title: "Frame guardado",
+            message: outputURL.lastPathComponent,
+            badgeText: format.displayName
+        )
+    }
+
+    private func showFrameCaptureFeedback(_ feedback: GifClipActionFeedback) {
+        frameCaptureFeedback = feedback
 
         Task { @MainActor in
             try? await Task.sleep(nanoseconds: 2_400_000_000)
-            if frameCaptureMessage == message {
-                frameCaptureMessage = nil
+            if frameCaptureFeedback == feedback {
+                frameCaptureFeedback = nil
             }
         }
+    }
+
+    private func friendlySaveDirectoryName() -> String {
+        let path = saveDirectory.path
+        if path.contains("/Downloads") || path.contains("/Descargas") {
+            return "Descargas"
+        }
+        if path.contains("/Desktop") || path.contains("/Escritorio") {
+            return "Escritorio"
+        }
+        return saveDirectory.lastPathComponent
     }
 }

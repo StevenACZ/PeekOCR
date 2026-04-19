@@ -11,6 +11,7 @@ import AppKit
 /// General settings tab
 struct GeneralSettingsTab: View {
     @ObservedObject private var settings = AppSettings.shared
+    @ObservedObject private var soundSettings = SoundSettings.shared
     @State private var launchAtLoginEnabled: Bool = LaunchAtLoginManager.shared.isEnabled
 
     var body: some View {
@@ -24,6 +25,31 @@ struct GeneralSettingsTab: View {
                 Text("Inicio")
             } footer: {
                 Text("La app se iniciará automáticamente cuando enciendas tu Mac.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section {
+                Toggle("Reproducir sonido de captura", isOn: $soundSettings.captureSoundEnabled)
+
+                HStack {
+                    Text("Volumen")
+                    Slider(value: $soundSettings.captureSoundVolume, in: 0...1)
+                        .disabled(!soundSettings.captureSoundEnabled)
+                    Text("\(Int(soundSettings.captureSoundVolume * 100))%")
+                        .monospacedDigit()
+                        .foregroundStyle(.secondary)
+                        .frame(width: 44, alignment: .trailing)
+                }
+
+                Button("Probar sonido") {
+                    CaptureSoundService.shared.play()
+                }
+                .disabled(!soundSettings.captureSoundEnabled)
+            } header: {
+                Text("Sonido")
+            } footer: {
+                Text("Se reproduce al guardar una captura, GIF o video.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

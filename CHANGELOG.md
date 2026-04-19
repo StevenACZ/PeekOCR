@@ -7,6 +7,29 @@ and this project loosely follows Semantic Versioning.
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-04-18
+
+### Added
+- `⌘⇧5` (annotated screenshot) and `⌘⇧6` (GIF recording) overlays now span every connected display, so you can start a selection on any monitor — not just the main one.
+- Capture feedback sound with on/off toggle and volume slider under Settings → General → Sonido. The sound plays after successful screenshot save, GIF export, and video export.
+
+### Improved
+- The clip editor's frame-capture button now plays the capture shutter sound on success, matching `⌘⇧4` and `⌘⇧5`. Clip exports (GIF/MP4) stay silent since the editor workflow is intentionally quiet on completion.
+- Redesigned the GIF/Video clip editor (`⌘⇧6`) with a flatter, card-based sidebar: the `GIF ↔ Video` switch now sits inline next to the "Exportación" title, and the quality, output, and estimation sections share a single card surface style.
+- Demoted the `FPS` field to an informative row inside the Calidad card (it is not user-editable for video exports), so the real decisions — Resolución and Codec — read first.
+- Replaced the yellow trim selection and the fixed gradient behind the video preview with an accent-color selection plus a neutral black canvas with a subtle vignette, so the trimmer stops competing with the video content.
+- Swapped the generic chevrons in the playback controls for frame-step SF Symbols (`backward.frame.fill` / `forward.frame.fill`), added shortcut hints, and promoted the export buttons to the large control size with `defaultAction` on the primary export button.
+- Flattened the post-capture "Frame guardado" toast into a chip that matches the timeline chip style and slides in from the bottom edge instead of from the right.
+
+### Fixed
+- Selection overlays for `⌘⇧5` and `⌘⇧6` were being clipped on secondary displays when macOS had "Displays have separate Spaces" enabled. Fixed by spawning one overlay window per active non-mirrored display, keyed to that display's `NSScreen`.
+- Fixed overlay windows landing off-screen on secondary displays: `NSWindow(contentRect:...:screen:)` doubles the content origin when a non-nil screen is passed. Switched to the 4-parameter init plus an explicit `setFrame(screen.frame, display: false)` so window placement uses global coordinates on every display.
+- Removed a hard-coded local path from a SwiftUI `#Preview` scaffold; preview now uses `FileManager.default.temporaryDirectory`.
+
+### Internal
+- Added `DisplayEnumerator` utility wrapping `CGGetActiveDisplayList` with mirror-set filtering.
+- Added `CaptureSoundService` singleton (lazy-loaded `AVAudioPlayer`, fire-and-forget playback) and `SoundSettings` `ObservableObject` backed by `UserDefaults`.
+
 ## [1.6.0] - 2026-04-11
 
 ### Improved
