@@ -185,6 +185,7 @@ final class CaptureCoordinator: ObservableObject {
         )
         historyManager.addItem(item)
         AppLogger.capture.debug("Screenshot added to history")
+        CaptureSoundService.shared.play()
     }
 
     // MARK: - Annotated Screenshot Processing
@@ -287,6 +288,7 @@ final class CaptureCoordinator: ObservableObject {
         }
 
         AppLogger.capture.info("Clip exported: \(exportResult.url.lastPathComponent)")
+        CaptureSoundService.shared.play()
         historyManager.addItem(CaptureItem(
             text: exportResult.url.lastPathComponent,
             captureType: exportResult.format == .gif ? .gif : .video
