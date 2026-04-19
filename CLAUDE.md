@@ -71,7 +71,7 @@ xcodebuild -project PeekOCR.xcodeproj -scheme PeekOCR -configuration Debug build
 
 ## Capture sound
 
-- A bundled shutter (`PeekOCR/Resources/capture-shutter.m4a`) plays asynchronously via `CaptureSoundService.shared.play()` at the end of `processScreenshot` and after successful clip export in `captureGifClipWithNativeRecorder`. OCR captures do not fire the sound.
+- A bundled shutter (`PeekOCR/Resources/capture-shutter.m4a`) plays asynchronously via `CaptureSoundService.shared.play()` at the end of `processScreenshot` and after a successful frame save in `GifClipEditorView+Actions.captureCurrentFrame()`. OCR captures, GIF/video clip recordings, and clip exports do NOT fire the sound — the editor's workflow is intentionally silent so the user isn't hit with a shutter when the export finishes.
 - User preferences live in `SoundSettings.shared` (enable toggle + volume, both persisted in `UserDefaults`).
 - New audio assets must include a license line in `PeekOCR/Resources/ATTRIBUTIONS.md`.
 

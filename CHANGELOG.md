@@ -12,6 +12,7 @@ and this project loosely follows Semantic Versioning.
 - Capture feedback sound with on/off toggle and volume slider under Settings → General → Sonido. The sound plays after successful screenshot save, GIF export, and video export.
 
 ### Improved
+- The clip editor's frame-capture button now plays the capture shutter sound on success, matching `⌘⇧4` and `⌘⇧5`. Clip exports (GIF/MP4) stay silent since the editor workflow is intentionally quiet on completion.
 - Redesigned the GIF/Video clip editor (`⌘⇧6`) with a flatter, card-based sidebar: the `GIF ↔ Video` switch now sits inline next to the "Exportación" title, and the quality, output, and estimation sections share a single card surface style.
 - Demoted the `FPS` field to an informative row inside the Calidad card (it is not user-editable for video exports), so the real decisions — Resolución and Codec — read first.
 - Replaced the yellow trim selection and the fixed gradient behind the video preview with an accent-color selection plus a neutral black canvas with a subtle vignette, so the trimmer stops competing with the video content.
