@@ -42,7 +42,7 @@ Presents the full-screen pre-capture annotation overlay used by `⌘⇧5`.
 **Location:** `Services/LiveAnnotationOverlayWindowController.swift`
 
 **Responsibilities:**
-- Present a full-screen live overlay on all displays
+- Spawn one overlay window per active non-mirrored display via `DisplayEnumerator`, with first-mousedown activation dismissing sibling overlays
 - Return the selected rect plus lightweight overlay annotations
 - Keep transient overlay interactions local to the session (selection, inline text editing, undo stack)
 - Keep the fast plain screenshot flow separate from the annotated flow
@@ -154,7 +154,7 @@ Full-screen overlay window used for region selection + recording focus.
 **Location:** `Services/GifRecordingOverlayWindowController.swift`
 
 **Responsibilities:**
-- Host the overlay view across all screens
+- Spawn one overlay window per active non-mirrored display via `DisplayEnumerator`, with first-mousedown activation dismissing sibling overlays
 - Capture selection rect + screen
 - Drive recording mode visuals (dim outside selection, crosshair cursor)
 
@@ -288,3 +288,26 @@ AppSettings.shared
 
 ### Static Helpers
 Services like `ImageScalingService` and `ImageEncodingService` use static methods for pure operations.
+
+## Audio & Displays
+
+### CaptureSoundService
+
+Plays a bundled shutter sound asynchronously on capture completion.
+
+**Location:** `Services/CaptureSoundService.swift`
+
+**Responsibilities:**
+- Lazily load `capture-shutter.m4a` into an `AVAudioPlayer` on first use
+- Respect `SoundSettings.captureSoundEnabled` and `.captureSoundVolume`
+- Non-blocking playback from the capture-coordination path
+
+### DisplayEnumerator
+
+Enumerates active physical displays.
+
+**Location:** `Services/DisplayEnumerator.swift`
+
+**Responsibilities:**
+- Wrap `CGGetActiveDisplayList` and pair each `CGDirectDisplayID` with its `NSScreen`
+- Filter out secondary members of a mirror set so consumers never render duplicate overlays on the same physical panel

@@ -7,6 +7,17 @@ and this project loosely follows Semantic Versioning.
 
 ## [Unreleased]
 
+### Added
+- `⌘⇧5` (annotated screenshot) and `⌘⇧6` (GIF recording) overlays now span every connected display, so you can start a selection on any monitor — not just the main one.
+- Capture feedback sound with on/off toggle and volume slider under Settings → General → Sonido. The sound plays after successful screenshot save, GIF export, and video export.
+
+### Fixed
+- Selection overlays for `⌘⇧5` and `⌘⇧6` were being clipped on secondary displays when macOS had "Displays have separate Spaces" enabled. Fixed by spawning one overlay window per active non-mirrored display, keyed to that display's `NSScreen`.
+
+### Internal
+- Added `DisplayEnumerator` utility wrapping `CGGetActiveDisplayList` with mirror-set filtering.
+- Added `CaptureSoundService` singleton (lazy-loaded `AVAudioPlayer`, fire-and-forget playback) and `SoundSettings` `ObservableObject` backed by `UserDefaults`.
+
 ## [1.6.0] - 2026-04-11
 
 ### Improved
