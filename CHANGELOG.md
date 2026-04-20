@@ -7,6 +7,8 @@ and this project loosely follows Semantic Versioning.
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-04-19
+
 ### Added
 - Guided permission onboarding with an in-app reminder banner, settings activation rows, and a dedicated "Missing Permissions" window that explains what is required before capture can continue.
 - A floating System Settings assistant that opens the correct privacy pane and overlays lightweight guidance while the user enables Screen Recording or Accessibility.
