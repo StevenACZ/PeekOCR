@@ -13,7 +13,7 @@ import SwiftUI
 final class PermissionRequirementsWindowController: NSWindowController {
     static let shared = PermissionRequirementsWindowController()
 
-    private let windowSize = CGSize(width: 500, height: 520)
+    private let windowSize = PermissionRequirementsView.windowSize
     private var hostingController: NSHostingController<AnyView>?
 
     private init() {
@@ -80,6 +80,7 @@ final class PermissionRequirementsWindowController: NSWindowController {
         window.isMovableByWindowBackground = false
         window.level = .floating
         window.delegate = self
+        window.standardWindowButton(.closeButton)?.isHidden = true
         window.standardWindowButton(.miniaturizeButton)?.isHidden = true
         window.standardWindowButton(.zoomButton)?.isHidden = true
 

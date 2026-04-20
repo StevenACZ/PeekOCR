@@ -12,7 +12,7 @@ struct PermissionRequirementsIntroView: View {
     let missingCount: Int
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .top, spacing: 16) {
                 HStack(alignment: .center, spacing: 14) {
                     ZStack {
@@ -57,7 +57,7 @@ struct PermissionRequirementsIntroView: View {
                             .fill(Color.orange.opacity(0.12))
                     )
             }
-            .padding(18)
+            .padding(16)
             .background(
                 RoundedRectangle(cornerRadius: 20, style: .continuous)
                     .fill(Color(nsColor: .controlBackgroundColor).opacity(0.86))
@@ -79,7 +79,7 @@ struct PermissionRequirementsIntroView: View {
 
                 Spacer(minLength: 0)
             }
-            .padding(.vertical, 10)
+            .padding(.vertical, 8)
             .padding(.horizontal, 12)
             .background(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)

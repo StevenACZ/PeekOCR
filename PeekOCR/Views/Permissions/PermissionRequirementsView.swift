@@ -10,6 +10,8 @@ import SwiftUI
 
 /// Modal content shown when required permissions are still missing.
 struct PermissionRequirementsView: View {
+    static let windowSize = CGSize(width: 500, height: 480)
+
     let onActivate: (AppPermission) -> Void
     let onClose: () -> Void
     private let previewPermissions: [AppPermission]?
@@ -31,7 +33,7 @@ struct PermissionRequirementsView: View {
         ZStack {
             backgroundLayer
 
-            VStack(alignment: .leading, spacing: 18) {
+            VStack(alignment: .leading, spacing: 14) {
                 PermissionRequirementsIntroView(missingCount: missingPermissions.count)
 
                 VStack(alignment: .leading, spacing: 12) {
@@ -49,12 +51,15 @@ struct PermissionRequirementsView: View {
                     }
                 }
 
-                Spacer(minLength: 0)
+                Color.clear.frame(height: 6)
                 footer
             }
-            .padding(24)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .padding(.horizontal, 24)
+            .padding(.top, 16)
+            .padding(.bottom, 14)
         }
-        .frame(width: 500, height: 520)
+        .frame(width: Self.windowSize.width, height: Self.windowSize.height)
         .background(Color(nsColor: .windowBackgroundColor))
         .onAppear {
             refreshMissingPermissions()
@@ -79,10 +84,6 @@ struct PermissionRequirementsView: View {
                 .frame(width: 180, height: 180)
                 .blur(radius: 60)
                 .offset(x: 180, y: 120)
-
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .stroke(Color.white.opacity(0.05), lineWidth: 1)
-                .padding(12)
         }
         .ignoresSafeArea()
     }
@@ -129,11 +130,27 @@ struct PermissionRequirementsView: View {
     }
 }
 
-#Preview("Missing Permissions") {
-    PermissionRequirementsView(
-        previewPermissions: [.screenRecording, .accessibility],
-        onActivate: { _ in },
-        onClose: {}
-    )
-    .frame(width: 500, height: 520)
+struct PermissionRequirementsView_Previews: PreviewProvider {
+    static var previews: some View {
+        PermissionRequirementsPreviewCanvas()
+            .previewLayout(.sizeThatFits)
+            .padding(24)
+            .background(Color(nsColor: .windowBackgroundColor))
+    }
+}
+
+private struct PermissionRequirementsPreviewCanvas: View {
+    var body: some View {
+        PermissionRequirementsView(
+            previewPermissions: [.screenRecording, .accessibility],
+            onActivate: { _ in },
+            onClose: {}
+        )
+        .frame(
+            width: PermissionRequirementsView.windowSize.width,
+            height: PermissionRequirementsView.windowSize.height
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .shadow(color: .black.opacity(0.18), radius: 18, y: 10)
+    }
 }
