@@ -252,7 +252,11 @@ PeekOCR is expected to behave well as a long-lived menu bar app. When changing r
 - `PermissionService` owns the "what is missing?" logic and starts the guided activation flow.
 - `PermissionAssistant` opens the correct System Settings pane and keeps the floating helper aligned with the settings window.
 - `PermissionRequirementsWindowController` presents the explainer window when capture cannot proceed yet.
+- The requirements window should keep a fixed footprint and always show both permissions, even in mixed states where one is already granted.
+- Granted permissions should remain visible with a green success state instead of disappearing and shifting the layout.
+- Activating a permission from the requirements window should keep that window alive while System Settings opens and status refreshes propagate back into the app.
 - Accessibility-backed hotkeys should refresh when the app becomes active again after the user enables the permission.
+- Screen Recording may lag behind Accessibility depending on macOS behavior, so avoid assuming instant activation without a refresh pass.
 
 ### Multi-display and Windowing Notes
 
@@ -378,6 +382,9 @@ Permission prompts should remain explicit and user-driven. Prefer the menu bar b
 - [ ] Missing permissions show the menu bar reminder banner instead of an automatic startup prompt
 - [ ] Hotkeys trigger capture
 - [ ] Trying to capture without Screen Recording opens the missing-permissions window
+- [ ] The missing-permissions window always shows both permission cards and keeps a stable height in mixed states
+- [ ] Granted permissions switch to the green success state instead of disappearing from the requirements window
+- [ ] Returning from System Settings refreshes Accessibility/Screen Recording status in the requirements window and settings rows
 - [ ] Live annotation overlay opens for `⌘⇧5`
 - [ ] Selection can be created, moved, and resized before capture
 - [ ] Overlay tools work for arrow, text, and highlight before capture

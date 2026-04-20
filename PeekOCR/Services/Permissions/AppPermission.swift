@@ -10,7 +10,7 @@ import ApplicationServices
 import CoreGraphics
 
 /// Supported permissions that PeekOCR can guide the user through.
-enum AppPermission: CaseIterable {
+enum AppPermission: CaseIterable, Hashable {
     case screenRecording
     case accessibility
 

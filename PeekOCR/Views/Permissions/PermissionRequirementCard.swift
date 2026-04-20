@@ -13,6 +13,7 @@ struct PermissionRequirementCard: View {
     let permission: AppPermission
     let index: Int
     let isLast: Bool
+    let isGranted: Bool
     let onActivate: (AppPermission) -> Void
 
     var body: some View {
@@ -20,16 +21,16 @@ struct PermissionRequirementCard: View {
             VStack(spacing: 8) {
                 ZStack {
                     Circle()
-                        .fill(Color(nsColor: permission.accentColor).opacity(0.14))
+                        .fill(toneColor.opacity(0.14))
                         .frame(width: 28, height: 28)
 
                     Text("\(index)")
                         .font(.caption.weight(.bold))
-                        .foregroundStyle(Color(nsColor: permission.accentColor))
+                        .foregroundStyle(toneColor)
                 }
 
                 Rectangle()
-                    .fill(Color(nsColor: permission.accentColor).opacity(0.10))
+                    .fill(toneColor.opacity(0.10))
                     .frame(width: 1, height: 34)
                     .opacity(isLast ? 0 : 1)
             }
@@ -37,12 +38,12 @@ struct PermissionRequirementCard: View {
             HStack(alignment: .center, spacing: 14) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .fill(Color(nsColor: permission.accentColor).opacity(0.12))
+                        .fill(toneColor.opacity(0.12))
                         .frame(width: 46, height: 46)
 
                     Image(systemName: permission.iconName)
                         .font(.body.weight(.semibold))
-                        .foregroundStyle(Color(nsColor: permission.accentColor))
+                        .foregroundStyle(toneColor)
                 }
 
                 VStack(alignment: .leading, spacing: 6) {
@@ -50,15 +51,15 @@ struct PermissionRequirementCard: View {
                         Text(permission.title)
                             .font(.body.weight(.semibold))
 
-                        Text("Requerido")
+                        Text(statusTitle)
                             .font(.caption2.weight(.semibold))
                             .padding(.horizontal, 7)
                             .padding(.vertical, 3)
                             .background(
                                 Capsule(style: .continuous)
-                                    .fill(Color(nsColor: permission.accentColor).opacity(0.12))
+                                    .fill(toneColor.opacity(0.12))
                             )
-                            .foregroundStyle(Color(nsColor: permission.accentColor))
+                            .foregroundStyle(toneColor)
                     }
 
                     Text(permission.summary)
@@ -73,25 +74,46 @@ struct PermissionRequirementCard: View {
 
                 Spacer(minLength: 12)
 
-                Button("Activar") {
-                    onActivate(permission)
+                Group {
+                    if isGranted {
+                        Label("Listo", systemImage: "checkmark.circle.fill")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.green)
+                    } else {
+                        Button("Activar") {
+                            onActivate(permission)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.small)
+                        .tint(Color(nsColor: permission.accentColor))
+                    }
                 }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.small)
-                .tint(Color(nsColor: permission.accentColor))
+                .frame(minWidth: 72, alignment: .trailing)
             }
         }
         .padding(14)
         .background(cardBackground)
     }
 
+    private var statusTitle: String {
+        isGranted ? "Activo" : "Pendiente"
+    }
+
     private var detailText: String {
-        switch permission {
-        case .screenRecording:
+        switch (permission, isGranted) {
+        case (.screenRecording, true):
+            return "PeekOCR ya puede usar la pantalla para OCR, capturas y clips."
+        case (.accessibility, true):
+            return "Los atajos globales de PeekOCR ya quedaron habilitados."
+        case (.screenRecording, false):
             return "Necesario para OCR, capturas y clips GIF."
-        case .accessibility:
+        case (.accessibility, false):
             return "Necesario para que funcionen los atajos globales de PeekOCR."
         }
+    }
+
+    private var toneColor: Color {
+        isGranted ? .green : Color(nsColor: permission.accentColor)
     }
 
     private var cardBackground: some View {
@@ -100,7 +122,7 @@ struct PermissionRequirementCard: View {
             .overlay(
                 LinearGradient(
                     colors: [
-                        Color(nsColor: permission.accentColor).opacity(0.10),
+                        toneColor.opacity(0.10),
                         .clear
                     ],
                     startPoint: .leading,
@@ -110,7 +132,7 @@ struct PermissionRequirementCard: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .stroke(Color(nsColor: permission.accentColor).opacity(0.12), lineWidth: 1)
+                    .stroke(toneColor.opacity(0.12), lineWidth: 1)
             )
             .shadow(color: .black.opacity(0.08), radius: 12, y: 6)
     }

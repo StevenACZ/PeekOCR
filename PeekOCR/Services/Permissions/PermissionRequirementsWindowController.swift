@@ -40,7 +40,7 @@ final class PermissionRequirementsWindowController: NSWindowController {
         let window = createWindow()
         let contentView = PermissionRequirementsView(
             onActivate: { [weak self] permission in
-                self?.closeWindow()
+                self?.window?.makeFirstResponder(nil)
                 PermissionService.shared.requestInteractively(permission)
             },
             onClose: { [weak self] in

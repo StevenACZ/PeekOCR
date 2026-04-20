@@ -1,2 +1,2 @@
-<!-- Claude Code wrapper: keep the source of truth in AGENTS.md. -->
+<!-- Claude Code wrapper: keep AGENTS.md as the single source of truth for runtime guardrails and public-release rules. -->
 @AGENTS.md

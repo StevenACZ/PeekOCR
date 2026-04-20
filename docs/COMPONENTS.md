@@ -48,6 +48,9 @@ ShortcutRecorderRow(
 ### PermissionStatusRow
 Displays permission status with a guided activation action.
 
+- Shows `Activo` / `Pendiente` state inline
+- Refreshes when PeekOCR becomes active again after permission changes
+
 ```swift
 PermissionStatusRow(
     permission: .screenRecording

@@ -280,6 +280,7 @@ Central permission orchestration.
 - Check whether a permission is already granted
 - Return the current list of missing permissions
 - Launch the guided permission assistant only from explicit user-driven entry points
+- Serve as the single permission source for settings rows, reminder banners, and blocked-capture onboarding
 
 ### PermissionAssistant
 Floating helper anchored over System Settings.
@@ -291,6 +292,7 @@ Floating helper anchored over System Settings.
 - Track the active settings window position
 - Display the drag/drop helper content for manual app insertion when needed
 - Dismiss itself automatically after the permission is granted
+- Let the requirements window stay visible while the external settings guidance is running
 
 ### PermissionRequirementsWindowController
 Explainer window shown when capture cannot start yet.
@@ -299,6 +301,8 @@ Explainer window shown when capture cannot start yet.
 
 **Responsibilities:**
 - Present a lightweight requirements window when Screen Recording is missing
+- Keep a fixed-size onboarding window that always shows both permission cards
+- Refresh per-permission status in place so granted items can transition to a green success state
 - Route "Activate" actions into `PermissionService`
 - Keep the runtime window size aligned with the SwiftUI requirements view
 

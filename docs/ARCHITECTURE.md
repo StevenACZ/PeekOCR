@@ -81,7 +81,7 @@ PeekOCR follows a clean **MVVM** architecture with clear separation of concerns.
 ### Permission-Gated Flow
 - `PermissionService`: Centralizes granted/missing permission checks
 - `PermissionAssistant`: Opens the correct System Settings pane and overlays guidance only after an explicit user action
-- `PermissionRequirementsWindowController`: Explains blocked capture requirements without interrupting app launch
+- `PermissionRequirementsWindowController`: Explains blocked capture requirements without interrupting app launch, while keeping both permissions visible with live status updates
 
 ### Static Helpers
 - `AnnotationGeometry`: Pure geometry calculations

@@ -31,7 +31,7 @@ struct PermissionRequirementsIntroView: View {
 
                         Image(systemName: "hand.raised.circle.fill")
                             .font(.title2.weight(.semibold))
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(accentColor)
                     }
 
                     VStack(alignment: .leading, spacing: 6) {
@@ -49,12 +49,12 @@ struct PermissionRequirementsIntroView: View {
 
                 Text(summaryBadgeText)
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(accentColor)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 7)
                     .background(
                         Capsule(style: .continuous)
-                            .fill(Color.orange.opacity(0.12))
+                            .fill(accentColor.opacity(0.12))
                     )
             }
             .padding(16)
@@ -63,16 +63,16 @@ struct PermissionRequirementsIntroView: View {
                     .fill(Color(nsColor: .controlBackgroundColor).opacity(0.86))
                     .overlay(
                         RoundedRectangle(cornerRadius: 20, style: .continuous)
-                            .stroke(Color.orange.opacity(0.12), lineWidth: 1)
+                            .stroke(accentColor.opacity(0.12), lineWidth: 1)
                     )
             )
 
             HStack(spacing: 10) {
-                Image(systemName: "sparkles")
+                Image(systemName: helperIconName)
                     .font(.caption.weight(.bold))
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(accentColor)
 
-                Text("Te guiaremos al ajuste correcto y verificaremos el estado cuando regreses.")
+                Text(helperText)
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -83,18 +83,24 @@ struct PermissionRequirementsIntroView: View {
             .padding(.horizontal, 12)
             .background(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(Color.orange.opacity(0.10))
+                    .fill(accentColor.opacity(0.10))
                     .overlay(
                         RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .stroke(Color.orange.opacity(0.14), lineWidth: 1)
+                            .stroke(accentColor.opacity(0.14), lineWidth: 1)
                     )
             )
         }
     }
 
+    private var accentColor: Color {
+        missingCount == 0 ? .green : .orange
+    }
+
     private var titleText: String {
         switch missingCount {
-        case 0, 1:
+        case 0:
+            return "Todo listo para capturar"
+        case 1:
             return "Activa el permiso pendiente"
         default:
             return "Activa los permisos pendientes"
@@ -110,5 +116,17 @@ struct PermissionRequirementsIntroView: View {
         default:
             return "\(missingCount) pendientes"
         }
+    }
+
+    private var helperIconName: String {
+        missingCount == 0 ? "checkmark.circle.fill" : "sparkles"
+    }
+
+    private var helperText: String {
+        if missingCount == 0 {
+            return "Ya puedes volver a PeekOCR y usar OCR, capturas y atajos globales con normalidad."
+        }
+
+        return "Te guiaremos al ajuste correcto y verificaremos el estado cuando regreses."
     }
 }
