@@ -25,7 +25,6 @@ final class HotKeyManager {
     // MARK: - Public Methods
 
     func registerHotKeys() {
-        requestAccessibilityPermissions()
         installEventHandler()
         registerAllHotKeys()
     }
@@ -42,12 +41,12 @@ final class HotKeyManager {
         registerAllHotKeys()
     }
 
-    // MARK: - Private Methods
-
-    private func requestAccessibilityPermissions() {
-        let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true]
-        AXIsProcessTrustedWithOptions(options as CFDictionary)
+    func refreshRegistrationIfNeeded() {
+        guard AXIsProcessTrusted() else { return }
+        reregisterHotKeys()
     }
+
+    // MARK: - Private Methods
 
     private func installEventHandler() {
         guard eventHandler == nil else { return }

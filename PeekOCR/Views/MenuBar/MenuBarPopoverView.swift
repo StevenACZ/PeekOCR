@@ -17,6 +17,7 @@ struct MenuBarPopoverView: View {
         VStack(spacing: 0) {
             HeaderSection()
             Divider()
+            PermissionReminderSection()
             QuickActionsSection(settings: settings)
             Divider()
             HistorySection(historyManager: historyManager)
@@ -44,6 +45,38 @@ private struct HeaderSection: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
+    }
+}
+
+// MARK: - Quick Actions Section
+
+private struct PermissionReminderSection: View {
+    @State private var missingPermissions: [AppPermission] = []
+
+    var body: some View {
+        Group {
+            if !missingPermissions.isEmpty {
+                VStack(spacing: 0) {
+                    PermissionSummaryBanner(missingPermissions: missingPermissions) {
+                        PermissionRequirementsWindowController.shared.showWindow()
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+
+                    Divider()
+                }
+            }
+        }
+        .onAppear {
+            refreshMissingPermissions()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            refreshMissingPermissions()
+        }
+    }
+
+    private func refreshMissingPermissions() {
+        missingPermissions = PermissionService.shared.missingPermissions()
     }
 }
 

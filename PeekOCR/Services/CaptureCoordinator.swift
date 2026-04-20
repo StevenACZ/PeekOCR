@@ -59,6 +59,14 @@ final class CaptureCoordinator: ObservableObject {
     /// Start the capture flow
     /// - Parameter mode: The capture mode (OCR or screenshot)
     func startCapture(mode: CaptureMode) {
+        guard PermissionService.shared.isGranted(.screenRecording) else {
+            AppLogger.capture.info("Blocked capture start because screen recording permission is missing")
+            Task { @MainActor in
+                PermissionRequirementsWindowController.shared.showWindow()
+            }
+            return
+        }
+
         if isCapturing {
             if currentMode == .gifClip, mode == .gifClip {
                 AppLogger.capture.info("Stopping GIF recording via hotkey")

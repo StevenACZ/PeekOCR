@@ -8,6 +8,8 @@ Tree of views organized by module.
 PeekOCRApp
 ├── MenuBarPopoverView          # Menu bar interface
 │   ├── HeaderSection
+│   ├── PermissionReminderSection
+│   │   └── PermissionSummaryBanner
 │   ├── QuickActionsSection
 │   │   ├── MenuBarActionButton (OCR)
 │   │   ├── MenuBarActionButton (Screenshot)
@@ -19,6 +21,7 @@ PeekOCRApp
 │
 ├── SettingsView               # Preferences window
 │   ├── GeneralSettingsTab
+│   │   └── PermissionStatusRow
 │   ├── ShortcutsSettingsTab
 │   │   └── ShortcutRecorderRow
 │   ├── ScreenshotSettingsTab
@@ -47,6 +50,10 @@ PeekOCRApp
 │
 ├── LiveAnnotationOverlayView  # Full-screen pre-capture annotation overlay
 │
+├── PermissionRequirementsView # Permission onboarding window
+│   ├── PermissionRequirementsIntroView
+│   └── PermissionRequirementCard
+│
 └── GifClipEditorView (window) # GIF post-record editor
     ├── GifClipVideoPreviewView
     │   └── NonInteractiveVideoPlayer
@@ -64,6 +71,7 @@ PeekOCRApp
 | View | Description |
 |------|-------------|
 | `MenuBarPopoverView` | Main popover container |
+| `PermissionSummaryBanner` | Missing-permissions reminder shown above quick actions |
 | `MenuBarActionButton` | Quick action button |
 | `HistoryItemRow` | Capture history item |
 | `EmptyStateView` | Empty list placeholder |
@@ -119,6 +127,15 @@ PeekOCRApp
 | `ImageScaleSection` | Scale slider |
 | `HotkeyDisplaySection` | Shows configured hotkeys |
 | `AnnotationDefaultsSection` | Annotation defaults |
+
+### Permissions (`Views/Permissions/`)
+Guided permission onboarding surfaces.
+
+| View | Description |
+|------|-------------|
+| `PermissionRequirementsView` | Window content shown when capture is blocked by missing permissions |
+| `PermissionRequirementsIntroView` | Intro/header block for the requirements window |
+| `PermissionRequirementCard` | Per-permission step card with activation action |
 
 ### GIF Clip (`Views/Gif/`)
 Post-record editor + recording overlay.

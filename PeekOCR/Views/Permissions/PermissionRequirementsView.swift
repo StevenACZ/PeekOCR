@@ -1,0 +1,139 @@
+//
+//  PermissionRequirementsView.swift
+//  PeekOCR
+//
+//  Explains which permissions are missing before capture actions can continue.
+//
+
+import AppKit
+import SwiftUI
+
+/// Modal content shown when required permissions are still missing.
+struct PermissionRequirementsView: View {
+    let onActivate: (AppPermission) -> Void
+    let onClose: () -> Void
+    private let previewPermissions: [AppPermission]?
+
+    @State private var missingPermissions: [AppPermission] = []
+
+    init(
+        previewPermissions: [AppPermission]? = nil,
+        onActivate: @escaping (AppPermission) -> Void,
+        onClose: @escaping () -> Void
+    ) {
+        self.previewPermissions = previewPermissions
+        self.onActivate = onActivate
+        self.onClose = onClose
+        _missingPermissions = State(initialValue: previewPermissions ?? [])
+    }
+
+    var body: some View {
+        ZStack {
+            backgroundLayer
+
+            VStack(alignment: .leading, spacing: 18) {
+                PermissionRequirementsIntroView(missingCount: missingPermissions.count)
+
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(sectionTitle)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+
+                    ForEach(Array(missingPermissions.enumerated()), id: \.element) { index, permission in
+                        PermissionRequirementCard(
+                            permission: permission,
+                            index: index + 1,
+                            isLast: index == missingPermissions.count - 1,
+                            onActivate: onActivate
+                        )
+                    }
+                }
+
+                Spacer(minLength: 0)
+                footer
+            }
+            .padding(24)
+        }
+        .frame(width: 500, height: 520)
+        .background(Color(nsColor: .windowBackgroundColor))
+        .onAppear {
+            refreshMissingPermissions()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            refreshMissingPermissions()
+        }
+    }
+
+    private var backgroundLayer: some View {
+        ZStack {
+            Color(nsColor: .windowBackgroundColor)
+
+            Circle()
+                .fill(Color.orange.opacity(0.16))
+                .frame(width: 220, height: 220)
+                .blur(radius: 70)
+                .offset(x: -110, y: -120)
+
+            Circle()
+                .fill(Color.blue.opacity(0.10))
+                .frame(width: 180, height: 180)
+                .blur(radius: 60)
+                .offset(x: 180, y: 120)
+
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .stroke(Color.white.opacity(0.05), lineWidth: 1)
+                .padding(12)
+        }
+        .ignoresSafeArea()
+    }
+
+    private var footer: some View {
+        HStack(alignment: .center, spacing: 12) {
+            Label("Puedes cerrar esta ventana y volver luego.", systemImage: "clock.arrow.trianglehead.counterclockwise.rotate.90")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+
+            Spacer()
+
+            Button("Ahora no") {
+                onClose()
+            }
+            .buttonStyle(.bordered)
+            .keyboardShortcut(.cancelAction)
+        }
+    }
+
+    private var sectionTitle: String {
+        switch missingPermissions.count {
+        case 0:
+            return "Sin pendientes"
+        case 1:
+            return "Permiso pendiente"
+        default:
+            return "Permisos pendientes"
+        }
+    }
+
+    private func refreshMissingPermissions() {
+        if let previewPermissions {
+            missingPermissions = previewPermissions
+            return
+        }
+
+        let updatedPermissions = PermissionService.shared.missingPermissions()
+        missingPermissions = updatedPermissions
+
+        if updatedPermissions.isEmpty {
+            onClose()
+        }
+    }
+}
+
+#Preview("Missing Permissions") {
+    PermissionRequirementsView(
+        previewPermissions: [.screenRecording, .accessibility],
+        onActivate: { _ in },
+        onClose: {}
+    )
+    .frame(width: 500, height: 520)
+}

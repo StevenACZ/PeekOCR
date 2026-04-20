@@ -46,14 +46,23 @@ ShortcutRecorderRow(
 ```
 
 ### PermissionStatusRow
-Displays permission status with action button.
+Displays permission status with a guided activation action.
 
 ```swift
 PermissionStatusRow(
-    title: "Screen Recording",
-    isGranted: isGranted,
-    onRequest: { /* request permission */ }
+    permission: .screenRecording
 )
+```
+
+### PermissionSummaryBanner
+Highlights missing permissions at the top of the menu bar popover.
+
+```swift
+PermissionSummaryBanner(
+    missingPermissions: [.screenRecording, .accessibility]
+) {
+    PermissionRequirementsWindowController.shared.showWindow()
+}
 ```
 
 ## Video / GIF Components
