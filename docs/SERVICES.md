@@ -256,7 +256,8 @@ Global keyboard shortcuts.
 **Responsibilities:**
 - Register global hotkeys using Carbon API
 - Handle hotkey events and route to `CaptureCoordinator`
-- Manage accessibility permissions
+- Manage accessibility-backed hotkey availability
+- Refresh registrations when the app becomes active after permission changes
 
 ### HotKeyDefinition
 Configuration struct for hotkeys.
@@ -267,6 +268,43 @@ Configuration struct for hotkeys.
 - Define hotkey configuration structure
 - Provide shared signature for Carbon registration
 - Define hotkey identifiers (including GIF clip)
+
+## Permission Services
+
+### PermissionService
+Central permission orchestration.
+
+**Location:** `Services/Permissions/PermissionService.swift`
+
+**Responsibilities:**
+- Check whether a permission is already granted
+- Return the current list of missing permissions
+- Launch the guided permission assistant only from explicit user-driven entry points
+- Serve as the single permission source for settings rows, reminder banners, and blocked-capture onboarding
+
+### PermissionAssistant
+Floating helper anchored over System Settings.
+
+**Location:** `Services/Permissions/PermissionAssistant.swift`
+
+**Responsibilities:**
+- Open the correct privacy pane in System Settings
+- Track the active settings window position
+- Display the drag/drop helper content for manual app insertion when needed
+- Dismiss itself automatically after the permission is granted
+- Let the requirements window stay visible while the external settings guidance is running
+
+### PermissionRequirementsWindowController
+Explainer window shown when capture cannot start yet.
+
+**Location:** `Services/Permissions/PermissionRequirementsWindowController.swift`
+
+**Responsibilities:**
+- Present a lightweight requirements window when Screen Recording is missing
+- Keep a fixed-size onboarding window that always shows both permission cards
+- Refresh per-permission status in place so granted items can transition to a green success state
+- Route "Activate" actions into `PermissionService`
+- Keep the runtime window size aligned with the SwiftUI requirements view
 
 ## Service Patterns
 

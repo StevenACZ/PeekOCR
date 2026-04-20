@@ -29,6 +29,7 @@ PeekOCR is a macOS menu bar app that lets you quickly **select an area of your s
 | 📷 **Screenshots**       | Save images with configurable format/quality/scale |
 | ✍️ **Live Annotation Capture** | Select, adjust, annotate in-place, then export      |
 | 🎞️ **GIF Clip Capture**  | Record up to 10s, trim, preview, and export as GIF |
+| 🛡️ **Guided permissions** | In-app reminders, live permission status, and a guided System Settings flow |
 | 🔊 **Capture sound**     | Optional shutter feedback on save (toggle + volume in Settings) |
 | 🕘 **History**           | Quickly access your last 6 captures                |
 | ⌨️ **Hotkeys**           | Customize global shortcuts in Settings             |
@@ -40,7 +41,7 @@ PeekOCR is a macOS menu bar app that lets you quickly **select an area of your s
 1. Download the latest version from [Releases](https://github.com/StevenACZ/PeekOCR/releases)
 2. Open the DMG and drag `PeekOCR.app` to your Applications folder
 3. Launch PeekOCR
-4. Grant the required permissions when prompted
+4. Open any capture mode, or use the menu bar reminder, to review and enable the required permissions with the guided setup flow
 
 ---
 
@@ -93,7 +94,9 @@ PeekOCR needs two permissions to work properly:
 | **Screen Recording** | Capture screen content  |
 | **Accessibility**    | Register global hotkeys |
 
-> Tip: PeekOCR will guide you to enable these the first time you use a capture mode.
+PeekOCR does not interrupt you with permission prompts on launch. If one of these permissions is missing, the app shows an in-app reminder and a guided window that opens the correct System Settings pane when you choose to continue.
+
+The requirements window keeps both permissions visible, marks granted permissions in green, and refreshes the status when you come back from System Settings. Accessibility usually updates right away; Screen Recording can still depend on how macOS applies the change on your machine.
 
 ---
 
@@ -116,8 +119,8 @@ PeekOCR is designed to live in the macOS menu bar for long periods, so the proje
 
 ## 📚 Documentation
 
-- `AGENTS.md` (project map + conventions)
-- `CLAUDE.md` (runtime and implementation guardrails)
+- `AGENTS.md` (project map, conventions, and release guardrails)
+- `CLAUDE.md` (thin wrapper that imports `AGENTS.md` for Claude Code)
 - `CHANGELOG.md`
 - `docs/ARCHITECTURE.md`
 - `docs/SERVICES.md`

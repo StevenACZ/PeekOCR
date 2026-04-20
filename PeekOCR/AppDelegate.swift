@@ -22,13 +22,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     func applicationDidFinishLaunching(_ notification: Notification) {
         setupMenuBar()
-        requestPermissions()
         setupHotKeys()
 
         // Hide dock icon
         NSApp.setActivationPolicy(.accessory)
     }
-    
+
+    func applicationDidBecomeActive(_ notification: Notification) {
+        hotKeyManager.refreshRegistrationIfNeeded()
+    }
+
     // MARK: - Menu Bar Setup
     
     private func setupMenuBar() {
@@ -48,15 +51,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 .environmentObject(appState)
         )
     }
-    
-    // MARK: - Permissions
-
-    private func requestPermissions() {
-        if !CGPreflightScreenCaptureAccess() {
-            CGRequestScreenCaptureAccess()
-        }
-    }
-
     // MARK: - Hotkeys
 
     private func setupHotKeys() {

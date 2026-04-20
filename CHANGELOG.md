@@ -7,6 +7,21 @@ and this project loosely follows Semantic Versioning.
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-04-19
+
+### Added
+- Guided permission onboarding with an in-app reminder banner, settings activation rows, and a dedicated "Missing Permissions" window that explains what is required before capture can continue.
+- A floating System Settings assistant that opens the correct privacy pane and overlays lightweight guidance while the user enables Screen Recording or Accessibility.
+- Live permission state cards in the requirements window, so Screen Recording and Accessibility stay visible and can transition to a green success state while setup is in progress.
+
+### Changed
+- PeekOCR no longer interrupts users with permission prompts on launch. Permission activation is now explicit and user-initiated from settings, the menu bar reminder, or a blocked capture attempt.
+- Capture attempts now stop cleanly when Screen Recording is missing and route through the new onboarding window instead of failing silently.
+- The "Missing Permissions" window now keeps a fixed size, remains open while the guided setup flow runs, and updates each permission card in place instead of hiding granted permissions.
+
+### Internal
+- Split the permission requirements UI into dedicated intro/card subviews, stabilized the preview/runtime sizing, and aligned the public docs with the new onboarding flow for release readiness.
+
 ## [1.7.0] - 2026-04-18
 
 ### Added

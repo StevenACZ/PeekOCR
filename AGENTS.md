@@ -19,6 +19,31 @@ Important:
 | [docs/SERVICES.md](docs/SERVICES.md) | Service classes documentation |
 | [docs/VIEWS.md](docs/VIEWS.md) | View hierarchy and modules |
 
+## Files Worth Checking First
+
+- `PeekOCR/Services/CaptureCoordinator.swift`
+- `PeekOCR/Services/Permissions/PermissionService.swift`
+- `PeekOCR/Services/Permissions/PermissionAssistant.swift`
+- `PeekOCR/Services/Permissions/PermissionRequirementsWindowController.swift`
+- `PeekOCR/Services/LiveAnnotationOverlayWindowController.swift`
+- `PeekOCR/Services/LiveAnnotationRenderer.swift`
+- `PeekOCR/Services/GifRecordingOverlayWindowController.swift`
+- `PeekOCR/Views/Annotation/Overlay/LiveAnnotationOverlayView.swift`
+- `PeekOCR/Views/MenuBar/MenuBarPopoverView.swift`
+- `PeekOCR/Views/Permissions/PermissionRequirementsView.swift`
+- `PeekOCR/Services/OCRService.swift`
+- `PeekOCR/Services/ScreenshotService.swift`
+- `PeekOCR/Services/GifExportService.swift`
+- `PeekOCR/Services/VideoExportService.swift`
+- `PeekOCR/Services/DisplayEnumerator.swift`
+- `PeekOCR/Services/CaptureSoundService.swift`
+- `PeekOCR/Models/SoundSettings.swift`
+- `PeekOCR/Models/State/GifClipEditorState.swift`
+- `PeekOCR/Views/Components/ShortcutRecorderRow.swift`
+- `PeekOCR/Views/Components/PermissionStatusRow.swift`
+- `PeekOCR/Views/Components/PermissionSummaryBanner.swift`
+- `PeekOCR/Managers/HistoryManager.swift`
+
 ## Dev Environment
 
 ### Requirements
@@ -85,6 +110,13 @@ PeekOCR/
 │   ├── HotKey/
 │   │   └── HotKeyDefinition.swift         # Hotkey config struct
 │   │
+│   ├── Permissions/
+│   │   ├── AppPermission.swift            # Supported permission definitions
+│   │   ├── PermissionService.swift        # Missing-permission checks + guided flow entry
+│   │   ├── PermissionAssistant.swift      # Floating helper over System Settings
+│   │   ├── PermissionRequirementsWindowController.swift # Blocked-capture explainer window
+│   │   └── PermissionSettingsWindowLocator.swift # Tracks Settings window positioning
+│   │
 │   ├── AnnotationWindowController.swift   # Window lifecycle
 │   ├── CaptureCoordinator.swift           # Capture orchestration
 │   ├── CaptureSoundService.swift          # Shutter sound playback (async AVAudioPlayer)
@@ -128,10 +160,15 @@ PeekOCR/
 │   │       └── LiveAnnotationOverlayView.swift # Full-screen live pre-capture overlay
 │   │
 │   ├── MenuBar/
-│   │   ├── MenuBarPopoverView.swift          # Main popover (~179 lines)
+│   │   ├── MenuBarPopoverView.swift          # Main popover + permission reminder
 │   │   ├── MenuBarActionButton.swift         # Quick action button
 │   │   ├── HistoryItemRow.swift              # History item row
 │   │   └── EmptyStateView.swift              # Empty state placeholder
+│   │
+│   ├── Permissions/
+│   │   ├── PermissionRequirementsView.swift      # Missing-permissions window content
+│   │   ├── PermissionRequirementsIntroView.swift # Intro block for permission onboarding
+│   │   └── PermissionRequirementCard.swift       # Per-permission activation card
 │   │
 │   ├── Gif/
 │   │   ├── GifClipEditorView.swift           # Post-record editor window
@@ -169,7 +206,8 @@ PeekOCR/
 │   │   ├── SectionDivider.swift
 │   │   ├── SettingSliderRow.swift
 │   │   ├── ShortcutRecorderRow.swift
-│   │   └── PermissionStatusRow.swift
+│   │   ├── PermissionStatusRow.swift
+│   │   └── PermissionSummaryBanner.swift
 │   │
 │   └── Helpers/
 │       ├── HitTestEngine.swift               # Collision detection
@@ -204,6 +242,44 @@ PeekOCR is expected to behave well as a long-lived menu bar app. When changing r
 - explicit cleanup for monitors, timers, observers, and temporary files
 - event-driven permission refreshes instead of perpetual polling
 - `@ObservedObject` for shared singletons owned outside the view lifecycle
+
+## UX Guardrails
+
+### Permission UX
+
+- Do not trigger permission prompts automatically at app launch.
+- Missing permissions should surface through explicit UI: settings rows, the menu bar reminder banner, or the dedicated requirements window shown when capture is blocked.
+- `PermissionService` owns the "what is missing?" logic and starts the guided activation flow.
+- `PermissionAssistant` opens the correct System Settings pane and keeps the floating helper aligned with the settings window.
+- `PermissionRequirementsWindowController` presents the explainer window when capture cannot proceed yet.
+- The requirements window should keep a fixed footprint and always show both permissions, even in mixed states where one is already granted.
+- Granted permissions should remain visible with a green success state instead of disappearing and shifting the layout.
+- Activating a permission from the requirements window should keep that window alive while System Settings opens and status refreshes propagate back into the app.
+- Accessibility-backed hotkeys should refresh when the app becomes active again after the user enables the permission.
+- Screen Recording may lag behind Accessibility depending on macOS behavior, so avoid assuming instant activation without a refresh pass.
+
+### Multi-display and Windowing Notes
+
+- Capture overlays (`LiveAnnotationOverlayWindowController`, `GifRecordingOverlayWindowController`) spawn one borderless window per active non-mirrored display via `DisplayEnumerator.activeScreens()`. The first mouse-down claims the session and dismisses sibling overlays.
+- Do not pass a non-nil `screen:` argument to `NSWindow(contentRect:styleMask:backing:defer:screen:)` when `contentRect` already contains global coordinates. Use the 4-parameter initializer and then `setFrame(screen.frame, display: false)`.
+- The Xcode project uses `PBXFileSystemSynchronizedRootGroup` (Xcode 16+). Files added anywhere under `PeekOCR/` are auto-discovered; manual `project.pbxproj` edits are unnecessary.
+
+### Clip Editor UI Notes
+
+- `GifClipSidebarView` uses a flat header plus shared card sections via `cardSection(title:content:)`. Reuse that helper instead of creating new background treatments.
+- The `GIF ↔ Video` segmented picker belongs inline in the export header, not in its own section.
+- Video export `FPS` is an informational row inside the quality card, not a user-editable picker.
+- Timeline trim selection uses `Color.accentColor`, with a white capsule playhead and dot. Do not reintroduce the previous yellow highlight.
+- The preview container should remain a neutral black rounded rectangle with a subtle vignette, not a decorative gradient.
+- Playback controls should keep `backward.frame.fill` and `forward.frame.fill` for frame stepping.
+- The primary export button keeps `.keyboardShortcut(.defaultAction)` and Cancel stays bound to `.cancelAction`.
+
+### Capture Sound Notes
+
+- `PeekOCR/Resources/capture-shutter.m4a` is played asynchronously via `CaptureSoundService.shared.play()`.
+- The shutter sound plays after successful screenshot save and after saving the current frame from the clip editor.
+- OCR captures, GIF/video recordings, and GIF/video exports should stay silent.
+- Preferences live in `SoundSettings.shared` and new audio assets must be documented in `PeekOCR/Resources/ATTRIBUTIONS.md`.
 
 ## Key Architecture
 
@@ -298,10 +374,17 @@ PeekOCR is expected to behave well as a long-lived menu bar app. When changing r
 - **Screen Recording**: For capture
 - **Accessibility**: For global hotkeys
 
+Permission prompts should remain explicit and user-driven. Prefer the menu bar banner, settings activation rows, and the dedicated requirements window over automatic launch-time prompts.
+
 ## Testing Checklist
 
 - [ ] Menu bar icon appears
+- [ ] Missing permissions show the menu bar reminder banner instead of an automatic startup prompt
 - [ ] Hotkeys trigger capture
+- [ ] Trying to capture without Screen Recording opens the missing-permissions window
+- [ ] The missing-permissions window always shows both permission cards and keeps a stable height in mixed states
+- [ ] Granted permissions switch to the green success state instead of disappearing from the requirements window
+- [ ] Returning from System Settings refreshes Accessibility/Screen Recording status in the requirements window and settings rows
 - [ ] Live annotation overlay opens for `⌘⇧5`
 - [ ] Selection can be created, moved, and resized before capture
 - [ ] Overlay tools work for arrow, text, and highlight before capture
@@ -314,6 +397,23 @@ PeekOCR is expected to behave well as a long-lived menu bar app. When changing r
 - [ ] Save exports image correctly
 - [ ] GIF export saves correctly and appears in history
 - [ ] Settings persist
+
+## Docs To Keep Updated
+
+- `README.md`
+- `AGENTS.md`
+- `CHANGELOG.md`
+- `docs/ARCHITECTURE.md`
+- `docs/COMPONENTS.md`
+- `docs/SERVICES.md`
+- `docs/VIEWS.md`
+
+## Final Validation Checklist
+
+- Build the app successfully with `xcodebuild`.
+- Check `git diff --stat` for unexpected churn.
+- Update docs for any user-visible or architecture-visible changes.
+- If export or capture behavior changes, verify failure paths do not leave partial temp or output files behind.
 
 ## Git Workflow
 

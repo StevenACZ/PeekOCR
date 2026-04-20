@@ -14,6 +14,9 @@ PeekOCR follows a clean **MVVM** architecture with clear separation of concerns.
 │  ┌─────────────┐  ┌──────────────────────────────┐     │
 │  │ GIF Overlay │  │        GIF Clip Editor        │     │
 │  └─────────────┘  └──────────────────────────────┘     │
+│  ┌──────────────────────────────┐                      │
+│  │   Permission Requirements     │                      │
+│  └──────────────────────────────┘                      │
 └─────────────────────────────────────────────────────────┘
                            │
                            ▼
@@ -37,6 +40,9 @@ PeekOCR follows a clean **MVVM** architecture with clear separation of concerns.
 │  ┌──────────────────────┐  ┌────────────────────────┐  │
 │  │ GifRecordingController│  │ GifExport/VideoExport   │  │
 │  └──────────────────────┘  └────────────────────────┘  │
+│  ┌──────────────────────┐  ┌────────────────────────┐  │
+│  │  PermissionService   │  │  PermissionAssistant     │  │
+│  └──────────────────────┘  └────────────────────────┘  │
 └─────────────────────────────────────────────────────────┘
                            │
                            ▼
@@ -56,9 +62,10 @@ PeekOCR follows a clean **MVVM** architecture with clear separation of concerns.
 
 1. **User Action** → View receives gesture/input
 2. **State Update** → Observable state objects publish changes
-3. **Service Call** → Services execute business logic
-4. **Model Update** → Data models are modified
-5. **UI Refresh** → SwiftUI reactively updates views
+3. **Permission Gate** → Capture flows check required permissions before continuing
+4. **Service Call** → Services execute business logic
+5. **Model Update** → Data models are modified
+6. **UI Refresh** → SwiftUI reactively updates views
 
 ## Key Patterns
 
@@ -70,6 +77,11 @@ PeekOCR follows a clean **MVVM** architecture with clear separation of concerns.
 ### Coordinator Pattern
 - `CaptureCoordinator`: Orchestrates capture workflow
 - `AnnotationWindowController`: Manages editor window lifecycle
+
+### Permission-Gated Flow
+- `PermissionService`: Centralizes granted/missing permission checks
+- `PermissionAssistant`: Opens the correct System Settings pane and overlays guidance only after an explicit user action
+- `PermissionRequirementsWindowController`: Explains blocked capture requirements without interrupting app launch, while keeping both permissions visible with live status updates
 
 ### Static Helpers
 - `AnnotationGeometry`: Pure geometry calculations
@@ -87,6 +99,7 @@ PeekOCR/
 │   ├── Annotation/      # Editor services
 │   ├── Screenshot/      # Image processing
 │   ├── HotKey/          # Keyboard shortcuts
+│   ├── Permissions/     # Guided permission onboarding
 │   └── (root)           # CaptureCoordinator, Gif* services, NativeScreen* wrappers
 ├── Views/
 │   ├── Annotation/      # Editor views
@@ -95,6 +108,7 @@ PeekOCR/
 │   │   └── Toolbar/     # Tool selection
 │   ├── Gif/             # GIF clip editor + recording overlay views
 │   ├── MenuBar/         # Menu bar popover
+│   ├── Permissions/     # Missing-permission onboarding window
 │   ├── Settings/        # Preferences
 │   └── Components/      # Reusable UI
 ├── Utils/               # Utilities

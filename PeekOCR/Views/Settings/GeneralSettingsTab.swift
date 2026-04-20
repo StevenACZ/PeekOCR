@@ -74,49 +74,22 @@ struct GeneralSettingsTab: View {
 
             Section {
                 PermissionStatusRow(
-                    title: "Grabar Pantalla",
-                    description: "Necesario para capturar texto",
-                    icon: "rectangle.dashed.badge.record",
-                    checkPermission: checkScreenCapturePermission,
-                    openSettings: openScreenCaptureSettings
+                    permission: .screenRecording
                 )
 
                 PermissionStatusRow(
-                    title: "Accesibilidad",
-                    description: "Necesario para atajos globales",
-                    icon: "accessibility",
-                    checkPermission: checkAccessibilityPermission,
-                    openSettings: openAccessibilitySettings
+                    permission: .accessibility
                 )
             } header: {
                 Text("Permisos")
+            } footer: {
+                Text("PeekOCR puede guiarte dentro de Ajustes del Sistema y actualizará el estado cuando regreses a la app.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)
         .padding()
-    }
-
-    // MARK: - Permission Checks
-
-    private func checkScreenCapturePermission() -> Bool {
-        return CGPreflightScreenCaptureAccess()
-    }
-
-    private func checkAccessibilityPermission() -> Bool {
-        return AXIsProcessTrusted()
-    }
-
-    private func openScreenCaptureSettings() {
-        CGRequestScreenCaptureAccess()
-        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture") {
-            NSWorkspace.shared.open(url)
-        }
-    }
-
-    private func openAccessibilitySettings() {
-        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
-            NSWorkspace.shared.open(url)
-        }
     }
 }
 

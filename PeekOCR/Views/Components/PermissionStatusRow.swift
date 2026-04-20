@@ -2,37 +2,57 @@
 //  PermissionStatusRow.swift
 //  PeekOCR
 //
-//  Created by Steven on 14/12/25.
+//  Displays a guided permission row inside Settings.
 //
 
-import SwiftUI
-import Combine
 import AppKit
+import Combine
+import SwiftUI
 
-/// A reusable row component for displaying permission status
+/// A reusable row component for displaying guided permission setup.
 struct PermissionStatusRow: View {
-    let title: String
-    let description: String
-    let icon: String
-    let checkPermission: () -> Bool
-    let openSettings: () -> Void
+    let permission: AppPermission
 
     @State private var isGranted = false
 
     var body: some View {
-        HStack {
-            Image(systemName: icon)
-                .font(.title3)
-                .foregroundStyle(isGranted ? .green : .orange)
-                .frame(width: 24)
+        HStack(spacing: 12) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(Color(nsColor: permission.accentColor).opacity(isGranted ? 0.14 : 0.10))
+                    .frame(width: 40, height: 40)
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.body)
+                Image(systemName: permission.iconName)
+                    .font(.title3)
+                    .foregroundStyle(isGranted ? .green : Color(nsColor: permission.accentColor))
+            }
+            .frame(width: 40, height: 40)
 
-                Text(description)
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 8) {
+                    Text(permission.title)
+                        .font(.body.weight(.semibold))
+
+                    Text(isGranted ? "Activo" : "Pendiente")
+                        .font(.caption.weight(.semibold))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(
+                            Capsule(style: .continuous)
+                                .fill(isGranted ? Color.green.opacity(0.14) : Color.orange.opacity(0.14))
+                        )
+                        .foregroundStyle(isGranted ? .green : .orange)
+                }
+
+                Text(permission.summary)
                     .font(.caption)
                     .foregroundStyle(.secondary)
+
+                if !isGranted {
+                    Text("PeekOCR te lleva al ajuste correcto y refresca el estado al volver.")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
             }
 
             Spacer()
@@ -42,12 +62,15 @@ struct PermissionStatusRow: View {
                     .foregroundStyle(.green)
             } else {
                 Button("Activar") {
-                    openSettings()
+                    PermissionService.shared.requestInteractively(permission)
                     refreshPermissionStatus()
                 }
-                .buttonStyle(.link)
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+                .tint(Color(nsColor: permission.accentColor))
             }
         }
+        .padding(.vertical, 6)
         .onAppear {
             refreshPermissionStatus()
         }
@@ -57,6 +80,6 @@ struct PermissionStatusRow: View {
     }
 
     private func refreshPermissionStatus() {
-        isGranted = checkPermission()
+        isGranted = PermissionService.shared.isGranted(permission)
     }
 }
