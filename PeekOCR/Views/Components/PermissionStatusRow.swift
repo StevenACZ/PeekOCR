@@ -13,13 +13,14 @@ import SwiftUI
 struct PermissionStatusRow: View {
     let permission: AppPermission
 
+    @Environment(\.colorScheme) private var colorScheme
     @State private var isGranted = false
 
     var body: some View {
         HStack(spacing: 12) {
             ZStack {
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(Color(nsColor: permission.accentColor).opacity(isGranted ? 0.14 : 0.10))
+                    .fill(iconBackgroundColor)
                     .frame(width: 40, height: 40)
 
                 Image(systemName: permission.iconName)
@@ -81,5 +82,10 @@ struct PermissionStatusRow: View {
 
     private func refreshPermissionStatus() {
         isGranted = PermissionService.shared.isGranted(permission)
+    }
+
+    private var iconBackgroundColor: Color {
+        let tone = isGranted ? Color.green : Color(nsColor: permission.accentColor)
+        return tone.opacity(colorScheme == .dark ? 0.16 : 0.10)
     }
 }

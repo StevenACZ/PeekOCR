@@ -112,6 +112,7 @@ PeekOCR/
 │   │
 │   ├── Permissions/
 │   │   ├── AppPermission.swift            # Supported permission definitions
+│   │   ├── PermissionAppearance.swift     # Adaptive AppKit colors for permission UI
 │   │   ├── PermissionService.swift        # Missing-permission checks + guided flow entry
 │   │   ├── PermissionAssistant.swift      # Floating helper over System Settings
 │   │   ├── PermissionRequirementsWindowController.swift # Blocked-capture explainer window
@@ -251,6 +252,7 @@ PeekOCR is expected to behave well as a long-lived menu bar app. When changing r
 - Missing permissions should surface through explicit UI: settings rows, the menu bar reminder banner, or the dedicated requirements window shown when capture is blocked.
 - `PermissionService` owns the "what is missing?" logic and starts the guided activation flow.
 - `PermissionAssistant` opens the correct System Settings pane and keeps the floating helper aligned with the settings window.
+- Permission assistant surfaces must use adaptive system colors and stay readable in both Light Mode and Dark Mode.
 - `PermissionRequirementsWindowController` presents the explainer window when capture cannot proceed yet.
 - The requirements window should keep a fixed footprint and always show both permissions, even in mixed states where one is already granted.
 - Granted permissions should remain visible with a green success state instead of disappearing and shifting the layout.

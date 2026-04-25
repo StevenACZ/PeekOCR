@@ -11,6 +11,8 @@ import SwiftUI
 struct PermissionRequirementsIntroView: View {
     let missingCount: Int
 
+    @Environment(\.colorScheme) private var colorScheme
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .top, spacing: 16) {
@@ -54,16 +56,18 @@ struct PermissionRequirementsIntroView: View {
                     .padding(.vertical, 7)
                     .background(
                         Capsule(style: .continuous)
-                            .fill(accentColor.opacity(0.12))
+                            .fill(accentColor.opacity(colorScheme == .dark ? 0.18 : 0.10))
                     )
             }
-            .padding(16)
+            .padding(.horizontal, 18)
+            .padding(.vertical, 20)
+            .frame(minHeight: 122, alignment: .topLeading)
             .background(
                 RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(Color(nsColor: .controlBackgroundColor).opacity(0.86))
+                    .fill(Color(nsColor: .controlBackgroundColor).opacity(colorScheme == .dark ? 0.88 : 1))
                     .overlay(
                         RoundedRectangle(cornerRadius: 20, style: .continuous)
-                            .stroke(accentColor.opacity(0.12), lineWidth: 1)
+                            .stroke(headerBorderColor, lineWidth: 1)
                     )
             )
 
@@ -83,10 +87,10 @@ struct PermissionRequirementsIntroView: View {
             .padding(.horizontal, 12)
             .background(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(accentColor.opacity(0.10))
+                    .fill(accentColor.opacity(colorScheme == .dark ? 0.16 : 0.08))
                     .overlay(
                         RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .stroke(accentColor.opacity(0.14), lineWidth: 1)
+                            .stroke(accentColor.opacity(colorScheme == .dark ? 0.22 : 0.12), lineWidth: 1)
                     )
             )
         }
@@ -94,6 +98,12 @@ struct PermissionRequirementsIntroView: View {
 
     private var accentColor: Color {
         missingCount == 0 ? .green : .orange
+    }
+
+    private var headerBorderColor: Color {
+        colorScheme == .dark
+            ? accentColor.opacity(0.20)
+            : Color(nsColor: .separatorColor).opacity(0.16)
     }
 
     private var titleText: String {

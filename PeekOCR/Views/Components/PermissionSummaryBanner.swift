@@ -12,6 +12,8 @@ struct PermissionSummaryBanner: View {
     let missingPermissions: [AppPermission]
     let onReview: () -> Void
 
+    @Environment(\.colorScheme) private var colorScheme
+
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: "exclamationmark.triangle.fill")
@@ -42,10 +44,10 @@ struct PermissionSummaryBanner: View {
         .padding(10)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color.orange.opacity(0.12))
+                .fill(Color.orange.opacity(colorScheme == .dark ? 0.16 : 0.09))
                 .overlay(
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(Color.orange.opacity(0.22), lineWidth: 1)
+                        .stroke(Color.orange.opacity(colorScheme == .dark ? 0.24 : 0.16), lineWidth: 1)
                 )
         )
     }
