@@ -7,8 +7,11 @@ and this project loosely follows Semantic Versioning.
 
 ## [Unreleased]
 
+## [1.8.1] - 2026-04-24
+
 ### Fixed
 - Permission guidance surfaces now render cleanly in Light Mode and Dark Mode, including the floating System Settings assistant, draggable app card, requirements window, menu bar reminder, and Settings permission rows.
+- Improved the requirements window activation button contrast across permission accent colors.
 
 ### Internal
 - Added shared permission appearance helpers so AppKit permission overlays resolve dynamic system colors against the active macOS appearance.
