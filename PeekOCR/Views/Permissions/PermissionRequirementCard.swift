@@ -87,7 +87,7 @@ struct PermissionRequirementCard: View {
                         } label: {
                             Text("Activar")
                                 .font(.caption.weight(.semibold))
-                                .foregroundStyle(.white)
+                                .foregroundStyle(activationButtonForeground)
                                 .lineLimit(1)
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 6)
@@ -153,5 +153,9 @@ struct PermissionRequirementCard: View {
         colorScheme == .dark
             ? toneColor.opacity(0.20)
             : Color(nsColor: .separatorColor).opacity(0.18)
+    }
+
+    private var activationButtonForeground: Color {
+        .black.opacity(0.82)
     }
 }
