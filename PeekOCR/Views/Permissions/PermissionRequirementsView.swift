@@ -18,6 +18,7 @@ struct PermissionRequirementsView: View {
     private let refreshTimer = Timer.publish(every: 0.5, on: .main, in: .common).autoconnect()
     private let previewGrantedPermissions: Set<AppPermission>?
 
+    @Environment(\.colorScheme) private var colorScheme
     @State private var grantedPermissions: Set<AppPermission> = []
 
     init(
@@ -76,21 +77,14 @@ struct PermissionRequirementsView: View {
     }
 
     private var backgroundLayer: some View {
-        ZStack {
-            Color(nsColor: .windowBackgroundColor)
-
-            Circle()
-                .fill(Color.orange.opacity(0.16))
-                .frame(width: 220, height: 220)
-                .blur(radius: 70)
-                .offset(x: -110, y: -120)
-
-            Circle()
-                .fill(Color.blue.opacity(0.10))
-                .frame(width: 180, height: 180)
-                .blur(radius: 60)
-                .offset(x: 180, y: 120)
-        }
+        LinearGradient(
+            colors: [
+                Color(nsColor: .windowBackgroundColor),
+                Color(nsColor: .controlBackgroundColor).opacity(colorScheme == .dark ? 0.42 : 0.72)
+            ],
+            startPoint: .top,
+            endPoint: .bottom
+        )
         .ignoresSafeArea()
     }
 

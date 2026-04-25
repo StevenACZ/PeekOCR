@@ -133,9 +133,9 @@ Guided permission onboarding surfaces.
 
 | View | Description |
 |------|-------------|
-| `PermissionRequirementsView` | Fixed-size window content shown when capture is blocked, keeping both permissions visible with live state |
-| `PermissionRequirementsIntroView` | Intro/header block that summarizes pending vs ready permission status |
-| `PermissionRequirementCard` | Per-permission card that can show either activation or green success state |
+| `PermissionRequirementsView` | Fixed-size window content shown when capture is blocked, keeping both permissions visible with live state and adaptive Light/Dark backgrounds |
+| `PermissionRequirementsIntroView` | Intro/header block that summarizes pending vs ready permission status with semantic contrast |
+| `PermissionRequirementCard` | Per-permission card that can show either activation or green success state without relying on dark-only material |
 
 ### GIF Clip (`Views/Gif/`)
 Post-record editor + recording overlay.

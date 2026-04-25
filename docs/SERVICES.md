@@ -294,6 +294,15 @@ Floating helper anchored over System Settings.
 - Dismiss itself automatically after the permission is granted
 - Let the requirements window stay visible while the external settings guidance is running
 
+### PermissionAppearance
+Shared AppKit appearance helpers for permission overlays.
+
+**Location:** `Services/Permissions/PermissionAppearance.swift`
+
+**Responsibilities:**
+- Resolve dynamic `NSColor` values against the active effective appearance
+- Keep the floating assistant and draggable app card readable in Light Mode and Dark Mode
+
 ### PermissionRequirementsWindowController
 Explainer window shown when capture cannot start yet.
 
