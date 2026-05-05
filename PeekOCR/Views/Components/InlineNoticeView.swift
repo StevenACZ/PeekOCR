@@ -64,4 +64,3 @@ struct InlineNoticeView: View {
             )
     }
 }
-

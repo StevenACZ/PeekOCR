@@ -136,7 +136,7 @@ enum CGContextAnnotationRenderer {
 
         let attributes: [NSAttributedString.Key: Any] = [
             .font: font,
-            .foregroundColor: cgColor
+            .foregroundColor: cgColor,
         ]
 
         let attributedString = NSAttributedString(string: annotation.text, attributes: attributes)

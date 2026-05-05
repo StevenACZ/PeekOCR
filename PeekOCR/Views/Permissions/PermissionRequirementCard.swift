@@ -135,7 +135,7 @@ struct PermissionRequirementCard: View {
                 LinearGradient(
                     colors: [
                         toneColor.opacity(colorScheme == .dark ? 0.14 : 0.07),
-                        .clear
+                        .clear,
                     ],
                     startPoint: .leading,
                     endPoint: .trailing

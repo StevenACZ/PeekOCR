@@ -1,133 +1,135 @@
-<h1 align="center">👁️ PeekOCR</h1>
+# PeekOCR
 
-<p align="center">
-  <strong>OCR, screenshots, GIF clips, and annotations — from your macOS menu bar</strong>
-</p>
+PeekOCR is a native macOS menu bar app for fast OCR, QR detection,
+screenshots, live annotation capture, GIF clip recording, and MP4/GIF export.
 
-<p align="center">
-  <img src="https://img.shields.io/badge/macOS-13.0+-007AFF?style=for-the-badge&logo=apple&logoColor=white" alt="macOS 13+"/>
-  <img src="https://img.shields.io/badge/Apple%20Silicon-M1+-111111?style=for-the-badge&logo=apple&logoColor=white" alt="Apple Silicon M1+"/>
-  <img src="https://img.shields.io/badge/Swift-5.9-F05138?style=for-the-badge&logo=swift&logoColor=white" alt="Swift 5.9"/>
-  <img src="https://img.shields.io/badge/License-MIT-34C759?style=for-the-badge" alt="MIT License"/>
-</p>
+## Requirements
 
----
+- macOS 13.0 or later
+- Apple Silicon Mac (`arm64`, M1 and newer)
+- Xcode with command line tools
+- Screen Recording permission for capture
+- Accessibility permission for global hotkeys
 
-## ✨ What is PeekOCR?
+## Features
 
-PeekOCR is a macOS menu bar app that lets you quickly **select an area of your screen** to:
+- OCR region capture with clipboard output.
+- QR content detection and copy.
+- Screenshot capture with configurable format, quality, scale, and save
+  location.
+- Live annotated screenshot flow with region adjustment, arrows, text,
+  highlights, move/resize, and undo before export.
+- GIF clip recording up to 10 seconds, with trim preview and GIF/MP4 export.
+- Guided permission setup through the menu bar reminder, settings rows, and
+  missing-permissions window.
+- Optional capture sound for successful screenshot/frame saves.
+- Recent capture history from the menu bar.
 
-- copy extracted text (OCR) to the clipboard,
-- save screenshots (optionally annotated),
-- and record short **GIF clips** (ideal for sharing UI bugs/animations).
+## Quick Start
 
-### 🎯 Features
+```bash
+git clone <repo-url>
+cd PeekOCR
+make tools
+make ci-check
+```
 
-| Feature                  | Description                                        |
-| ------------------------ | -------------------------------------------------- |
-| 📸 **OCR Capture**       | Select an area and copy the extracted text         |
-| 🔗 **QR Detection**      | Detect and copy QR contents                        |
-| 📷 **Screenshots**       | Save images with configurable format/quality/scale |
-| ✍️ **Live Annotation Capture** | Select, adjust, annotate in-place, then export      |
-| 🎞️ **GIF Clip Capture**  | Record up to 10s, trim, preview, and export as GIF |
-| 🛡️ **Guided permissions** | In-app reminders, live permission status, and a guided System Settings flow |
-| 🔊 **Capture sound**     | Optional shutter feedback on save (toggle + volume in Settings) |
-| 🕘 **History**           | Quickly access your last 6 captures                |
-| ⌨️ **Hotkeys**           | Customize global shortcuts in Settings             |
+Open `PeekOCR.xcodeproj` in Xcode and run the `PeekOCR` scheme.
 
----
+## Daily Workflow
 
-## 🚀 Installation
+```bash
+make format
+make lint
+make build
+```
 
-1. Download the latest version from [Releases](https://github.com/StevenACZ/PeekOCR/releases)
-2. Open the DMG and drag `PeekOCR.app` to your Applications folder
-3. Launch PeekOCR
-4. Open any capture mode, or use the menu bar reminder, to review and enable the required permissions with the guided setup flow
+- `make format` formats changed Swift files with Xcode's bundled
+  `swift-format`.
+- `make lint` checks changed Swift files without editing them.
+- `make ci-check` runs `lint + Debug build`.
+- `make release-check` runs `lint + Release build + size check`.
+- `make format-all` and `make lint-all` are explicit full-repo passes; use them
+  only for a planned formatting migration.
 
----
+Optional hooks:
 
-## ⌨️ How to Use
+```bash
+make hooks-install
+```
 
-### Default Keyboard Shortcuts
+## Default Shortcuts
+
+| Action | Shortcut |
+|---|---|
+| OCR capture | `⇧ Space` |
+| Screenshot | `⌘⇧4` |
+| Annotated screenshot | `⌘⇧5` |
+| GIF clip | `⌘⇧6` |
 
 All shortcuts can be changed in Settings.
 
-| Action                         | Shortcut  |
-| ------------------------------ | --------- |
-| **Capture text (OCR)**         | `⇧ Space` |
-| **Capture screenshot**         | `⌘⇧4`     |
-| **Capture with annotations**   | `⌘⇧5`     |
-| **Capture GIF clip (max 10s)** | `⌘⇧6`     |
+## Permissions
 
-### Quick Start
+PeekOCR does not trigger permission prompts automatically at launch. If Screen
+Recording or Accessibility is missing, the app surfaces explicit activation UI
+from settings, the menu bar reminder, or a blocked capture attempt.
 
-**OCR**
+Screen Recording may lag after being enabled in System Settings depending on
+macOS behavior. Reopen the app or retry the capture flow if macOS has not
+refreshed the permission yet.
 
-1. Press `⇧ Space`
-2. Drag to select a region
-3. The extracted text is copied to your clipboard
+## Release Size
 
-**Annotated screenshot**
+Release builds target Apple Silicon only. Measure a built app with:
 
-1. Press `⌘⇧5`
-2. Drag to create the capture area
-3. Adjust the selection by dragging corners or moving the region
-4. Add arrows, text, or highlights directly on the live overlay
-5. Move existing annotations inline, resize highlight boxes, and edit text with double click
-6. Use `⌘Z` to undo the last live annotation change
-7. Press `Enter` to capture and export the final annotated image
+```bash
+make release
+make size-check
+```
 
-**GIF Clip**
+The current Release bundle is expected to contain only:
 
-1. Press `⌘⇧6`
-2. Select a region
-3. Record (auto-stops at 10s or stop early)
-4. Trim in/out in the editor and export as a GIF
+- `Contents/MacOS/PeekOCR`
+- `Contents/Resources/Assets.car`
+- `Contents/Resources/capture-shutter.m4a`
+- `Contents/Resources/ATTRIBUTIONS.md`
+- standard bundle metadata and code signature files
 
----
+## Public Repo Safety
 
-## 🔐 Permissions
+Tracked and expected to be public:
 
-PeekOCR needs two permissions to work properly:
+- Source code, app assets required at runtime, resources, entitlements, Xcode
+  project metadata, Makefile, formatting config, hook config, README,
+  changelog, contributing notes, security notes, and license.
 
-| Permission           | Why                     |
-| -------------------- | ----------------------- |
-| **Screen Recording** | Capture screen content  |
-| **Accessibility**    | Register global hotkeys |
+Ignored and intentionally private/local:
 
-PeekOCR does not interrupt you with permission prompts on launch. If one of these permissions is missing, the app shows an in-app reminder and a guided window that opens the correct System Settings pane when you choose to continue.
+- `AGENTS.md`, `CLAUDE.md`, `docs/`, `.codex/`, Xcode user data, build
+  products, logs, crash reports, credentials, `.env*`, screenshots, recordings,
+  DMGs, archives, and local signing files.
 
-The requirements window keeps both permissions visible, marks granted permissions in green, and refreshes the status when you come back from System Settings. Accessibility usually updates right away; Screen Recording can still depend on how macOS applies the change on your machine.
+Before opening a PR, run:
 
----
+```bash
+make ci-check
+git diff --check
+```
 
-## 💻 Requirements
+## Tests
 
-- macOS 13.0 (Ventura) or later
-- Apple Silicon Mac (M1 or newer)
+The `PeekOCR` scheme currently has no configured test action. Use
+`make ci-check` as the current local gate.
 
----
+## Contributing
 
-## ⚡ Performance and Stability
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
-PeekOCR is designed to live in the macOS menu bar for long periods, so the project now prioritizes:
+## Security
 
-- OCR and image processing off the UI-critical path
-- lower transient memory usage during screenshot save/export
-- cleanup of temporary/partial export files on failures
-- no leaked keyboard event monitors in settings
-- fewer long-running polling timers in resident UI
+See [SECURITY.md](SECURITY.md).
 
-## 📚 Documentation
+## License
 
-- `CHANGELOG.md`
-
-## 📝 License
-
-MIT License — use and modify freely
-
----
-
-<p align="center">
-  Made with ❤️ for the macOS community
-</p>
+MIT

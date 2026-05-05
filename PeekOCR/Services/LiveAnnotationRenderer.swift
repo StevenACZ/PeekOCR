@@ -29,7 +29,7 @@ enum LiveAnnotationRenderer {
         annotations: [LiveAnnotation]
     ) -> CGImage? {
         guard let colorSpace = CGColorSpace(name: CGColorSpace.sRGB),
-              let context = CGContext(
+            let context = CGContext(
                 data: nil,
                 width: image.width,
                 height: image.height,
@@ -37,7 +37,8 @@ enum LiveAnnotationRenderer {
                 bytesPerRow: 0,
                 space: colorSpace,
                 bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
-              ) else {
+            )
+        else {
             return nil
         }
 
@@ -126,7 +127,9 @@ enum LiveAnnotationRenderer {
         }
     }
 
-    private static func drawRenderedArrow(_ annotation: LiveAnnotation, in context: CGContext, selectionRectInScreen: CGRect, scaleFactor: CGFloat) {
+    private static func drawRenderedArrow(
+        _ annotation: LiveAnnotation, in context: CGContext, selectionRectInScreen: CGRect, scaleFactor: CGFloat
+    ) {
         let start = localPoint(annotation.startPoint, selectionRectInScreen: selectionRectInScreen, scaleFactor: scaleFactor)
         let end = localPoint(annotation.endPoint, selectionRectInScreen: selectionRectInScreen, scaleFactor: scaleFactor)
 
@@ -152,7 +155,9 @@ enum LiveAnnotationRenderer {
         context.restoreGState()
     }
 
-    private static func drawRenderedHighlight(_ annotation: LiveAnnotation, in context: CGContext, selectionRectInScreen: CGRect, scaleFactor: CGFloat) {
+    private static func drawRenderedHighlight(
+        _ annotation: LiveAnnotation, in context: CGContext, selectionRectInScreen: CGRect, scaleFactor: CGFloat
+    ) {
         let rect = CGRect(
             x: (min(annotation.startPoint.x, annotation.endPoint.x) - selectionRectInScreen.minX) * scaleFactor,
             y: (min(annotation.startPoint.y, annotation.endPoint.y) - selectionRectInScreen.minY) * scaleFactor,
@@ -169,7 +174,9 @@ enum LiveAnnotationRenderer {
         context.restoreGState()
     }
 
-    private static func drawRenderedText(_ annotation: LiveAnnotation, in context: CGContext, selectionRectInScreen: CGRect, scaleFactor: CGFloat) {
+    private static func drawRenderedText(
+        _ annotation: LiveAnnotation, in context: CGContext, selectionRectInScreen: CGRect, scaleFactor: CGFloat
+    ) {
         guard !annotation.text.isEmpty else { return }
         let origin = localPoint(annotation.startPoint, selectionRectInScreen: selectionRectInScreen, scaleFactor: scaleFactor)
         let font = CTFontCreateWithName("Helvetica-Bold" as CFString, annotation.fontSize * scaleFactor, nil)

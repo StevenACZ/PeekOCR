@@ -13,9 +13,9 @@ struct CaptureItem: Identifiable, Codable, Equatable {
     let text: String
     let captureType: CaptureType
     let timestamp: Date
-    
+
     // MARK: - Initialization
-    
+
     init(
         id: UUID = UUID(),
         text: String,
@@ -27,20 +27,20 @@ struct CaptureItem: Identifiable, Codable, Equatable {
         self.captureType = captureType
         self.timestamp = timestamp
     }
-    
+
     // MARK: - Computed Properties
-    
+
     var displayText: String {
         if text.count > Constants.History.maxPreviewLength {
             return String(text.prefix(Constants.History.maxPreviewLength)) + "..."
         }
         return text
     }
-    
+
     var formattedTime: String {
         AppDateFormatters.relativeTimestamp(for: timestamp)
     }
-    
+
     var icon: String {
         switch captureType {
         case .text:

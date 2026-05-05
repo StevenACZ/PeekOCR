@@ -43,10 +43,11 @@ struct GifClipEditorView: View {
         _gifOptions = State(initialValue: clipSettings.makeDefaultGifOptions())
         _videoOptions = State(initialValue: clipSettings.makeDefaultVideoOptions())
 
-        _state = StateObject(wrappedValue: GifClipEditorState(
-            videoURL: videoURL,
-            maxDurationSeconds: clipSettings.maxDurationSeconds
-        ))
+        _state = StateObject(
+            wrappedValue: GifClipEditorState(
+                videoURL: videoURL,
+                maxDurationSeconds: clipSettings.maxDurationSeconds
+            ))
     }
 
     var body: some View {
@@ -74,10 +75,13 @@ struct GifClipEditorView: View {
             keyboardHandler.teardown()
             state.stopPlayback()
         }
-        .alert(errorAlertTitle, isPresented: Binding(
-            get: { errorAlertMessage != nil },
-            set: { if !$0 { errorAlertMessage = nil } }
-        )) {
+        .alert(
+            errorAlertTitle,
+            isPresented: Binding(
+                get: { errorAlertMessage != nil },
+                set: { if !$0 { errorAlertMessage = nil } }
+            )
+        ) {
             Button("OK") {}
         } message: {
             Text(errorAlertMessage ?? "Error desconocido")

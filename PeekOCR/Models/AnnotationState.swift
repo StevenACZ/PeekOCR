@@ -6,8 +6,8 @@
 //  Uses composition with specialized managers for undo/redo, drag, and text input.
 //
 
-import SwiftUI
 import Combine
+import SwiftUI
 
 /// Main state manager for the annotation editor
 final class AnnotationState: ObservableObject {
@@ -131,11 +131,13 @@ final class AnnotationState: ObservableObject {
     }
 
     func finishTextInput() {
-        guard let annotation = textManager.createAnnotation(
-            color: selectedColor,
-            strokeWidth: strokeWidth,
-            fontSize: fontSize
-        ) else { return }
+        guard
+            let annotation = textManager.createAnnotation(
+                color: selectedColor,
+                strokeWidth: strokeWidth,
+                fontSize: fontSize
+            )
+        else { return }
 
         undoManager.saveState(annotations)
         annotations.append(annotation)
@@ -192,23 +194,26 @@ final class AnnotationState: ObservableObject {
 
     func startDrag(at point: CGPoint, handle: ResizeHandle?) {
         guard let id = selectedAnnotationId,
-              let annotation = annotations.first(where: { $0.id == id }) else { return }
+            let annotation = annotations.first(where: { $0.id == id })
+        else { return }
         dragManager.startDrag(at: point, handle: handle, annotation: annotation)
     }
 
     func updateDrag(to point: CGPoint) {
         guard let id = selectedAnnotationId,
-              let original = dragManager.getOriginalForUndo(),
-              let index = annotations.firstIndex(where: { $0.id == id }) else { return }
+            let original = dragManager.getOriginalForUndo(),
+            let index = annotations.firstIndex(where: { $0.id == id })
+        else { return }
 
         annotations[index] = dragManager.calculateDragUpdate(to: point, for: original)
     }
 
     func finishDrag() {
         if let id = selectedAnnotationId,
-           let current = annotations.first(where: { $0.id == id }),
-           dragManager.hasChanges(current: current),
-           let original = dragManager.getOriginalForUndo() {
+            let current = annotations.first(where: { $0.id == id }),
+            dragManager.hasChanges(current: current),
+            let original = dragManager.getOriginalForUndo()
+        {
             var previousState = annotations
             if let index = previousState.firstIndex(where: { $0.id == id }) {
                 previousState[index] = original

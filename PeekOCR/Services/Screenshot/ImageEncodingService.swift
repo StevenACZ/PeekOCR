@@ -19,12 +19,14 @@ enum ImageEncodingService {
     /// - Returns: Encoded image data, or nil on failure
     nonisolated static func encode(_ image: CGImage, format: ImageFormat, quality: Double = 1.0) -> Data? {
         let data = NSMutableData()
-        guard let destination = CGImageDestinationCreateWithData(
-            data as CFMutableData,
-            format.utType.identifier as CFString,
-            1,
-            nil
-        ) else {
+        guard
+            let destination = CGImageDestinationCreateWithData(
+                data as CFMutableData,
+                format.utType.identifier as CFString,
+                1,
+                nil
+            )
+        else {
             return nil
         }
 
@@ -44,32 +46,32 @@ enum ImageEncodingService {
         case .png:
             return [
                 kCGImagePropertyPNGDictionary: [
-                    kCGImagePropertyPNGInterlaceType: 0,
-                ],
+                    kCGImagePropertyPNGInterlaceType: 0
+                ]
             ]
         case .jpg:
             return [
                 kCGImageDestinationLossyCompressionQuality: quality,
                 kCGImagePropertyJFIFDictionary: [
-                    kCGImagePropertyJFIFIsProgressive: false,
+                    kCGImagePropertyJFIFIsProgressive: false
                 ],
             ]
         case .tiff:
             return [
                 kCGImagePropertyTIFFDictionary: [
-                    kCGImagePropertyTIFFCompression: 1,
-                ],
+                    kCGImagePropertyTIFFCompression: 1
+                ]
             ]
         case .heic:
             return [
-                kCGImageDestinationLossyCompressionQuality: quality,
+                kCGImageDestinationLossyCompressionQuality: quality
             ]
         }
     }
 }
 
-private extension ImageFormat {
-    nonisolated var utType: UTType {
+extension ImageFormat {
+    fileprivate nonisolated var utType: UTType {
         switch self {
         case .png:
             return .png

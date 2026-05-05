@@ -24,9 +24,10 @@ extension LiveAnnotationOverlayView {
         removeTextField(commit: true)
 
         if let annotationID = selectedAnnotationID,
-           let annotation = annotations.first(where: { $0.id == annotationID }),
-           annotation.tool == .highlight,
-           let handle = hitTestAnnotationResizeHandle(for: annotation, at: pointInScreen) {
+            let annotation = annotations.first(where: { $0.id == annotationID }),
+            annotation.tool == .highlight,
+            let handle = hitTestAnnotationResizeHandle(for: annotation, at: pointInScreen)
+        {
             notifyActivationIfNeeded()
             recordAnnotationSnapshot()
             interaction = .resizingAnnotation(id: annotationID, handle: handle, initialAnnotation: annotation)
@@ -34,7 +35,8 @@ extension LiveAnnotationOverlayView {
         }
 
         if let selectionRectInScreen,
-           let handle = hitTestHandle(at: pointInScreen, selectionRectInScreen: selectionRectInScreen) {
+            let handle = hitTestHandle(at: pointInScreen, selectionRectInScreen: selectionRectInScreen)
+        {
             notifyActivationIfNeeded()
             selectedAnnotationID = nil
             if !annotations.isEmpty {
@@ -46,7 +48,8 @@ extension LiveAnnotationOverlayView {
 
         if let selectionRectInScreen, selectionRectInScreen.contains(pointInScreen) {
             if let annotationID = hitTestAnnotation(at: pointInScreen),
-               let annotation = annotations.first(where: { $0.id == annotationID }) {
+                let annotation = annotations.first(where: { $0.id == annotationID })
+            {
                 notifyActivationIfNeeded()
                 selectedAnnotationID = annotationID
 
@@ -131,7 +134,8 @@ extension LiveAnnotationOverlayView {
             updateAnnotation(id: id, with: movedAnnotation)
         case .resizingAnnotation(let id, let handle, let initialAnnotation):
             guard let selectionRectInScreen else { return }
-            let resizedAnnotation = resize(annotation: initialAnnotation, handle: handle, point: clamp(pointInScreen, to: selectionRectInScreen))
+            let resizedAnnotation = resize(
+                annotation: initialAnnotation, handle: handle, point: clamp(pointInScreen, to: selectionRectInScreen))
             updateAnnotation(id: id, with: resizedAnnotation)
         case .drawingAnnotation(var annotation):
             guard let selectionRectInScreen else { return }
@@ -143,7 +147,9 @@ extension LiveAnnotationOverlayView {
     override func mouseUp(with event: NSEvent) {
         switch interaction {
         case .creatingSelection:
-            if let selectionRectInScreen, selectionRectInScreen.width >= minimumSelectionSize.width, selectionRectInScreen.height >= minimumSelectionSize.height {
+            if let selectionRectInScreen, selectionRectInScreen.width >= minimumSelectionSize.width,
+                selectionRectInScreen.height >= minimumSelectionSize.height
+            {
                 self.selectionRectInScreen = selectionRectInScreen
             } else {
                 self.selectionRectInScreen = nil

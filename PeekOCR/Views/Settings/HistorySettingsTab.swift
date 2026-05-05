@@ -11,7 +11,7 @@ import SwiftUI
 struct HistorySettingsTab: View {
     @ObservedObject private var historyManager = HistoryManager.shared
     @State private var showClearConfirmation = false
-    
+
     var body: some View {
         Form {
             Section {
@@ -24,7 +24,7 @@ struct HistorySettingsTab: View {
             } header: {
                 Text("Estado del Historial")
             }
-            
+
             Section {
                 if historyManager.items.isEmpty {
                     HStack {
@@ -41,7 +41,7 @@ struct HistorySettingsTab: View {
             } header: {
                 Text("Capturas Recientes")
             }
-            
+
             Section {
                 Button("Limpiar Historial", role: .destructive) {
                     showClearConfirmation = true
@@ -71,7 +71,7 @@ struct HistorySettingsTab: View {
 private struct HistoryItemDetailRow: View {
     let item: CaptureItem
     @ObservedObject var historyManager: HistoryManager
-    
+
     var body: some View {
         HStack {
             Image(systemName: item.icon)

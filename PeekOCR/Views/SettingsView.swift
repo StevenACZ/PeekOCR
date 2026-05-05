@@ -10,19 +10,19 @@ import SwiftUI
 /// Settings window view
 struct SettingsView: View {
     @EnvironmentObject var appState: AppState
-    
+
     var body: some View {
         TabView {
             GeneralSettingsTab()
                 .tabItem {
                     Label("General", systemImage: "gear")
                 }
-            
+
             ShortcutsSettingsTab()
                 .tabItem {
                     Label("Atajos", systemImage: "keyboard")
                 }
-            
+
             ScreenshotSettingsTab()
                 .tabItem {
                     Label("Capturas", systemImage: "camera.viewfinder")
@@ -32,12 +32,12 @@ struct SettingsView: View {
                 .tabItem {
                     Label("Clips", systemImage: "film")
                 }
-            
+
             HistorySettingsTab()
                 .tabItem {
                     Label("Historial", systemImage: "clock")
                 }
-            
+
             AboutTab()
                 .tabItem {
                     Label("Acerca de", systemImage: "info.circle")

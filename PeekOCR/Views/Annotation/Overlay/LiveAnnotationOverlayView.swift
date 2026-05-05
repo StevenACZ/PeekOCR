@@ -158,7 +158,8 @@ final class LiveAnnotationOverlayView: NSView {
 
     override func keyDown(with event: NSEvent) {
         if event.modifierFlags.intersection(.deviceIndependentFlagsMask).contains(.command),
-           event.charactersIgnoringModifiers?.lowercased() == "z" {
+            event.charactersIgnoringModifiers?.lowercased() == "z"
+        {
             undoLastAnnotationChange()
             return
         }
@@ -183,13 +184,13 @@ final class LiveAnnotationOverlayView: NSView {
         }
 
         switch event.keyCode {
-        case 53: // esc
+        case 53:  // esc
             if textField != nil {
                 removeTextField(commit: false)
             } else {
                 onCancel?()
             }
-        case 36, 76: // return / enter
+        case 36, 76:  // return / enter
             if textField != nil {
                 removeTextField(commit: true)
                 return

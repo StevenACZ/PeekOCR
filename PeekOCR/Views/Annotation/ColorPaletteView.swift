@@ -20,7 +20,7 @@ struct ColorPaletteView: View {
         .blue,
         .purple,
         .black,
-        .white
+        .white,
     ]
 
     /// Number of columns in the grid

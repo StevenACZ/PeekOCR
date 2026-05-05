@@ -5,8 +5,8 @@
 //  Created by Steven on 14/12/25.
 //
 
-import SwiftUI
 import AppKit
+import SwiftUI
 
 /// General settings tab
 struct GeneralSettingsTab: View {

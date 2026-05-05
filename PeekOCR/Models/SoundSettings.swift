@@ -5,8 +5,8 @@
 //  UserDefaults-backed settings for capture sound feedback.
 //
 
-import Foundation
 import Combine
+import Foundation
 
 final class SoundSettings: ObservableObject {
     static let shared = SoundSettings()

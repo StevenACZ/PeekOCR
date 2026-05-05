@@ -17,6 +17,11 @@ Focused on Apple Silicon release size, code organization, and export diagnostics
 - Added lightweight GIF/MP4 export completion logs with frame counts, skipped
   frames, FPS, output bytes, render size, and elapsed time.
 - Cleaned repo hygiene around private/local agent files and Xcode user data.
+- Added a Makefile-first developer workflow with Xcode `swift-format`,
+  `make format`, `make lint`, `make ci-check`, `make release-check`, and
+  optional Lefthook hooks.
+- Added compact public `CONTRIBUTING.md` and `SECURITY.md` files and refreshed
+  the README around public build, verification, and repo safety boundaries.
 
 ## 1.8.1 - Light Mode Permission Polish - 2026-04-24
 

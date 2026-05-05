@@ -5,8 +5,8 @@
 //  Pure functions to move and resize annotations.
 //
 
-import Foundation
 import CoreGraphics
+import Foundation
 
 /// Pure transformation functions for annotations
 enum AnnotationTransformer {

@@ -5,8 +5,8 @@
 //  Manages drag and resize state for annotations.
 //
 
-import SwiftUI
 import Combine
+import SwiftUI
 
 /// Manages drag operations for moving and resizing annotations
 final class AnnotationDragManager: ObservableObject {

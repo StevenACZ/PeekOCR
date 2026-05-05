@@ -12,4 +12,3 @@ struct ClipExportResult: Equatable {
     let url: URL
     let format: ClipExportFormat
 }
-

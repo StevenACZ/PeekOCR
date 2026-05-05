@@ -13,10 +13,11 @@ enum DisplayEnumerator {
     /// Filters out secondary members of a mirror set so we never draw duplicate overlays.
     static func activeScreens() -> [(displayID: CGDirectDisplayID, screen: NSScreen)] {
         let displayIDs = activeDisplayIDs()
-        let screensByID = Dictionary(uniqueKeysWithValues: NSScreen.screens.compactMap { screen -> (CGDirectDisplayID, NSScreen)? in
-            guard let id = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID else { return nil }
-            return (id, screen)
-        })
+        let screensByID = Dictionary(
+            uniqueKeysWithValues: NSScreen.screens.compactMap { screen -> (CGDirectDisplayID, NSScreen)? in
+                guard let id = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID else { return nil }
+                return (id, screen)
+            })
 
         return displayIDs.compactMap { id in
             if let screen = screensByID[id] {

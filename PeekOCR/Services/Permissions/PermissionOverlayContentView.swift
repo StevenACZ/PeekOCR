@@ -102,7 +102,7 @@ final class PermissionOverlayContentView: NSView {
 
             footnoteLabel.leadingAnchor.constraint(equalTo: dragSource.leadingAnchor),
             footnoteLabel.trailingAnchor.constraint(equalTo: dragSource.trailingAnchor),
-            footnoteLabel.topAnchor.constraint(equalTo: dragSource.bottomAnchor, constant: 10)
+            footnoteLabel.topAnchor.constraint(equalTo: dragSource.bottomAnchor, constant: 10),
         ])
     }
 

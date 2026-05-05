@@ -6,8 +6,8 @@
 //  Uses composition with the generic UndoRedoManager.
 //
 
-import Foundation
 import Combine
+import Foundation
 
 /// Specialized undo/redo manager for annotation arrays
 final class AnnotationUndoManager: ObservableObject {

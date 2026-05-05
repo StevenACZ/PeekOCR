@@ -20,7 +20,8 @@ extension LiveAnnotationOverlayView {
         guard let previousAnnotations = annotationHistory.popLast() else { return }
         annotations = previousAnnotations
         if let selectedAnnotationID,
-           !annotations.contains(where: { $0.id == selectedAnnotationID }) {
+            !annotations.contains(where: { $0.id == selectedAnnotationID })
+        {
             self.selectedAnnotationID = nil
         }
         interaction = .none

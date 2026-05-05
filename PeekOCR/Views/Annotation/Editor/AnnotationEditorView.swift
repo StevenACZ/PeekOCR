@@ -5,8 +5,8 @@
 //  Main annotation editor view combining canvas and toolbar.
 //
 
-import SwiftUI
 import AppKit
+import SwiftUI
 
 /// Main editor view for annotating screenshots
 struct AnnotationEditorView: View {
@@ -69,7 +69,7 @@ struct AnnotationEditorView: View {
         let imageSize = CGSize(width: width, height: height)
 
         guard let colorSpace = CGColorSpace(name: CGColorSpace.sRGB),
-              let context = CGContext(
+            let context = CGContext(
                 data: nil,
                 width: width,
                 height: height,
@@ -77,7 +77,8 @@ struct AnnotationEditorView: View {
                 bytesPerRow: 0,
                 space: colorSpace,
                 bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
-              ) else {
+            )
+        else {
             return nil
         }
 

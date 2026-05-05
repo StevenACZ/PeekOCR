@@ -5,8 +5,8 @@
 //  UserDefaults-backed settings for clip capture and export defaults.
 //
 
-import Foundation
 import Combine
+import Foundation
 
 /// Export format for the clip editor.
 enum ClipExportFormat: String, CaseIterable, Identifiable {
@@ -108,17 +108,20 @@ final class GifClipSettings: ObservableObject {
     private init() {
         let savedMaxDuration = defaults.integer(forKey: Keys.maxDurationSeconds)
         let rawMaxDuration = savedMaxDuration > 0 ? savedMaxDuration : Defaults.maxDurationSeconds
-        self.maxDurationSeconds = min(Constants.Gif.maxDurationRange.upperBound, max(Constants.Gif.maxDurationRange.lowerBound, rawMaxDuration))
+        self.maxDurationSeconds = min(
+            Constants.Gif.maxDurationRange.upperBound, max(Constants.Gif.maxDurationRange.lowerBound, rawMaxDuration))
 
         if let raw = defaults.string(forKey: Keys.defaultExportFormat),
-           let format = ClipExportFormat(rawValue: raw) {
+            let format = ClipExportFormat(rawValue: raw)
+        {
             self.defaultExportFormat = format
         } else {
             self.defaultExportFormat = Defaults.exportFormat
         }
 
         if let raw = defaults.string(forKey: Keys.gifProfile),
-           let profile = GifExportProfile(rawValue: raw) {
+            let profile = GifExportProfile(rawValue: raw)
+        {
             self.gifProfile = profile
         } else {
             self.gifProfile = Defaults.gifProfile
@@ -134,14 +137,16 @@ final class GifClipSettings: ObservableObject {
         }
 
         if let raw = defaults.string(forKey: Keys.videoResolution),
-           let resolution = VideoExportResolution(rawValue: raw) {
+            let resolution = VideoExportResolution(rawValue: raw)
+        {
             self.videoResolution = resolution
         } else {
             self.videoResolution = Defaults.videoResolution
         }
 
         if let raw = defaults.string(forKey: Keys.videoCodec),
-           let codec = VideoExportCodec(rawValue: raw) {
+            let codec = VideoExportCodec(rawValue: raw)
+        {
             self.videoCodec = codec
         } else {
             self.videoCodec = Defaults.videoCodec

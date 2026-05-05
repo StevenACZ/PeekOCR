@@ -73,10 +73,13 @@ struct GifClipSidebarView: View {
         cardSection(title: "Calidad") {
             VStack(alignment: .leading, spacing: 14) {
                 fieldLabel("Perfil")
-                Picker("", selection: Binding(
-                    get: { gifOptions.profile },
-                    set: { newValue in gifOptions.applyProfilePreset(newValue) }
-                )) {
+                Picker(
+                    "",
+                    selection: Binding(
+                        get: { gifOptions.profile },
+                        set: { newValue in gifOptions.applyProfilePreset(newValue) }
+                    )
+                ) {
                     ForEach(GifExportProfile.allCases) { profile in
                         Text(profile.displayName).tag(profile)
                     }
@@ -138,7 +141,8 @@ struct GifClipSidebarView: View {
                 if sourceNominalFps > 1, sourceNominalFps < 29 {
                     InlineNoticeView(
                         style: .info,
-                        text: "Este clip se grabó a ~\(Int(sourceNominalFps.rounded())) FPS. Se exportará a ~\(Int(min(30.0, sourceNominalFps).rounded())) FPS."
+                        text:
+                            "Este clip se grabó a ~\(Int(sourceNominalFps.rounded())) FPS. Se exportará a ~\(Int(min(30.0, sourceNominalFps).rounded())) FPS."
                     )
                 }
             }

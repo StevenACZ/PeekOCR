@@ -1,5 +1,21 @@
-# Xcode
+# PeekOCR - public repo hygiene
+
+# Local/private documentation
+/AGENTS.md
+CLAUDE.md
+PEEKOCR_SPEC.md
+/docs/
+
+# macOS system files
 .DS_Store
+*.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Xcode build output and user state
 */build/*
 DerivedData/
 *.xcodeproj/project.xcworkspace/xcuserdata/
@@ -18,6 +34,13 @@ xcuserdata/
 *.moved-aside
 *.xcuserstate
 *.xcscmblueprint
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+*.xcarchive
+*.xcresult
+*.xcdistributionlogs
 
 # Swift Package Manager
 Packages/
@@ -39,8 +62,20 @@ fastlane/Preview.html
 fastlane/screenshots
 fastlane/test_output
 
+# Local signing/provisioning
+*.mobileprovision
+*.provisionprofile
+*.cer
+*.p12
+*.xcconfig.local
+Local.xcconfig
+Signing.xcconfig
+
 # IDE
+.idea/
+.vscode/
 *.swp
+*.swo
 *~
 \#*\#
 
@@ -48,21 +83,22 @@ fastlane/test_output
 timeline.xctimeline
 playground.xcworkspace
 
-# Archives
-*.xcarchive
-
-# Build artifacts
+# Build and distribution artifacts
 build/
 *.app
-*.ipa
-*.dSYM.zip
-*.dSYM
+*.zip
+*.tar.gz
+*.dmg
 
-# AI Agent Config (keep private)
-PEEKOCR_SPEC.md
+# Local AI/editor context
+.agent/
 .codex/
-/AGENTS.md
-CLAUDE.md
+.cursor/
+.claude/
+.gemini/
+.superpowers/
+
+# Local/private notes
 cloud.md
 CLOUD.md
 clavo.md
@@ -70,9 +106,6 @@ AGENTS.local.md
 
 # Dev scripts (local)
 dev-reset.sh
-
-# Gemini/AI
-.gemini/
 
 # ChunkHound (local)
 .chunkhound/
@@ -83,28 +116,40 @@ dev-reset.sh
 .env.local
 *.local
 credentials.json
+credentials/
 secrets/
 *.pem
 *.key
-
-# Claude Plans (temporary)
-.claude/plans/
-
-# Local docs and planning notes
-/docs/
+*.p8
+*.p12
+*.credentials.json
+*credentials*.json
+*service-account*.json
 
 # Logs
+*.crash
 *.log
 logs/
-
-# OS Files
-.DS_Store
-.AppleDouble
-.LSOverride
-._*
-.Spotlight-V100
-.Trashes
+CrashReports/
 
 # Thumbnails
 Thumbs.db
 ehthumbs.db
+
+# Local capture/export scratch
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.mp4
+*.mov
+*.m4v
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Keep bundled runtime assets tracked
+!PeekOCR/Resources/capture-shutter.m4a
+!PeekOCR/Resources/ATTRIBUTIONS.md
+!PeekOCR/Assets.xcassets/**/*.png

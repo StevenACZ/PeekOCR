@@ -5,8 +5,8 @@
 //  Created by Steven on 14/12/25.
 //
 
-import Foundation
 import Combine
+import Foundation
 import os.log
 
 /// Manages the history of captured items
@@ -145,11 +145,14 @@ final class HistoryManager: ObservableObject {
     private func handleDecodingError(_ error: DecodingError, data: Data) {
         switch error {
         case .typeMismatch(let type, let context):
-            AppLogger.history.warning("History data type mismatch - expected \(type), path: \(context.codingPath.map { $0.stringValue }.joined(separator: "."))")
+            AppLogger.history.warning(
+                "History data type mismatch - expected \(type), path: \(context.codingPath.map { $0.stringValue }.joined(separator: "."))")
         case .valueNotFound(let type, let context):
-            AppLogger.history.warning("History data missing value - expected \(type), path: \(context.codingPath.map { $0.stringValue }.joined(separator: "."))")
+            AppLogger.history.warning(
+                "History data missing value - expected \(type), path: \(context.codingPath.map { $0.stringValue }.joined(separator: "."))")
         case .keyNotFound(let key, let context):
-            AppLogger.history.warning("History data missing key '\(key.stringValue)', path: \(context.codingPath.map { $0.stringValue }.joined(separator: "."))")
+            AppLogger.history.warning(
+                "History data missing key '\(key.stringValue)', path: \(context.codingPath.map { $0.stringValue }.joined(separator: "."))")
         case .dataCorrupted(let context):
             AppLogger.history.warning("History data corrupted: \(context.debugDescription)")
         @unknown default:

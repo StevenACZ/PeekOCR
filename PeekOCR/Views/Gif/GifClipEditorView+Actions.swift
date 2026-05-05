@@ -101,10 +101,11 @@ extension GifClipEditorView {
                 quality: settings.imageQuality
             )
 
-            HistoryManager.shared.addItem(CaptureItem(
-                text: outputURL.lastPathComponent,
-                captureType: .screenshot
-            ))
+            HistoryManager.shared.addItem(
+                CaptureItem(
+                    text: outputURL.lastPathComponent,
+                    captureType: .screenshot
+                ))
 
             CaptureSoundService.shared.play()
 
@@ -130,7 +131,8 @@ extension GifClipEditorView {
         }
 
         AppLogger.capture.info("GIF clip re-record requested")
-        guard let newVideoURL = await GifRecordingController.shared.record(maxDurationSeconds: GifClipSettings.shared.maxDurationSeconds) else {
+        guard let newVideoURL = await GifRecordingController.shared.record(maxDurationSeconds: GifClipSettings.shared.maxDurationSeconds)
+        else {
             AppLogger.capture.info("GIF clip re-record cancelled")
             return
         }

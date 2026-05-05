@@ -5,8 +5,8 @@
 //  Manages annotation selection, dragging, and resizing operations.
 //
 
-import SwiftUI
 import Combine
+import SwiftUI
 
 /// Manages selection state and drag/resize operations for annotations
 final class SelectionManager: ObservableObject {

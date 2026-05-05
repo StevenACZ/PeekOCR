@@ -56,7 +56,8 @@ extension LiveAnnotationOverlayView {
         guard !text.isEmpty else { return }
 
         if let editingAnnotationID,
-           let existing = annotations.first(where: { $0.id == editingAnnotationID }) {
+            let existing = annotations.first(where: { $0.id == editingAnnotationID })
+        {
             recordAnnotationSnapshot()
             var updated = existing
             updated.text = text

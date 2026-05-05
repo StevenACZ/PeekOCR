@@ -7,8 +7,8 @@
 
 import AVFoundation
 import ImageIO
-import os
 import UniformTypeIdentifiers
+import os
 
 /// Errors that can occur during GIF export.
 enum GifExportError: LocalizedError {
@@ -56,7 +56,8 @@ final class GifExportService {
             throw GifExportError.directoryCreationFailed(path: outputDirectory.path, underlying: error)
         }
 
-        let outputURL = outputDirectory
+        let outputURL =
+            outputDirectory
             .appendingPathComponent(generateFilename())
             .appendingPathExtension("gif")
 
@@ -123,19 +124,21 @@ final class GifExportService {
             return NSValue(time: time)
         }
 
-        guard let destination = CGImageDestinationCreateWithURL(
-            outputURL as CFURL,
-            UTType.gif.identifier as CFString,
-            times.count,
-            nil
-        ) else {
+        guard
+            let destination = CGImageDestinationCreateWithURL(
+                outputURL as CFURL,
+                UTType.gif.identifier as CFString,
+                times.count,
+                nil
+            )
+        else {
             throw GifExportError.cannotCreateDestination
         }
 
         let gifProperties: [CFString: Any] = [
             kCGImagePropertyGIFDictionary: [
-                kCGImagePropertyGIFLoopCount: preset.loopCount,
-            ],
+                kCGImagePropertyGIFLoopCount: preset.loopCount
+            ]
         ]
         CGImageDestinationSetProperties(destination, gifProperties as CFDictionary)
 
@@ -156,7 +159,7 @@ final class GifExportService {
                     kCGImagePropertyGIFDictionary: [
                         kCGImagePropertyGIFDelayTime: delayTime,
                         kCGImagePropertyGIFUnclampedDelayTime: delayTime,
-                    ],
+                    ]
                 ]
 
                 CGImageDestinationAddImage(destination, image, frameProperties as CFDictionary)
@@ -172,7 +175,9 @@ final class GifExportService {
 
         let elapsed = Date().timeIntervalSince(exportStartedAt)
         let outputBytes = fileSize(at: outputURL)
-        AppLogger.capture.info("GIF export completed - frames: \(framesAdded), fps: \(fps), maxPixelSize: \(preset.maxPixelSize), output: \(outputBytes) bytes, elapsed: \(String(format: "%.2f", elapsed))s")
+        AppLogger.capture.info(
+            "GIF export completed - frames: \(framesAdded), fps: \(fps), maxPixelSize: \(preset.maxPixelSize), output: \(outputBytes) bytes, elapsed: \(String(format: "%.2f", elapsed))s"
+        )
     }
 
     private func generateFilename() -> String {

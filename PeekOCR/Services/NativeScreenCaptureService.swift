@@ -36,7 +36,7 @@ final class NativeScreenCaptureService {
         }
 
         guard let imageData = try? Data(contentsOf: tempURL, options: .mappedIfSafe),
-              let image = Self.loadImage(from: imageData)
+            let image = Self.loadImage(from: imageData)
         else {
             try? FileManager.default.removeItem(at: tempURL)
             return nil
@@ -107,8 +107,8 @@ final class NativeScreenCaptureService {
 
         let success = await runScreenCapture(rectInScreen: rect, outputPath: tempURL.path)
         guard success,
-              let imageData = try? Data(contentsOf: tempURL, options: .mappedIfSafe),
-              let image = Self.loadImage(from: imageData)
+            let imageData = try? Data(contentsOf: tempURL, options: .mappedIfSafe),
+            let image = Self.loadImage(from: imageData)
         else {
             try? FileManager.default.removeItem(at: tempURL)
             return nil

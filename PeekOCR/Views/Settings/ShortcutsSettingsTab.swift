@@ -67,10 +67,12 @@ struct ShortcutsSettingsTab: View {
             } footer: {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Haz clic en \"Grabar\" y presiona la combinacion de teclas deseada.")
-                    Text("Nota: algunos atajos como ⌘⇧5/⌘⇧6 pueden estar reservados por macOS. Si no funcionan, desactiva esos atajos en Ajustes del Sistema → Teclado → Atajos de teclado → Capturas de pantalla, o elige otra combinacion.")
+                    Text(
+                        "Nota: algunos atajos como ⌘⇧5/⌘⇧6 pueden estar reservados por macOS. Si no funcionan, desactiva esos atajos en Ajustes del Sistema → Teclado → Atajos de teclado → Capturas de pantalla, o elige otra combinacion."
+                    )
                 }
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                .font(.caption)
+                .foregroundStyle(.secondary)
             }
 
             Section {

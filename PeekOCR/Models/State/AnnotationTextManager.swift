@@ -5,8 +5,8 @@
 //  Manages text input state for text annotations.
 //
 
-import SwiftUI
 import Combine
+import SwiftUI
 
 /// Manages text input operations for creating text annotations
 final class AnnotationTextManager: ObservableObject {

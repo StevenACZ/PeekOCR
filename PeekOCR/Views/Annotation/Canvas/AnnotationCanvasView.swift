@@ -69,7 +69,8 @@ struct AnnotationCanvasView: View {
 
     private func drawSelectionIfNeeded(context: GraphicsContext) {
         guard state.selectedTool == .select,
-              let selected = state.selectedAnnotation else { return }
+            let selected = state.selectedAnnotation
+        else { return }
 
         let boundingRect = state.boundingRect(for: selected)
         SelectionHandlesRenderer.draw(

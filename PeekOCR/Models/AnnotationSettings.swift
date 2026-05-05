@@ -5,8 +5,8 @@
 //  Created by Steven on 06/01/26.
 //
 
-import SwiftUI
 import Combine
+import SwiftUI
 
 /// Persistent settings for annotation tools
 final class AnnotationSettings: ObservableObject {
@@ -49,7 +49,7 @@ final class AnnotationSettings: ObservableObject {
         .blue,
         .purple,
         .pink,
-        .white
+        .white,
     ]
 
     // MARK: - Published Properties
@@ -137,8 +137,8 @@ final class AnnotationSettings: ObservableObject {
 
 // MARK: - Comparable Clamping Extension
 
-private extension Comparable {
-    func clamped(to range: ClosedRange<Self>) -> Self {
+extension Comparable {
+    fileprivate func clamped(to range: ClosedRange<Self>) -> Self {
         min(max(self, range.lowerBound), range.upperBound)
     }
 }

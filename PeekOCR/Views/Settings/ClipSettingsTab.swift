@@ -58,9 +58,11 @@ struct ClipSettingsTab: View {
         } header: {
             Text("Clip")
         } footer: {
-            Text("El clip se detiene automáticamente al llegar al límite. Mínimo \(Constants.Gif.maxDurationRange.lowerBound)s, máximo \(Constants.Gif.maxDurationRange.upperBound)s.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            Text(
+                "El clip se detiene automáticamente al llegar al límite. Mínimo \(Constants.Gif.maxDurationRange.lowerBound)s, máximo \(Constants.Gif.maxDurationRange.upperBound)s."
+            )
+            .font(.caption)
+            .foregroundStyle(.secondary)
         }
     }
 

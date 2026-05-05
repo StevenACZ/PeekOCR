@@ -62,7 +62,7 @@ struct GifClipVideoPreviewView: View {
             colors: [
                 Color.white.opacity(0.04),
                 Color.black.opacity(0.0),
-                Color.black.opacity(0.25)
+                Color.black.opacity(0.25),
             ],
             center: .center,
             startRadius: 0,

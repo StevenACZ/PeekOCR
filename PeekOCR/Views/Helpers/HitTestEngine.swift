@@ -5,8 +5,8 @@
 //  Collision detection for annotations and resize handles.
 //
 
-import Foundation
 import CoreGraphics
+import Foundation
 
 /// Engine for hit testing annotations and handles
 enum HitTestEngine {

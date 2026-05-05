@@ -26,15 +26,17 @@ enum ImageScalingService {
         let colorSpace = CGColorSpace(name: CGColorSpace.sRGB) ?? image.colorSpace ?? CGColorSpaceCreateDeviceRGB()
 
         // Create context with proper settings for high quality
-        guard let context = CGContext(
-            data: nil,
-            width: newWidth,
-            height: newHeight,
-            bitsPerComponent: 8,
-            bytesPerRow: 0,
-            space: colorSpace,
-            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
-        ) else {
+        guard
+            let context = CGContext(
+                data: nil,
+                width: newWidth,
+                height: newHeight,
+                bitsPerComponent: 8,
+                bytesPerRow: 0,
+                space: colorSpace,
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+            )
+        else {
             return image
         }
 

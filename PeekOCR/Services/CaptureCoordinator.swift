@@ -6,8 +6,8 @@
 //
 
 import AppKit
-import SwiftUI
 import Combine
+import SwiftUI
 import os
 
 /// Capture mode enumeration
@@ -103,7 +103,8 @@ final class CaptureCoordinator: ObservableObject {
 
         if wasCapturing {
             let elapsed = CFAbsoluteTimeGetCurrent() - captureStartTime
-            AppLogger.capture.info("Capture cancelled - mode: \(self.currentMode.description), elapsed: \(String(format: "%.2f", elapsed))s")
+            AppLogger.capture.info(
+                "Capture cancelled - mode: \(self.currentMode.description), elapsed: \(String(format: "%.2f", elapsed))s")
             if currentMode == .gifClip {
                 gifRecordingController.stop()
             }
@@ -143,7 +144,8 @@ final class CaptureCoordinator: ObservableObject {
         }
 
         let elapsed = CFAbsoluteTimeGetCurrent() - captureStartTime
-        AppLogger.capture.info("Capture flow complete - mode: \(self.currentMode.description), total time: \(String(format: "%.2f", elapsed))s")
+        AppLogger.capture.info(
+            "Capture flow complete - mode: \(self.currentMode.description), total time: \(String(format: "%.2f", elapsed))s")
 
         isCapturing = false
     }
@@ -246,18 +248,20 @@ final class CaptureCoordinator: ObservableObject {
             }
         }
 
-        let finalImage = LiveAnnotationRenderer.render(
-            image: capturedImage,
-            selectionRectInScreen: session.selectionRect,
-            scaleFactor: session.screen.backingScaleFactor,
-            annotations: visibleAnnotations
-        ) ?? capturedImage
+        let finalImage =
+            LiveAnnotationRenderer.render(
+                image: capturedImage,
+                selectionRectInScreen: session.selectionRect,
+                scaleFactor: session.screen.backingScaleFactor,
+                annotations: visibleAnnotations
+            ) ?? capturedImage
 
         AppLogger.capture.info("Live annotation capture completed - processing final image")
         await processScreenshot(image: finalImage)
 
         let elapsed = CFAbsoluteTimeGetCurrent() - captureStartTime
-        AppLogger.capture.info("Capture flow complete - mode: \(self.currentMode.description), total time: \(String(format: "%.2f", elapsed))s")
+        AppLogger.capture.info(
+            "Capture flow complete - mode: \(self.currentMode.description), total time: \(String(format: "%.2f", elapsed))s")
         isCapturing = false
     }
 
@@ -296,10 +300,11 @@ final class CaptureCoordinator: ObservableObject {
         }
 
         AppLogger.capture.info("Clip exported: \(exportResult.url.lastPathComponent)")
-        historyManager.addItem(CaptureItem(
-            text: exportResult.url.lastPathComponent,
-            captureType: exportResult.format == .gif ? .gif : .video
-        ))
+        historyManager.addItem(
+            CaptureItem(
+                text: exportResult.url.lastPathComponent,
+                captureType: exportResult.format == .gif ? .gif : .video
+            ))
     }
 
     // MARK: - Result Handlers

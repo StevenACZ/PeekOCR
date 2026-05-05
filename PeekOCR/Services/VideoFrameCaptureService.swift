@@ -110,13 +110,15 @@ final class VideoFrameCaptureService {
 
     private func generateUniqueOutputURL(in directory: URL, format: ImageFormat) -> URL {
         let baseName = generateFilename()
-        var candidate = directory
+        var candidate =
+            directory
             .appendingPathComponent(baseName)
             .appendingPathExtension(format.fileExtension)
         var counter = 1
 
         while FileManager.default.fileExists(atPath: candidate.path) {
-            candidate = directory
+            candidate =
+                directory
                 .appendingPathComponent("\(baseName)_\(counter)")
                 .appendingPathExtension(format.fileExtension)
             counter += 1

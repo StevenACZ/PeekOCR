@@ -5,8 +5,8 @@
 //  State machine for text annotation input lifecycle (start -> edit -> finish/cancel).
 //
 
-import SwiftUI
 import Combine
+import SwiftUI
 
 /// Manages text input state for text annotations
 final class TextInputController: ObservableObject {

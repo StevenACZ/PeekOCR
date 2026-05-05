@@ -5,8 +5,8 @@
 //  Created by Steven on 14/12/25.
 //
 
-import Carbon
 import AppKit
+import Carbon
 
 /// Utility for displaying keyboard shortcuts
 enum HotKeyDisplay {

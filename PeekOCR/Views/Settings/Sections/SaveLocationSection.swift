@@ -5,8 +5,8 @@
 //  Picker for selecting save location with custom folder support.
 //
 
-import SwiftUI
 import AppKit
+import SwiftUI
 
 /// Section for selecting where to save screenshots
 struct SaveLocationSection: View {

@@ -5,8 +5,8 @@
 //  Created by Steven on 14/12/25.
 //
 
-import Vision
 import AppKit
+import Vision
 import os.log
 
 // MARK: - OCR Error Types
@@ -118,7 +118,8 @@ final class OCRService {
                 return
             }
 
-            recognizedText = observations
+            recognizedText =
+                observations
                 .compactMap { $0.topCandidates(1).first?.string }
                 .joined(separator: "\n")
 
@@ -161,7 +162,8 @@ final class OCRService {
             }
 
             // Get first QR code payload
-            qrContent = observations
+            qrContent =
+                observations
                 .first(where: { $0.symbology == .qr })?
                 .payloadStringValue
 

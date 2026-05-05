@@ -121,10 +121,12 @@ final class VideoExportService {
         )
 
         let composition = AVMutableComposition()
-        guard let compositionVideoTrack = composition.addMutableTrack(
-            withMediaType: .video,
-            preferredTrackID: kCMPersistentTrackID_Invalid
-        ) else {
+        guard
+            let compositionVideoTrack = composition.addMutableTrack(
+                withMediaType: .video,
+                preferredTrackID: kCMPersistentTrackID_Invalid
+            )
+        else {
             throw VideoExportError.exportFailed(underlying: nil)
         }
 
@@ -150,7 +152,7 @@ final class VideoExportService {
         }
 
         let outputSettings: [String: Any] = [
-            kCVPixelBufferPixelFormatTypeKey as String: Int(kCVPixelFormatType_32BGRA),
+            kCVPixelBufferPixelFormatTypeKey as String: Int(kCVPixelFormatType_32BGRA)
         ]
         let readerOutput = AVAssetReaderVideoCompositionOutput(videoTracks: [compositionVideoTrack], videoSettings: outputSettings)
         readerOutput.videoComposition = videoComposition
@@ -270,7 +272,9 @@ final class VideoExportService {
                             if writer.status == .completed {
                                 let elapsed = Date().timeIntervalSince(exportStartedAt)
                                 let outputBytes = fileSize(at: outputURL)
-                                AppLogger.capture.info("Video export completed - frames: \(appendedFrameCount), skipped: \(skippedFrameCount), fps: \(effectiveFps), renderSize: \(Int(renderSize.width))x\(Int(renderSize.height)), output: \(outputBytes) bytes, elapsed: \(String(format: "%.2f", elapsed))s")
+                                AppLogger.capture.info(
+                                    "Video export completed - frames: \(appendedFrameCount), skipped: \(skippedFrameCount), fps: \(effectiveFps), renderSize: \(Int(renderSize.width))x\(Int(renderSize.height)), output: \(outputBytes) bytes, elapsed: \(String(format: "%.2f", elapsed))s"
+                                )
                                 continuation.resume()
                             } else {
                                 continuation.resume(throwing: VideoExportError.exportFailed(underlying: writer.error))
@@ -322,13 +326,15 @@ final class VideoExportService {
 
     private func generateUniqueOutputURL(in outputDirectory: URL) -> URL {
         let baseName = generateFilename()
-        var candidateURL = outputDirectory
+        var candidateURL =
+            outputDirectory
             .appendingPathComponent(baseName)
             .appendingPathExtension("mp4")
         var counter = 1
 
         while FileManager.default.fileExists(atPath: candidateURL.path) {
-            candidateURL = outputDirectory
+            candidateURL =
+                outputDirectory
                 .appendingPathComponent("\(baseName)_\(counter)")
                 .appendingPathExtension("mp4")
             counter += 1

@@ -5,8 +5,8 @@
 //  Shared geometry calculations for image rect and shape bounds.
 //
 
-import Foundation
 import CoreGraphics
+import Foundation
 
 /// Utility functions for annotation geometry calculations
 enum AnnotationGeometry {

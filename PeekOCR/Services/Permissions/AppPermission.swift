@@ -62,7 +62,8 @@ enum AppPermission: CaseIterable, Hashable {
     var overlayMessage: String {
         switch self {
         case .screenRecording:
-            return "Si PeekOCR ya aparece en la lista, solo activa el interruptor. Si no aparece todavía, arrástralo desde la tarjeta inferior."
+            return
+                "Si PeekOCR ya aparece en la lista, solo activa el interruptor. Si no aparece todavía, arrástralo desde la tarjeta inferior."
         case .accessibility:
             return "Si PeekOCR ya aparece en la lista, solo habilítalo. Si todavía no está visible, arrástralo desde la tarjeta inferior."
         }
@@ -93,7 +94,7 @@ enum AppPermission: CaseIterable, Hashable {
     var settingsURLs: [URL] {
         [
             URL(string: "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?\(extensionAnchor)"),
-            URL(string: "x-apple.systempreferences:com.apple.preference.security?\(legacyAnchor)")
+            URL(string: "x-apple.systempreferences:com.apple.preference.security?\(legacyAnchor)"),
         ]
         .compactMap { $0 }
     }

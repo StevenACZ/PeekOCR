@@ -10,16 +10,16 @@ import SwiftUI
 
 class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Properties
-    
+
     private var statusItem: NSStatusItem?
     private var popover: NSPopover?
-    
+
     let appState = AppState.shared
     private let hotKeyManager = HotKeyManager.shared
     private let historyManager = HistoryManager.shared
-    
+
     // MARK: - Lifecycle
-    
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         setupMenuBar()
         setupHotKeys()
@@ -33,16 +33,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     // MARK: - Menu Bar Setup
-    
+
     private func setupMenuBar() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        
+
         if let button = statusItem?.button {
             button.image = NSImage(systemSymbolName: "eye", accessibilityDescription: "PeekOCR")
             button.action = #selector(togglePopover)
             button.target = self
         }
-        
+
         popover = NSPopover()
         popover?.contentSize = NSSize(width: 320, height: 400)
         popover?.behavior = .transient
@@ -56,12 +56,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func setupHotKeys() {
         hotKeyManager.registerHotKeys()
     }
-    
+
     // MARK: - Actions
-    
+
     @objc private func togglePopover() {
         guard let button = statusItem?.button, let popover = popover else { return }
-        
+
         if popover.isShown {
             popover.performClose(nil)
         } else {
@@ -69,7 +69,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             NSApp.activate(ignoringOtherApps: true)
         }
     }
-    
+
     func closePopover() {
         popover?.performClose(nil)
     }

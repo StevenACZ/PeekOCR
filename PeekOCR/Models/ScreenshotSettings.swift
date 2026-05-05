@@ -5,8 +5,8 @@
 //  Created by Steven on 14/12/25.
 //
 
-import Foundation
 import Combine
+import Foundation
 
 /// Settings for screenshot capture functionality
 final class ScreenshotSettings: ObservableObject {
@@ -80,7 +80,8 @@ final class ScreenshotSettings: ObservableObject {
     private init() {
         // Load save location
         if let locationRaw = defaults.string(forKey: Keys.saveLocation),
-           let location = SaveLocation(rawValue: locationRaw) {
+            let location = SaveLocation(rawValue: locationRaw)
+        {
             self.saveLocation = location
         } else {
             self.saveLocation = Defaults.saveLocation
@@ -91,7 +92,8 @@ final class ScreenshotSettings: ObservableObject {
 
         // Load image format
         if let formatRaw = defaults.string(forKey: Keys.imageFormat),
-           let format = ImageFormat(rawValue: formatRaw) {
+            let format = ImageFormat(rawValue: formatRaw)
+        {
             self.imageFormat = format
         } else {
             self.imageFormat = Defaults.imageFormat

@@ -236,7 +236,7 @@ final class GifRecordingController {
 
     private nonisolated static func fileSizeBytes(at url: URL) -> Int64? {
         guard let attributes = try? FileManager.default.attributesOfItem(atPath: url.path),
-              let size = attributes[.size] as? NSNumber
+            let size = attributes[.size] as? NSNumber
         else {
             return nil
         }

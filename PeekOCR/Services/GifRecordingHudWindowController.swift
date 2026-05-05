@@ -99,18 +99,20 @@ final class GifRecordingHudWindowController: NSWindowController {
             return safeFrame.contains(rect) && !rect.intersects(avoidanceRect)
         }
 
-        let centeredAbove = clampToSafeFrame(CGPoint(
-            x: selectionRectInScreen.midX - size.width / 2,
-            y: selectionRectInScreen.maxY + gap
-        ))
+        let centeredAbove = clampToSafeFrame(
+            CGPoint(
+                x: selectionRectInScreen.midX - size.width / 2,
+                y: selectionRectInScreen.maxY + gap
+            ))
         if isValid(centeredAbove) {
             return centeredAbove
         }
 
-        let centeredBelow = clampToSafeFrame(CGPoint(
-            x: selectionRectInScreen.midX - size.width / 2,
-            y: selectionRectInScreen.minY - gap - size.height
-        ))
+        let centeredBelow = clampToSafeFrame(
+            CGPoint(
+                x: selectionRectInScreen.midX - size.width / 2,
+                y: selectionRectInScreen.minY - gap - size.height
+            ))
         if isValid(centeredBelow) {
             return centeredBelow
         }
@@ -120,10 +122,10 @@ final class GifRecordingHudWindowController: NSWindowController {
             clampToSafeFrame(CGPoint(x: selectionRectInScreen.maxX - size.width, y: selectionRectInScreen.maxY + gap)),
             clampToSafeFrame(CGPoint(x: selectionRectInScreen.minX, y: selectionRectInScreen.minY - gap - size.height)),
             clampToSafeFrame(CGPoint(x: selectionRectInScreen.maxX - size.width, y: selectionRectInScreen.minY - gap - size.height)),
-            clampToSafeFrame(CGPoint(x: safeFrame.maxX - size.width, y: safeFrame.maxY - size.height)), // top-right
-            clampToSafeFrame(CGPoint(x: safeFrame.minX, y: safeFrame.maxY - size.height)), // top-left
-            clampToSafeFrame(CGPoint(x: safeFrame.maxX - size.width, y: safeFrame.minY)), // bottom-right
-            clampToSafeFrame(CGPoint(x: safeFrame.minX, y: safeFrame.minY)), // bottom-left
+            clampToSafeFrame(CGPoint(x: safeFrame.maxX - size.width, y: safeFrame.maxY - size.height)),  // top-right
+            clampToSafeFrame(CGPoint(x: safeFrame.minX, y: safeFrame.maxY - size.height)),  // top-left
+            clampToSafeFrame(CGPoint(x: safeFrame.maxX - size.width, y: safeFrame.minY)),  // bottom-right
+            clampToSafeFrame(CGPoint(x: safeFrame.minX, y: safeFrame.minY)),  // bottom-left
         ]
 
         for origin in candidates where isValid(origin) {

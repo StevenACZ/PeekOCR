@@ -123,7 +123,8 @@ final class ScreenshotService {
 
     nonisolated private static func processImage(_ image: CGImage, using snapshot: SettingsSnapshot) async -> ProcessedScreenshot {
         await Task.detached(priority: .userInitiated) {
-            let processedImage = snapshot.imageScale < 1.0
+            let processedImage =
+                snapshot.imageScale < 1.0
                 ? ImageScalingService.scaleImage(image, scale: snapshot.imageScale)
                 : image
 
@@ -146,12 +147,15 @@ final class ScreenshotService {
         }
 
         // Encode image using the service
-        guard let imageData = ImageEncodingService.encode(
-            image,
-            format: snapshot.imageFormat,
-            quality: snapshot.imageQuality
-        ) else {
-            AppLogger.capture.error("Image encoding failed - format: \(snapshot.imageFormat.fileExtension), quality: \(snapshot.imageQuality)")
+        guard
+            let imageData = ImageEncodingService.encode(
+                image,
+                format: snapshot.imageFormat,
+                quality: snapshot.imageQuality
+            )
+        else {
+            AppLogger.capture.error(
+                "Image encoding failed - format: \(snapshot.imageFormat.fileExtension), quality: \(snapshot.imageQuality)")
             return nil
         }
 

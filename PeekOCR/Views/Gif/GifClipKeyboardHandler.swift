@@ -64,4 +64,3 @@ private enum KeyCode {
     static let leftArrow: UInt16 = 123
     static let rightArrow: UInt16 = 124
 }
-

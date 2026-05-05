@@ -5,9 +5,9 @@
 //  Created by Steven on 14/12/25.
 //
 
-import Foundation
 import Carbon
 import Combine
+import Foundation
 
 /// UserDefaults wrapper for app settings with default values
 final class AppSettings: ObservableObject {
@@ -114,35 +114,43 @@ final class AppSettings: ObservableObject {
     // MARK: - Initialization
 
     private init() {
-        self.captureHotKeyModifiers = UInt32(defaults.integer(forKey: Keys.captureHotKeyModifiers)) != 0
+        self.captureHotKeyModifiers =
+            UInt32(defaults.integer(forKey: Keys.captureHotKeyModifiers)) != 0
             ? UInt32(defaults.integer(forKey: Keys.captureHotKeyModifiers))
             : Defaults.captureModifiers
 
-        self.captureHotKeyCode = UInt32(defaults.integer(forKey: Keys.captureHotKeyCode)) != 0
+        self.captureHotKeyCode =
+            UInt32(defaults.integer(forKey: Keys.captureHotKeyCode)) != 0
             ? UInt32(defaults.integer(forKey: Keys.captureHotKeyCode))
             : Defaults.captureKeyCode
 
-        self.screenshotHotKeyModifiers = UInt32(defaults.integer(forKey: Keys.screenshotHotKeyModifiers)) != 0
+        self.screenshotHotKeyModifiers =
+            UInt32(defaults.integer(forKey: Keys.screenshotHotKeyModifiers)) != 0
             ? UInt32(defaults.integer(forKey: Keys.screenshotHotKeyModifiers))
             : Defaults.screenshotModifiers
 
-        self.screenshotHotKeyCode = UInt32(defaults.integer(forKey: Keys.screenshotHotKeyCode)) != 0
+        self.screenshotHotKeyCode =
+            UInt32(defaults.integer(forKey: Keys.screenshotHotKeyCode)) != 0
             ? UInt32(defaults.integer(forKey: Keys.screenshotHotKeyCode))
             : Defaults.screenshotKeyCode
 
-        self.annotatedScreenshotHotKeyModifiers = UInt32(defaults.integer(forKey: Keys.annotatedScreenshotHotKeyModifiers)) != 0
+        self.annotatedScreenshotHotKeyModifiers =
+            UInt32(defaults.integer(forKey: Keys.annotatedScreenshotHotKeyModifiers)) != 0
             ? UInt32(defaults.integer(forKey: Keys.annotatedScreenshotHotKeyModifiers))
             : Defaults.annotatedScreenshotModifiers
 
-        self.annotatedScreenshotHotKeyCode = UInt32(defaults.integer(forKey: Keys.annotatedScreenshotHotKeyCode)) != 0
+        self.annotatedScreenshotHotKeyCode =
+            UInt32(defaults.integer(forKey: Keys.annotatedScreenshotHotKeyCode)) != 0
             ? UInt32(defaults.integer(forKey: Keys.annotatedScreenshotHotKeyCode))
             : Defaults.annotatedScreenshotKeyCode
 
-        self.gifHotKeyModifiers = UInt32(defaults.integer(forKey: Keys.gifHotKeyModifiers)) != 0
+        self.gifHotKeyModifiers =
+            UInt32(defaults.integer(forKey: Keys.gifHotKeyModifiers)) != 0
             ? UInt32(defaults.integer(forKey: Keys.gifHotKeyModifiers))
             : Defaults.gifModifiers
 
-        self.gifHotKeyCode = UInt32(defaults.integer(forKey: Keys.gifHotKeyCode)) != 0
+        self.gifHotKeyCode =
+            UInt32(defaults.integer(forKey: Keys.gifHotKeyCode)) != 0
             ? UInt32(defaults.integer(forKey: Keys.gifHotKeyCode))
             : Defaults.gifKeyCode
 

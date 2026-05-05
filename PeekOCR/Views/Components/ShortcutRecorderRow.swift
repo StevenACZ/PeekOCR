@@ -5,8 +5,8 @@
 //  Created by Steven on 14/12/25.
 //
 
-import SwiftUI
 import Carbon
+import SwiftUI
 
 /// A reusable row component for recording keyboard shortcuts
 struct ShortcutRecorderRow: View {
@@ -102,7 +102,7 @@ struct ShortcutRecorderRow: View {
 
             // Require at least one modifier
             guard modifiers != 0 else {
-                return nil // Consume the event while recording
+                return nil  // Consume the event while recording
             }
 
             DispatchQueue.main.async {
@@ -110,7 +110,7 @@ struct ShortcutRecorderRow: View {
                 onRecord(modifiers, keyCode)
             }
 
-            return nil // Consume the event
+            return nil  // Consume the event
         }
 
         let timeout = DispatchWorkItem {

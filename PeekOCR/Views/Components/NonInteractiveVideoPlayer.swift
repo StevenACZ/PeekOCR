@@ -5,8 +5,8 @@
 //  Wraps AVPlayerView with controls disabled for preview-only playback.
 //
 
-import SwiftUI
 import AVKit
+import SwiftUI
 
 /// Preview-only AVPlayerView without built-in playback controls.
 struct NonInteractiveVideoPlayer: NSViewRepresentable {
@@ -30,4 +30,3 @@ private final class NonInteractiveAVPlayerView: AVPlayerView {
     override func mouseUp(with event: NSEvent) {}
     override func scrollWheel(with event: NSEvent) {}
 }
-

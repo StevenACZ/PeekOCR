@@ -32,13 +32,15 @@ extension LiveAnnotationOverlayView {
         }
 
         if let selectedAnnotationID,
-           let annotation = annotations.first(where: { $0.id == selectedAnnotationID }),
-           hitTestAnnotationResizeHandle(for: annotation, at: pointInScreen) != nil {
+            let annotation = annotations.first(where: { $0.id == selectedAnnotationID }),
+            hitTestAnnotationResizeHandle(for: annotation, at: pointInScreen) != nil
+        {
             return .openHand
         }
 
         if let selectionRectInScreen,
-           hitTestHandle(at: pointInScreen, selectionRectInScreen: selectionRectInScreen) != nil {
+            hitTestHandle(at: pointInScreen, selectionRectInScreen: selectionRectInScreen) != nil
+        {
             return .openHand
         }
 

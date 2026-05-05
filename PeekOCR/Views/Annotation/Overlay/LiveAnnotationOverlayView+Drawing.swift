@@ -24,14 +24,16 @@ extension LiveAnnotationOverlayView {
             border.stroke()
 
             drawSelectionHandles(in: selectionRect)
-            LiveAnnotationRenderer.drawOverlayAnnotations(annotationsForDrawing, in: self, window: window, selectionRectInScreen: selectionRectInScreen)
+            LiveAnnotationRenderer.drawOverlayAnnotations(
+                annotationsForDrawing, in: self, window: window, selectionRectInScreen: selectionRectInScreen)
             drawSelectedAnnotationIfNeeded(in: self, window: window)
             drawToolbar(in: selectionRect)
             drawInstructions(in: selectionRect)
         } else {
             NSColor.black.withAlphaComponent(0.12).setFill()
             bounds.fill()
-            drawCenteredHint(text: "Arrastra para seleccionar • S mover/ajustar • A flecha • T texto • H highlight • Enter capturar • Esc cancelar")
+            drawCenteredHint(
+                text: "Arrastra para seleccionar • S mover/ajustar • A flecha • T texto • H highlight • Enter capturar • Esc cancelar")
         }
     }
 
@@ -123,7 +125,8 @@ extension LiveAnnotationOverlayView {
 
     func drawSelectedAnnotationIfNeeded(in view: NSView, window: NSWindow) {
         guard let selectedAnnotationID,
-              let annotation = annotations.first(where: { $0.id == selectedAnnotationID }) else { return }
+            let annotation = annotations.first(where: { $0.id == selectedAnnotationID })
+        else { return }
 
         let rectInView = rectInView(from: annotation.bounds).insetBy(dx: -6, dy: -6)
         let path = NSBezierPath(roundedRect: rectInView, xRadius: 8, yRadius: 8)

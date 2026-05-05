@@ -25,7 +25,7 @@ enum AnnotationRenderer {
 
         switch annotation.tool {
         case .select:
-            break // Select tool doesn't create annotations
+            break  // Select tool doesn't create annotations
         case .arrow:
             drawArrow(annotation, context: context, strokeStyle: strokeStyle, color: shading)
         case .text:
@@ -63,7 +63,7 @@ enum AnnotationRenderer {
 
     private static func createArrowhead(from start: CGPoint, to end: CGPoint, size: CGFloat) -> Path {
         let angle = atan2(end.y - start.y, end.x - start.x)
-        let arrowAngle: CGFloat = .pi / 6 // 30 degrees
+        let arrowAngle: CGFloat = .pi / 6  // 30 degrees
 
         let point1 = CGPoint(
             x: end.x - size * cos(angle - arrowAngle),
