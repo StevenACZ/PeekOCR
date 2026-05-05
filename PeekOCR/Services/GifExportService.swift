@@ -7,6 +7,7 @@
 
 import AVFoundation
 import ImageIO
+import os
 import UniformTypeIdentifiers
 
 /// Errors that can occur during GIF export.
@@ -96,6 +97,7 @@ final class GifExportService {
         preset: GifExportPreset,
         outputURL: URL
     ) async throws {
+        let exportStartedAt = Date()
         let asset = AVURLAsset(url: videoURL)
 
         let duration = try await asset.load(.duration)
@@ -143,6 +145,7 @@ final class GifExportService {
         generator.requestedTimeToleranceBefore = .zero
         generator.requestedTimeToleranceAfter = .zero
 
+        var framesAdded = 0
         for value in times {
             let time = value.timeValue
             do {
@@ -157,6 +160,7 @@ final class GifExportService {
                 ]
 
                 CGImageDestinationAddImage(destination, image, frameProperties as CFDictionary)
+                framesAdded += 1
             } catch {
                 throw GifExportError.frameExtractionFailed(underlying: error)
             }
@@ -165,10 +169,19 @@ final class GifExportService {
         guard CGImageDestinationFinalize(destination) else {
             throw GifExportError.cannotFinalize
         }
+
+        let elapsed = Date().timeIntervalSince(exportStartedAt)
+        let outputBytes = fileSize(at: outputURL)
+        AppLogger.capture.info("GIF export completed - frames: \(framesAdded), fps: \(fps), maxPixelSize: \(preset.maxPixelSize), output: \(outputBytes) bytes, elapsed: \(String(format: "%.2f", elapsed))s")
     }
 
     private func generateFilename() -> String {
         let timestamp = AppDateFormatters.filenameTimestamp()
         return "PeekOCR_\(timestamp)"
+    }
+
+    private static func fileSize(at url: URL) -> Int64 {
+        let attributes = try? FileManager.default.attributesOfItem(atPath: url.path)
+        return (attributes?[.size] as? NSNumber)?.int64Value ?? 0
     }
 }

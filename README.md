@@ -6,6 +6,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/macOS-13.0+-007AFF?style=for-the-badge&logo=apple&logoColor=white" alt="macOS 13+"/>
+  <img src="https://img.shields.io/badge/Apple%20Silicon-M1+-111111?style=for-the-badge&logo=apple&logoColor=white" alt="Apple Silicon M1+"/>
   <img src="https://img.shields.io/badge/Swift-5.9-F05138?style=for-the-badge&logo=swift&logoColor=white" alt="Swift 5.9"/>
   <img src="https://img.shields.io/badge/License-MIT-34C759?style=for-the-badge" alt="MIT License"/>
 </p>
@@ -103,7 +104,7 @@ The requirements window keeps both permissions visible, marks granted permission
 ## 💻 Requirements
 
 - macOS 13.0 (Ventura) or later
-- Apple Silicon or Intel Mac
+- Apple Silicon Mac (M1 or newer)
 
 ---
 
@@ -120,7 +121,6 @@ PeekOCR is designed to live in the macOS menu bar for long periods, so the proje
 ## 📚 Documentation
 
 - `AGENTS.md` (project map, conventions, and release guardrails)
-- `CLAUDE.md` (thin wrapper that imports `AGENTS.md` for Claude Code)
 - `CHANGELOG.md`
 - `docs/ARCHITECTURE.md`
 - `docs/SERVICES.md`

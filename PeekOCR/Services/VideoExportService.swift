@@ -7,6 +7,7 @@
 
 import AVFoundation
 import Foundation
+import os
 
 /// Errors that can occur during MP4 export.
 enum VideoExportError: LocalizedError {
@@ -87,6 +88,7 @@ final class VideoExportService {
         outputURL: URL,
         options: VideoExportOptions
     ) async throws {
+        let exportStartedAt = Date()
         let asset = AVURLAsset(url: videoURL)
 
         let duration = try await asset.load(.duration)
@@ -211,6 +213,7 @@ final class VideoExportService {
             let targetFrameDuration = CMTime(value: 1, timescale: Int32(max(1, effectiveFps)))
             var nextAllowed = CMTime.zero
             var frameIndex: Int64 = 0
+            var skippedFrames: Int64 = 0
 
             writerInputBox.value.requestMediaDataWhenReady(on: queue) {
                 let writerInput = writerInputBox.value
@@ -222,6 +225,7 @@ final class VideoExportService {
                     if let sampleBuffer = readerOutput.copyNextSampleBuffer() {
                         let pts = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
                         if pts < nextAllowed {
+                            skippedFrames += 1
                             continue
                         }
 
@@ -259,9 +263,14 @@ final class VideoExportService {
                         frameIndex += 1
                         nextAllowed = pts + targetFrameDuration
                     } else {
+                        let appendedFrameCount = frameIndex
+                        let skippedFrameCount = skippedFrames
                         writerInput.markAsFinished()
                         writer.finishWriting {
                             if writer.status == .completed {
+                                let elapsed = Date().timeIntervalSince(exportStartedAt)
+                                let outputBytes = fileSize(at: outputURL)
+                                AppLogger.capture.info("Video export completed - frames: \(appendedFrameCount), skipped: \(skippedFrameCount), fps: \(effectiveFps), renderSize: \(Int(renderSize.width))x\(Int(renderSize.height)), output: \(outputBytes) bytes, elapsed: \(String(format: "%.2f", elapsed))s")
                                 continuation.resume()
                             } else {
                                 continuation.resume(throwing: VideoExportError.exportFailed(underlying: writer.error))
@@ -380,5 +389,10 @@ final class VideoExportService {
             return best.rounded()
         }
         return nil
+    }
+
+    private static func fileSize(at url: URL) -> Int64 {
+        let attributes = try? FileManager.default.attributesOfItem(atPath: url.path)
+        return (attributes?[.size] as? NSNumber)?.int64Value ?? 0
     }
 }

@@ -49,6 +49,12 @@ PeekOCRApp
 │       └── TextInputOverlay
 │
 ├── LiveAnnotationOverlayView  # Full-screen pre-capture annotation overlay
+│   ├── +Mouse
+│   ├── +Drawing
+│   ├── +Text
+│   ├── +HitTesting
+│   ├── +Geometry
+│   └── +Cursor
 │
 ├── PermissionRequirementsView # Permission onboarding window
 │   ├── PermissionRequirementsIntroView
@@ -104,7 +110,13 @@ PeekOCRApp
 **Overlay** (`Overlay/`)
 | View | Description |
 |------|-------------|
-| `LiveAnnotationOverlayView` | Full-screen live pre-capture annotation surface with inline move/edit/resize, contextual cursor handling, and lightweight undo |
+| `LiveAnnotationOverlayView` | Full-screen live pre-capture annotation surface and shared state |
+| `LiveAnnotationOverlayView+Mouse` | Mouse selection, dragging, resizing, and annotation creation |
+| `LiveAnnotationOverlayView+Drawing` | Overlay drawing, toolbar layout, handles, and selected-annotation chrome |
+| `LiveAnnotationOverlayView+Text` | Inline text field lifecycle for new and edited annotations |
+| `LiveAnnotationOverlayView+HitTesting` | Toolbar, selection handle, and annotation hit testing |
+| `LiveAnnotationOverlayView+Geometry` | Coordinate conversion, resizing, translation, and undo snapshots |
+| `LiveAnnotationOverlayView+Cursor` | Contextual cursor resolution and cursor refresh |
 
 ### Settings (`Views/Settings/`)
 
@@ -148,6 +160,7 @@ Post-record editor + recording overlay.
 | `GifClipTimelineView` | Timeline trimming UI |
 | `GifClipTimelineReadoutView` | In/Out + duration readout |
 | `GifClipSidebarView` | Export options + output + estimates |
+| `GifClipSidebarView+Estimates` | Export estimate and directory display formatting helpers |
 | `ClipExportOverlay` | Export overlay (loading + success) |
 | `Overlay/GifRecordingOverlayView` | Full-screen selection overlay |
 | `Overlay/GifRecordingHudView` | Recording HUD (timer + stop) |
