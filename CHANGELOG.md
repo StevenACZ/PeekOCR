@@ -5,6 +5,8 @@ compact and avoid local machine, signing, or private environment details.
 
 ## Unreleased
 
+## 1.8.2 - Apple Silicon Release Trim - 2026-05-05
+
 Focused on Apple Silicon release size, code organization, and export diagnostics.
 
 - Made macOS builds Apple Silicon only (`arm64`, M1 or newer) and updated public
