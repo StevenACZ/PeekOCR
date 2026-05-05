@@ -61,6 +61,7 @@ build/
 # AI Agent Config (keep private)
 PEEKOCR_SPEC.md
 .codex/
+/AGENTS.md
 CLAUDE.md
 cloud.md
 CLOUD.md
@@ -89,8 +90,8 @@ secrets/
 # Claude Plans (temporary)
 .claude/plans/
 
-# Superpowers specs (internal planning docs)
-docs/superpowers/
+# Local docs and planning notes
+/docs/
 
 # Logs
 *.log

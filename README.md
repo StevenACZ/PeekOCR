@@ -120,13 +120,7 @@ PeekOCR is designed to live in the macOS menu bar for long periods, so the proje
 
 ## 📚 Documentation
 
-- `AGENTS.md` (project map, conventions, and release guardrails)
 - `CHANGELOG.md`
-- `docs/ARCHITECTURE.md`
-- `docs/SERVICES.md`
-- `docs/MODELS.md`
-- `docs/VIEWS.md`
-- `docs/GIF_CLIP.md`
 
 ## 📝 License
 
