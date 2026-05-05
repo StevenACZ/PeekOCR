@@ -9,6 +9,9 @@ Focused on Apple Silicon release size, code organization, and export diagnostics
 
 - Made macOS builds Apple Silicon only (`arm64`, M1 or newer) and updated public
   requirements accordingly.
+- Measured the Release app at 10.0M -> 6.2M (38.0% smaller), the main binary
+  at 7.3M -> 3.6M (50.4% smaller), and bundled resources at 2.7M -> 2.6M
+  (4.9% smaller).
 - Removed the duplicate standalone `AppIcon.icns` from the final app bundle by
   relying on the asset catalog icon in `Assets.car`.
 - Split the live annotation overlay into focused mouse, drawing, text,
