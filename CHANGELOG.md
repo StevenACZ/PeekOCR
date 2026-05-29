@@ -5,6 +5,11 @@ compact and avoid local machine, signing, or private environment details.
 
 ## Unreleased
 
+## 1.8.3 - Developer ID DMG - 2026-05-29
+
+- Distribution-only patch: the macOS DMG is built with Developer ID signing,
+  secure timestamping, notarization, and stapling. No app behavior changed.
+
 ## 1.8.2 - Apple Silicon Release Trim - 2026-05-05
 
 Focused on Apple Silicon release size, code organization, and export diagnostics.
