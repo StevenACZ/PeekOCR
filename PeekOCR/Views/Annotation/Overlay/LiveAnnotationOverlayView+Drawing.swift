@@ -30,10 +30,9 @@ extension LiveAnnotationOverlayView {
             drawToolbar(in: selectionRect)
             drawInstructions(in: selectionRect)
         } else {
-            NSColor.black.withAlphaComponent(0.12).setFill()
+            NSColor.black.withAlphaComponent(0.25).setFill()
             bounds.fill()
-            drawCenteredHint(
-                text: "Arrastra para seleccionar • S mover/ajustar • A flecha • T texto • H highlight • Enter capturar • Esc cancelar")
+            drawCenteredHint(text: "Arrastra para seleccionar la zona a capturar • Esc cancela")
         }
     }
 
@@ -66,30 +65,46 @@ extension LiveAnnotationOverlayView {
         }.insetBy(dx: -8, dy: -8).standardized
         guard !background.isNull else { return }
 
-        NSColor.black.withAlphaComponent(0.7).setFill()
-        NSBezierPath(roundedRect: background, xRadius: 12, yRadius: 12).fill()
+        NSColor.black.withAlphaComponent(0.72).setFill()
+        NSBezierPath(roundedRect: background, xRadius: 14, yRadius: 14).fill()
 
         for tool in LiveAnnotationTool.allCases {
             guard let frame = buttons[tool] else { continue }
             let selected = tool == selectedTool
             let fill = selected ? accentColor.withAlphaComponent(0.9) : NSColor.white.withAlphaComponent(0.08)
             fill.setFill()
-            NSBezierPath(roundedRect: frame, xRadius: 8, yRadius: 8).fill()
+            NSBezierPath(roundedRect: frame, xRadius: 9, yRadius: 9).fill()
+
+            let symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 15, weight: .semibold)
+                .applying(.init(paletteColors: [.white]))
+            if let icon = NSImage(systemSymbolName: tool.iconName, accessibilityDescription: tool.displayName)?
+                .withSymbolConfiguration(symbolConfiguration)
+            {
+                let iconRect = CGRect(
+                    x: frame.midX - icon.size.width / 2,
+                    y: frame.maxY - icon.size.height - 7,
+                    width: icon.size.width,
+                    height: icon.size.height
+                )
+                icon.draw(in: iconRect)
+            }
 
             let paragraph = NSMutableParagraphStyle()
             paragraph.alignment = .center
             let attributes: [NSAttributedString.Key: Any] = [
-                .font: NSFont.systemFont(ofSize: 11, weight: .semibold),
-                .foregroundColor: NSColor.white,
+                .font: NSFont.systemFont(ofSize: 9, weight: .bold),
+                .foregroundColor: NSColor.white.withAlphaComponent(selected ? 0.95 : 0.55),
                 .paragraphStyle: paragraph,
             ]
-            let title = "\(tool.displayName)\n\(tool.shortcutKey)"
-            title.draw(in: frame.insetBy(dx: 6, dy: 8), withAttributes: attributes)
+            (tool.shortcutKey as NSString).draw(
+                in: CGRect(x: frame.minX, y: frame.minY + 4, width: frame.width, height: 12),
+                withAttributes: attributes
+            )
         }
     }
 
     func drawInstructions(in selectionRect: CGRect) {
-        let text = "Arrastra bordes para ajustar • Arrastra dentro para mover • Enter captura • Esc cancela"
+        let text = "Enter captura • Esc cancela • ⌘Z deshacer • ⇧⌘Z rehacer • ⌫ elimina"
         let attributes: [NSAttributedString.Key: Any] = [
             .font: NSFont.systemFont(ofSize: 12, weight: .semibold),
             .foregroundColor: NSColor.white,

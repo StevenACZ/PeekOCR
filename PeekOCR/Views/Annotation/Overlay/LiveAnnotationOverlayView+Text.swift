@@ -58,7 +58,7 @@ extension LiveAnnotationOverlayView {
         if let editingAnnotationID,
             let existing = annotations.first(where: { $0.id == editingAnnotationID })
         {
-            recordAnnotationSnapshot()
+            pushUndoSnapshot(annotations)
             var updated = existing
             updated.text = text
             updated.startPoint = point
@@ -68,7 +68,7 @@ extension LiveAnnotationOverlayView {
             return
         }
 
-        recordAnnotationSnapshot()
+        pushUndoSnapshot(annotations)
         let newAnnotation = LiveAnnotation(
             tool: .text,
             color: accentColor,

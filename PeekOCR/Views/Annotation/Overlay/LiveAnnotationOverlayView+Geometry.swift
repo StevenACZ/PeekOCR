@@ -8,23 +8,66 @@ extension LiveAnnotationOverlayView {
         annotations[index] = updatedAnnotation
     }
 
-    func recordAnnotationSnapshot() {
-        annotationHistory.append(annotations)
+    /// Captures the state at the start of a drag interaction. The snapshot only
+    /// becomes an undo step if the interaction actually changed something —
+    /// otherwise ⌘Z would silently "undo" no-op clicks.
+    func beginAnnotationTransaction() {
+        pendingUndoSnapshot = annotations
+    }
+
+    func commitAnnotationTransaction() {
+        guard let snapshot = pendingUndoSnapshot else { return }
+        pendingUndoSnapshot = nil
+        guard snapshot != annotations else { return }
+        pushUndoSnapshot(snapshot)
+    }
+
+    /// Records an atomic change (add, delete, text edit). `snapshot` is the state
+    /// BEFORE the change. Any new change invalidates the redo stack.
+    func pushUndoSnapshot(_ snapshot: [LiveAnnotation]) {
+        annotationHistory.append(snapshot)
         if annotationHistory.count > maxAnnotationHistory {
             annotationHistory.removeFirst(annotationHistory.count - maxAnnotationHistory)
         }
+        annotationRedoStack.removeAll()
     }
 
     func undoLastAnnotationChange() {
         removeTextField(commit: false)
+        pendingUndoSnapshot = nil
         guard let previousAnnotations = annotationHistory.popLast() else { return }
+        annotationRedoStack.append(annotations)
         annotations = previousAnnotations
+        clearSelectionIfMissing()
+        interaction = .none
+    }
+
+    func redoLastAnnotationChange() {
+        removeTextField(commit: false)
+        pendingUndoSnapshot = nil
+        guard let nextAnnotations = annotationRedoStack.popLast() else { return }
+        annotationHistory.append(annotations)
+        annotations = nextAnnotations
+        clearSelectionIfMissing()
+        interaction = .none
+    }
+
+    func deleteSelectedAnnotation() {
+        guard let selectedAnnotationID,
+            let index = annotations.firstIndex(where: { $0.id == selectedAnnotationID })
+        else { return }
+        pushUndoSnapshot(annotations)
+        annotations.remove(at: index)
+        self.selectedAnnotationID = nil
+        interaction = .none
+    }
+
+    private func clearSelectionIfMissing() {
         if let selectedAnnotationID,
             !annotations.contains(where: { $0.id == selectedAnnotationID })
         {
             self.selectedAnnotationID = nil
         }
-        interaction = .none
     }
 
     func translated(annotation: LiveAnnotation, dx: CGFloat, dy: CGFloat) -> LiveAnnotation {

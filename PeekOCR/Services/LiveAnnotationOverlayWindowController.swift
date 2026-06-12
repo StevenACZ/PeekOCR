@@ -30,12 +30,33 @@ final class LiveAnnotationOverlayWindowController: NSWindowController {
         for (displayID, screen) in screens {
             let overlay = makeOverlay(for: screen, displayID: displayID)
             overlays[displayID] = overlay
-            overlay.window.makeKeyAndOrderFront(nil)
-            overlay.window.makeFirstResponder(overlay.view)
+            overlay.window.alphaValue = 0
+            // The app is usually inactive when the hotkey fires; orderFrontRegardless
+            // is the only call that brings the window up without waiting for activation.
+            overlay.window.orderFrontRegardless()
         }
 
-        self.window = overlays.values.first?.window
+        // Key window on the screen under the cursor so Esc/Enter/⌘Z work right away.
+        let mouseLocation = NSEvent.mouseLocation
+        let keyOverlay =
+            overlays.values.first { $0.window.frame.contains(mouseLocation) }
+            ?? overlays.values.first
+        self.window = keyOverlay?.window
+
         NSApp.activate(ignoringOtherApps: true)
+        if let keyOverlay {
+            keyOverlay.window.makeKeyAndOrderFront(nil)
+            keyOverlay.window.makeFirstResponder(keyOverlay.view)
+        }
+        NSCursor.crosshair.set()
+
+        NSAnimationContext.beginGrouping()
+        NSAnimationContext.current.duration = 0.15
+        NSAnimationContext.current.timingFunction = CAMediaTimingFunction(name: .easeOut)
+        for overlay in overlays.values {
+            overlay.window.animator().alphaValue = 1
+        }
+        NSAnimationContext.endGrouping()
 
         return await withCheckedContinuation { continuation in
             self.continuation = continuation

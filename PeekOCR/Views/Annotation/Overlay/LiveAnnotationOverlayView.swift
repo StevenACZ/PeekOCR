@@ -91,6 +91,8 @@ final class LiveAnnotationOverlayView: NSView {
     var textField: NSTextField?
     var selectedAnnotationID: UUID?
     var annotationHistory: [[LiveAnnotation]] = []
+    var annotationRedoStack: [[LiveAnnotation]] = []
+    var pendingUndoSnapshot: [LiveAnnotation]?
     let maxAnnotationHistory = 50
     let appSettings = AppSettings.shared
     let accentColor = NSColor.systemBlue
@@ -102,11 +104,17 @@ final class LiveAnnotationOverlayView: NSView {
 
     override var acceptsFirstResponder: Bool { true }
 
+    // If activation was deferred by the system, the first click must already
+    // start the selection instead of being swallowed by app activation.
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+
     func resetState() {
         selectionRectInScreen = nil
         selectedTool = .select
         annotations = []
         annotationHistory = []
+        annotationRedoStack = []
+        pendingUndoSnapshot = nil
         interaction = .none
         pendingTextPoint = nil
         editingAnnotationID = nil
@@ -157,14 +165,18 @@ final class LiveAnnotationOverlayView: NSView {
     }
 
     override func keyDown(with event: NSEvent) {
-        if event.modifierFlags.intersection(.deviceIndependentFlagsMask).contains(.command),
-            event.charactersIgnoringModifiers?.lowercased() == "z"
-        {
-            undoLastAnnotationChange()
+        let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+
+        if modifiers.contains(.command), event.charactersIgnoringModifiers?.lowercased() == "z" {
+            if modifiers.contains(.shift) {
+                redoLastAnnotationChange()
+            } else {
+                undoLastAnnotationChange()
+            }
             return
         }
 
-        if let characters = event.charactersIgnoringModifiers?.lowercased() {
+        if !modifiers.contains(.command), let characters = event.charactersIgnoringModifiers?.lowercased() {
             switch characters {
             case "s":
                 selectedTool = .select
@@ -184,9 +196,14 @@ final class LiveAnnotationOverlayView: NSView {
         }
 
         switch event.keyCode {
+        case 51, 117:  // delete / forward delete
+            deleteSelectedAnnotation()
         case 53:  // esc
             if textField != nil {
                 removeTextField(commit: false)
+            } else if selectedAnnotationID != nil {
+                selectedAnnotationID = nil
+                needsDisplay = true
             } else {
                 onCancel?()
             }

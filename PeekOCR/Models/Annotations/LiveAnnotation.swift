@@ -35,7 +35,7 @@ enum LiveAnnotationTool: String, CaseIterable {
     }
 }
 
-struct LiveAnnotation: Identifiable {
+struct LiveAnnotation: Identifiable, Equatable {
     let id = UUID()
     let tool: LiveAnnotationTool
     var color: NSColor

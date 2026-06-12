@@ -18,7 +18,7 @@ extension LiveAnnotationOverlayView {
     }
 
     func toolbarButtonFrames(in selectionRect: CGRect) -> [LiveAnnotationTool: CGRect] {
-        let buttonSize = CGSize(width: 78, height: 42)
+        let buttonSize = CGSize(width: 64, height: 46)
         let spacing: CGFloat = 8
         let totalWidth =
             CGFloat(LiveAnnotationTool.allCases.count) * buttonSize.width + CGFloat(LiveAnnotationTool.allCases.count - 1) * spacing
