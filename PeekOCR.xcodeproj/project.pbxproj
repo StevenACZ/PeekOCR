@@ -8,6 +8,7 @@
 
 /* Begin PBXFileReference section */
 		B0D251B42EEF870D006F4EAA /* PeekOCR.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PeekOCR.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B0517CF6516000000000000C /* SigningDefaults.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = SigningDefaults.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -46,6 +47,7 @@
 			isa = PBXGroup;
 			children = (
 				B0D251B62EEF870D006F4EAA /* PeekOCR */,
+				B0517CF6516000000000000C /* SigningDefaults.xcconfig */,
 				B0D251B52EEF870D006F4EAA /* Products */,
 			);
 			sourceTree = "<group>";
@@ -140,6 +142,7 @@
 /* Begin XCBuildConfiguration section */
 		B0D251BD2EEF870E006F4EAA /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = B0517CF6516000000000000C /* SigningDefaults.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -174,7 +177,6 @@
 				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				DEVELOPMENT_TEAM = NXT93S55FY;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -193,7 +195,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -206,6 +208,7 @@
 		};
 		B0D251BE2EEF870E006F4EAA /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = B0517CF6516000000000000C /* SigningDefaults.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -240,7 +243,6 @@
 				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = NXT93S55FY;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -253,7 +255,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = macosx;
@@ -270,7 +272,6 @@
 				ASSETCATALOG_COMPILER_STANDALONE_ICON_BEHAVIOR = none;
 				ARCHS = arm64;
 				CODE_SIGN_ENTITLEMENTS = PeekOCR/PeekOCR.entitlements;
-				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 					CURRENT_PROJECT_VERSION = 7;
 				DEAD_CODE_STRIPPING = YES;
@@ -304,7 +305,6 @@
 				ASSETCATALOG_COMPILER_STANDALONE_ICON_BEHAVIOR = none;
 				ARCHS = arm64;
 				CODE_SIGN_ENTITLEMENTS = PeekOCR/PeekOCR.entitlements;
-				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 					CURRENT_PROJECT_VERSION = 7;
 				DEAD_CODE_STRIPPING = YES;
