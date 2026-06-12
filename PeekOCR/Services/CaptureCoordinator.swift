@@ -227,15 +227,15 @@ final class CaptureCoordinator: ObservableObject {
             return
         }
 
-        // Give the overlay window a beat to disappear before the pixel capture happens.
-        try? await Task.sleep(nanoseconds: 120_000_000)
-
+        // No settle delay needed: the capture filter excludes this app's windows.
         AppLogger.capture.debug("Capturing selected region from live overlay")
         guard let capturedImage = await nativeScreenCapture.captureRegion(session.selectionRect, on: session.screen) else {
             AppLogger.capture.error("Failed to capture selected region after live overlay")
             isCapturing = false
             return
         }
+
+        CaptureFlashEffect.flash(rectInScreen: session.selectionRect)
 
         let visibleAnnotations = session.annotations.filter { annotation in
             switch annotation.tool {

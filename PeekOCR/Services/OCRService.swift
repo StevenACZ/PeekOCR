@@ -9,29 +9,6 @@ import AppKit
 import Vision
 import os.log
 
-// MARK: - OCR Error Types
-
-/// Specific error types for OCR operations
-enum OCRError: Error, LocalizedError {
-    case noImageData
-    case recognitionFailed(Error)
-    case noTextFound
-    case cancelled
-
-    var errorDescription: String? {
-        switch self {
-        case .noImageData:
-            return "No image data provided for OCR processing"
-        case .recognitionFailed(let underlyingError):
-            return "Text recognition failed: \(underlyingError.localizedDescription)"
-        case .noTextFound:
-            return "No text was found in the image"
-        case .cancelled:
-            return "OCR operation was cancelled"
-        }
-    }
-}
-
 /// Result type for OCR processing
 enum OCRResult {
     case text(String)
@@ -40,13 +17,12 @@ enum OCRResult {
     case error(Error)
 }
 
-/// Service for performing OCR and QR code detection using Vision framework
+/// Service for performing OCR and QR code detection using the modern Vision API
 final class OCRService {
     static let shared = OCRService()
 
-    private struct UncheckedSendableBox<Value>: @unchecked Sendable {
-        nonisolated let value: Value
-    }
+    private nonisolated static let recognitionLanguages = ["en-US", "es-ES", "fr-FR", "de-DE", "pt-BR", "it-IT"]
+        .map(Locale.Language.init(identifier:))
 
     // MARK: - Initialization
 
@@ -56,32 +32,24 @@ final class OCRService {
 
     // MARK: - Public Methods
 
-    /// Process an image for text and QR codes
+    /// Process an image for text and QR codes. Both detections run in parallel;
+    /// a QR hit wins over plain text.
     /// - Parameter image: The image to process
     /// - Returns: OCR result containing extracted text or QR content
     nonisolated func processImage(_ image: CGImage) async -> OCRResult {
-        let imageBox = UncheckedSendableBox(value: image)
-
-        return await Task.detached(priority: .userInitiated) {
-            Self.processImageSynchronously(imageBox.value)
-        }.value
-    }
-
-    // MARK: - Private Methods
-
-    nonisolated private static func processImageSynchronously(_ image: CGImage) -> OCRResult {
         let startTime = CFAbsoluteTimeGetCurrent()
         AppLogger.ocr.debug("Starting image processing (\(image.width)x\(image.height))")
 
-        // First, try to detect QR codes
-        if let qrContent = detectQRCode(in: image) {
+        async let qrContent = Self.detectQRCode(in: image)
+        async let recognizedText = Self.recognizeText(in: image)
+
+        if let qrContent = await qrContent {
             let elapsed = CFAbsoluteTimeGetCurrent() - startTime
             AppLogger.ocr.info("QR code detected successfully in \(String(format: "%.2f", elapsed))s")
             return .qrCode(qrContent)
         }
 
-        // If no QR code, perform text recognition
-        let text = recognizeText(in: image)
+        let text = await recognizedText
         let elapsed = CFAbsoluteTimeGetCurrent() - startTime
 
         if text.isEmpty {
@@ -95,97 +63,59 @@ final class OCRService {
         return .text(text)
     }
 
+    // MARK: - Private Methods
+
     /// Recognize text in an image
     /// - Parameter image: The image to process
     /// - Returns: Recognized text string
-    nonisolated private static func recognizeText(in image: CGImage) -> String {
+    nonisolated private static func recognizeText(in image: CGImage) async -> String {
         AppLogger.ocr.debug("Starting text recognition request")
 
-        var recognizedText = ""
-        let request = VNRecognizeTextRequest { request, error in
-            if let error = error {
-                AppLogger.ocr.error("Text recognition request failed: \(error.localizedDescription)")
-                return
-            }
+        var request = RecognizeTextRequest()
+        request.recognitionLevel = .accurate
+        request.usesLanguageCorrection = true
+        request.automaticallyDetectsLanguage = true
+        request.recognitionLanguages = recognitionLanguages
 
-            guard let observations = request.results as? [VNRecognizedTextObservation] else {
-                AppLogger.ocr.warning("No text observations returned from Vision request")
-                return
-            }
-
-            if observations.isEmpty {
+        do {
+            let observations = try await request.perform(on: image)
+            guard !observations.isEmpty else {
                 AppLogger.ocr.debug("Vision request completed with zero observations")
-                return
+                return ""
             }
 
-            recognizedText =
+            AppLogger.ocr.debug("Extracted \(observations.count) text observations")
+            return
                 observations
                 .compactMap { $0.topCandidates(1).first?.string }
                 .joined(separator: "\n")
-
-            AppLogger.ocr.debug("Extracted \(observations.count) text observations")
-        }
-
-        // Configure request for accurate recognition
-        request.recognitionLevel = .accurate
-        request.usesLanguageCorrection = true
-        request.recognitionLanguages = ["en-US", "es-ES", "fr-FR", "de-DE", "pt-BR", "it-IT"]
-
-        let handler = VNImageRequestHandler(cgImage: image, options: [:])
-
-        do {
-            try handler.perform([request])
         } catch {
             AppLogger.ocr.error("Failed to perform text recognition: \(error.localizedDescription)")
             return ""
         }
-
-        return recognizedText
     }
 
     /// Detect QR codes in an image
     /// - Parameter image: The image to process
     /// - Returns: QR code content if found, nil otherwise
-    nonisolated private static func detectQRCode(in image: CGImage) -> String? {
+    nonisolated private static func detectQRCode(in image: CGImage) async -> String? {
         AppLogger.ocr.debug("Starting QR code detection request")
 
-        var qrContent: String?
-        let request = VNDetectBarcodesRequest { request, error in
-            if let error = error {
-                AppLogger.ocr.error("Barcode detection request failed: \(error.localizedDescription)")
-                return
-            }
-
-            guard let observations = request.results as? [VNBarcodeObservation] else {
-                AppLogger.ocr.debug("No barcode observations returned from Vision request")
-                return
-            }
-
-            // Get first QR code payload
-            qrContent =
-                observations
-                .first(where: { $0.symbology == .qr })?
-                .payloadStringValue
-
-            if qrContent != nil {
-                AppLogger.ocr.debug("QR code payload extracted successfully")
-            } else if !observations.isEmpty {
-                let symbologies = observations.map { $0.symbology.rawValue }.joined(separator: ", ")
-                AppLogger.ocr.debug("Found barcodes but no QR codes: \(symbologies)")
-            } else {
-                AppLogger.ocr.debug("No barcodes detected in image")
-            }
-        }
-
-        let handler = VNImageRequestHandler(cgImage: image, options: [:])
+        var request = DetectBarcodesRequest()
+        request.symbologies = [.qr]
 
         do {
-            try handler.perform([request])
+            let observations = try await request.perform(on: image)
+            guard let payload = observations.first?.payloadString else {
+                AppLogger.ocr.debug("No QR codes detected in image")
+                return nil
+            }
+
+            AppLogger.ocr.debug("QR code payload extracted successfully")
+            return payload
         } catch {
             AppLogger.ocr.error("Failed to perform barcode detection: \(error.localizedDescription)")
             return nil
         }
-
-        return qrContent
     }
 }
