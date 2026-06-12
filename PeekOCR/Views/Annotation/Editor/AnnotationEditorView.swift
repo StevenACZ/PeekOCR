@@ -38,7 +38,7 @@ struct AnnotationEditorView: View {
                     .onAppear {
                         canvasSize = geometry.size
                     }
-                    .onChange(of: geometry.size) { newSize in
+                    .onChange(of: geometry.size) { _, newSize in
                         canvasSize = newSize
                     }
             }

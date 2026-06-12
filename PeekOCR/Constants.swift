@@ -38,8 +38,10 @@ enum Constants {
 
     /// App information
     enum App {
-        static let version = "1.6.0"
-        static let minimumOSVersion = "macOS 13.0+"
+        static var version: String {
+            Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—"
+        }
+        static let minimumOSVersion = "macOS 15.0+"
     }
 
     /// GIF capture/export defaults

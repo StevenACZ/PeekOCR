@@ -195,7 +195,7 @@ final class CaptureCoordinator: ObservableObject {
         )
         historyManager.addItem(item)
         AppLogger.capture.debug("Screenshot added to history")
-        CaptureSoundService.shared.play()
+        CaptureSoundService.shared.playCapture()
     }
 
     // MARK: - Annotated Screenshot Processing
@@ -319,6 +319,7 @@ final class CaptureCoordinator: ObservableObject {
         )
         historyManager.addItem(item)
         AppLogger.capture.debug("Text result added to history")
+        CaptureSoundService.shared.playOCRFeedback()
     }
 
     private func handleQRResult(_ content: String) async {
@@ -331,5 +332,6 @@ final class CaptureCoordinator: ObservableObject {
         )
         historyManager.addItem(item)
         AppLogger.capture.debug("QR result added to history")
+        CaptureSoundService.shared.playOCRFeedback()
     }
 }

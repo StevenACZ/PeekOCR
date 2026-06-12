@@ -41,8 +41,8 @@ struct RangeSlider: View {
         .onAppear {
             normalizeValues()
         }
-        .onChange(of: lowerValue) { _ in normalizeValues() }
-        .onChange(of: upperValue) { _ in normalizeValues() }
+        .onChange(of: lowerValue) { normalizeValues() }
+        .onChange(of: upperValue) { normalizeValues() }
     }
 
     private var track: some View {

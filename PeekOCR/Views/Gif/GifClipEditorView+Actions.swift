@@ -107,7 +107,7 @@ extension GifClipEditorView {
                     captureType: .screenshot
                 ))
 
-            CaptureSoundService.shared.play()
+            CaptureSoundService.shared.playCapture()
 
             AppLogger.capture.info("Video frame captured: \(outputURL.lastPathComponent)")
             showFrameCaptureFeedback(makeFrameCaptureSuccessFeedback(outputURL: outputURL, format: settings.imageFormat))
