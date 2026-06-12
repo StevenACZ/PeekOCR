@@ -4,6 +4,10 @@ import AppKit
 
 extension LiveAnnotationOverlayView {
     func currentCursor() -> NSCursor {
+        if mode == .quickSelect {
+            return .crosshair
+        }
+
         if let pointInScreen = currentMouseLocationInScreen() {
             return cursor(for: pointInScreen)
         }
@@ -16,6 +20,9 @@ extension LiveAnnotationOverlayView {
     }
 
     func cursor(for pointInScreen: CGPoint) -> NSCursor {
+        if mode == .quickSelect {
+            return .crosshair
+        }
         switch interaction {
         case .movingSelection, .movingAnnotation:
             return .closedHand

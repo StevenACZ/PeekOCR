@@ -19,35 +19,6 @@ final class NativeScreenCaptureService {
 
     // MARK: - Public Methods
 
-    /// Capture a screen region using macOS native screencapture tool
-    /// This uses the interactive mode (-i) which provides a smooth, native experience
-    /// - Returns: The captured image, or nil if cancelled or failed
-    func captureInteractive() async -> CGImage? {
-        // Create a temporary file path
-        let tempURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent(UUID().uuidString)
-            .appendingPathExtension("png")
-
-        // Run screencapture command
-        let success = await runScreenCapture(outputPath: tempURL.path)
-
-        guard success else {
-            // Clean up in case of failure
-            try? FileManager.default.removeItem(at: tempURL)
-            return nil
-        }
-
-        guard let imageData = try? Data(contentsOf: tempURL, options: .mappedIfSafe),
-            let image = Self.loadImage(from: imageData)
-        else {
-            try? FileManager.default.removeItem(at: tempURL)
-            return nil
-        }
-
-        try? FileManager.default.removeItem(at: tempURL)
-        return image
-    }
-
     /// Capture a screen region and return the image data directly
     /// - Returns: PNG data of the captured image, or nil if cancelled
     func captureInteractiveAsData() async -> Data? {

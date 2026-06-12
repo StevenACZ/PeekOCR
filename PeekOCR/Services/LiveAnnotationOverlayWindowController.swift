@@ -20,7 +20,9 @@ final class LiveAnnotationOverlayWindowController: NSWindowController {
         fatalError("init(coder:) has not been implemented")
     }
 
-    func runSession() async -> (selectionRect: CGRect, screen: NSScreen, annotations: [LiveAnnotation])? {
+    func runSession(
+        mode: LiveAnnotationOverlayView.OverlayMode = .annotate
+    ) async -> (selectionRect: CGRect, screen: NSScreen, annotations: [LiveAnnotation])? {
         let screens = DisplayEnumerator.activeScreens()
         guard !screens.isEmpty else { return nil }
 
@@ -28,7 +30,7 @@ final class LiveAnnotationOverlayWindowController: NSWindowController {
         activeDisplayID = nil
 
         for (displayID, screen) in screens {
-            let overlay = makeOverlay(for: screen, displayID: displayID)
+            let overlay = makeOverlay(for: screen, displayID: displayID, mode: mode)
             overlays[displayID] = overlay
             overlay.window.alphaValue = 0
             // The app is usually inactive when the hotkey fires; orderFrontRegardless
@@ -65,7 +67,9 @@ final class LiveAnnotationOverlayWindowController: NSWindowController {
 
     // MARK: - Private
 
-    private func makeOverlay(for screen: NSScreen, displayID: CGDirectDisplayID) -> Overlay {
+    private func makeOverlay(
+        for screen: NSScreen, displayID: CGDirectDisplayID, mode: LiveAnnotationOverlayView.OverlayMode
+    ) -> Overlay {
         let window = LiveAnnotationOverlayWindow(
             contentRect: screen.frame,
             styleMask: [.borderless],
@@ -82,7 +86,7 @@ final class LiveAnnotationOverlayWindowController: NSWindowController {
         window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .ignoresCycle, .stationary]
         window.ignoresMouseEvents = false
 
-        let view = LiveAnnotationOverlayView(screen: screen)
+        let view = LiveAnnotationOverlayView(screen: screen, mode: mode)
         view.resetState()
         view.onCancel = { [weak self] in
             self?.finish(with: nil)

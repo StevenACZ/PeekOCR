@@ -3,6 +3,14 @@
 import AppKit
 
 final class LiveAnnotationOverlayView: NSView {
+    /// How the overlay behaves once a region is selected.
+    enum OverlayMode {
+        /// Full annotation session: adjust the selection, draw, capture on Enter.
+        case annotate
+        /// One-shot region pick: capture immediately on mouse-up (⌘⇧4-style).
+        case quickSelect
+    }
+
     enum Interaction {
         case none
         case creatingSelection(origin: CGPoint)
@@ -82,13 +90,17 @@ final class LiveAnnotationOverlayView: NSView {
     /// The screen this overlay is rendering on. Set at construction.
     let overlayScreen: NSScreen
 
+    /// Behavior of this overlay session. Set at construction.
+    let mode: OverlayMode
+
     /// Fires the first time the user mousedowns on this overlay, so the window controller can dismiss sibling overlays.
     var onActivate: (() -> Void)?
 
     var didActivate = false
 
-    init(screen: NSScreen) {
+    init(screen: NSScreen, mode: OverlayMode = .annotate) {
         self.overlayScreen = screen
+        self.mode = mode
         super.init(frame: .zero)
     }
 
@@ -195,7 +207,9 @@ final class LiveAnnotationOverlayView: NSView {
             return
         }
 
-        if !modifiers.contains(.command), let characters = event.charactersIgnoringModifiers?.lowercased() {
+        if mode == .annotate, !modifiers.contains(.command),
+            let characters = event.charactersIgnoringModifiers?.lowercased()
+        {
             // Home-row tool shortcuts, matching toolbar order (A S D F G).
             switch characters {
             case "a":

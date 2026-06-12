@@ -23,17 +23,40 @@ extension LiveAnnotationOverlayView {
             border.lineWidth = 2
             border.stroke()
 
-            drawSelectionHandles(in: selectionRect)
-            LiveAnnotationRenderer.drawOverlayAnnotations(
-                annotationsForDrawing, in: self, window: window, selectionRectInScreen: selectionRectInScreen)
-            drawSelectedAnnotationIfNeeded(in: self, window: window)
-            drawToolbar(in: selectionRect)
-            drawInstructions(in: selectionRect)
+            if mode == .quickSelect {
+                drawSelectionSizeBadge(in: selectionRect)
+            } else {
+                drawSelectionHandles(in: selectionRect)
+                LiveAnnotationRenderer.drawOverlayAnnotations(
+                    annotationsForDrawing, in: self, window: window, selectionRectInScreen: selectionRectInScreen)
+                drawSelectedAnnotationIfNeeded(in: self, window: window)
+                drawToolbar(in: selectionRect)
+                drawInstructions(in: selectionRect)
+            }
         } else {
             NSColor.black.withAlphaComponent(0.25).setFill()
             bounds.fill()
             drawCenteredHint(text: "Arrastra para seleccionar la zona a capturar • Esc cancela")
         }
+    }
+
+    /// Live "W × H" readout under the selection while picking a region.
+    func drawSelectionSizeBadge(in selectionRect: CGRect) {
+        let text = "\(Int(selectionRect.width)) × \(Int(selectionRect.height))"
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .semibold),
+            .foregroundColor: NSColor.white,
+        ]
+        let size = (text as NSString).size(withAttributes: attributes)
+        let rect = CGRect(
+            x: selectionRect.maxX - size.width - 18,
+            y: max(selectionRect.minY - 26, 8),
+            width: size.width + 14,
+            height: size.height + 6
+        )
+        NSColor.black.withAlphaComponent(0.7).setFill()
+        NSBezierPath(roundedRect: rect, xRadius: rect.height / 2, yRadius: rect.height / 2).fill()
+        (text as NSString).draw(at: CGPoint(x: rect.minX + 7, y: rect.minY + 3), withAttributes: attributes)
     }
 
     var annotationsForDrawing: [LiveAnnotation] {

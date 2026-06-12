@@ -115,18 +115,30 @@ final class CaptureCoordinator: ObservableObject {
 
     // MARK: - Private Methods
 
-    /// Use native macOS screencapture for OCR/plain screenshots.
+    /// Region pick with the app's own dimmed overlay for OCR/plain screenshots,
+    /// then a ScreenCaptureKit grab of the selected rect.
+    @MainActor
     private func captureWithNativeScreenshot() async {
-        AppLogger.capture.debug("Invoking native screen capture")
+        AppLogger.capture.debug("Opening quick-select capture overlay")
 
-        guard let image = await nativeScreenCapture.captureInteractive() else {
+        let overlayController = LiveAnnotationOverlayWindowController()
+        guard let session = await overlayController.runSession(mode: .quickSelect) else {
             let elapsed = CFAbsoluteTimeGetCurrent() - captureStartTime
-            AppLogger.capture.info("Native capture returned nil (user cancelled or failed) - elapsed: \(String(format: "%.2f", elapsed))s")
+            AppLogger.capture.info(
+                "Quick-select capture cancelled - elapsed: \(String(format: "%.2f", elapsed))s")
             isCapturing = false
             return
         }
 
-        AppLogger.capture.debug("Native capture successful - dimensions: \(image.width)x\(image.height)")
+        guard let image = await nativeScreenCapture.captureRegion(session.selectionRect, on: session.screen) else {
+            AppLogger.capture.error("Failed to capture selected region from quick-select overlay")
+            isCapturing = false
+            return
+        }
+
+        CaptureFlashEffect.flash(rectInScreen: session.selectionRect)
+
+        AppLogger.capture.debug("Region capture successful - dimensions: \(image.width)x\(image.height)")
 
         // Process based on mode
         switch currentMode {

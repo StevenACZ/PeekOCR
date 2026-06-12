@@ -7,6 +7,14 @@ extension LiveAnnotationOverlayView {
         guard let window else { return }
         let pointInScreen = screenPoint(from: event.locationInWindow, window: window)
 
+        if mode == .quickSelect {
+            notifyActivationIfNeeded()
+            let origin = clamp(pointInScreen, to: overlayScreen.frame)
+            selectionRectInScreen = CGRect(origin: origin, size: .zero)
+            interaction = .creatingSelection(origin: origin)
+            return
+        }
+
         if isEditingText {
             if handleToolbarClick(at: pointInScreen) {
                 dismissTextEditor(commit: true)
@@ -153,7 +161,15 @@ extension LiveAnnotationOverlayView {
     override func mouseUp(with event: NSEvent) {
         switch interaction {
         case .creatingSelection:
-            if let selectionRectInScreen, selectionRectInScreen.width >= minimumSelectionSize.width,
+            if mode == .quickSelect {
+                // One-shot pick: releasing the mouse captures right away.
+                if let selectionRectInScreen, selectionRectInScreen.width >= 8, selectionRectInScreen.height >= 8 {
+                    interaction = .none
+                    onComplete?(selectionRectInScreen, overlayScreen, [])
+                    return
+                }
+                self.selectionRectInScreen = nil
+            } else if let selectionRectInScreen, selectionRectInScreen.width >= minimumSelectionSize.width,
                 selectionRectInScreen.height >= minimumSelectionSize.height
             {
                 self.selectionRectInScreen = selectionRectInScreen
