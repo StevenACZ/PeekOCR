@@ -43,6 +43,36 @@ struct AnnotationDefaultsSection: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
+            // Pen Stroke Width Slider
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text("Grosor del lápiz")
+                    Spacer()
+                    Text("\(Int(appSettings.defaultPenStrokeWidth)) px")
+                        .font(.system(.body, design: .monospaced))
+                        .foregroundStyle(.blue)
+                }
+
+                Slider(value: $appSettings.defaultPenStrokeWidth, in: 1...12, step: 1)
+                    .labelsHidden()
+                    .frame(maxWidth: .infinity)
+
+                HStack {
+                    Text("1 px")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                    Spacer()
+                    Text("6 px")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                    Spacer()
+                    Text("12 px")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
             // Font Size Slider
             VStack(alignment: .leading, spacing: 8) {
                 HStack {

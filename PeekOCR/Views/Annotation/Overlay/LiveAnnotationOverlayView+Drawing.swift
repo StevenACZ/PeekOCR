@@ -153,26 +153,36 @@ extension LiveAnnotationOverlayView {
         path.setLineDash([6, 4], count: 2, phase: 0)
         path.stroke()
 
-        if annotation.tool == .highlight {
-            drawAnnotationResizeHandles(for: annotation)
-        }
+        drawAnnotationResizeHandles(for: annotation)
     }
 
     func drawAnnotationResizeHandles(for annotation: LiveAnnotation) {
-        for handle in SelectionHandle.allCases {
-            let point = viewPoint(from: handle.point(for: annotation.bounds))
-            let handleRect = CGRect(
-                x: point.x - annotationHandleSize / 2,
-                y: point.y - annotationHandleSize / 2,
-                width: annotationHandleSize,
-                height: annotationHandleSize
-            )
-            NSColor.white.setFill()
-            NSBezierPath(ovalIn: handleRect).fill()
-            annotation.color.setStroke()
-            let stroke = NSBezierPath(ovalIn: handleRect)
-            stroke.lineWidth = 1.5
-            stroke.stroke()
+        switch annotation.tool {
+        case .arrow:
+            drawHandleDot(at: annotation.startPoint, accent: annotation.color)
+            drawHandleDot(at: annotation.endPoint, accent: annotation.color)
+        case .highlight, .text, .pen:
+            for handle in SelectionHandle.allCases {
+                drawHandleDot(at: handle.point(for: annotation.bounds), accent: annotation.color)
+            }
+        case .select:
+            break
         }
+    }
+
+    private func drawHandleDot(at screenPoint: CGPoint, accent: NSColor) {
+        let point = viewPoint(from: screenPoint)
+        let handleRect = CGRect(
+            x: point.x - annotationHandleSize / 2,
+            y: point.y - annotationHandleSize / 2,
+            width: annotationHandleSize,
+            height: annotationHandleSize
+        )
+        NSColor.white.setFill()
+        NSBezierPath(ovalIn: handleRect).fill()
+        accent.setStroke()
+        let stroke = NSBezierPath(ovalIn: handleRect)
+        stroke.lineWidth = 1.5
+        stroke.stroke()
     }
 }

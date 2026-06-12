@@ -28,8 +28,10 @@ final class OverlayTextEditorView: NSView {
         layer?.borderColor = color.withAlphaComponent(0.6).cgColor
 
         textView.string = initialText
-        textView.font = LiveAnnotation.textFont(ofSize: fontSize)
-        textView.textColor = color
+        let attributes = LiveAnnotation.textAttributes(fontSize: fontSize, color: color)
+        textView.typingAttributes = attributes
+        textView.textStorage?.setAttributes(
+            attributes, range: NSRange(location: 0, length: (initialText as NSString).length))
         textView.insertionPointColor = color
         textView.drawsBackground = false
         textView.isRichText = false

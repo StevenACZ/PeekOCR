@@ -24,7 +24,7 @@ extension LiveAnnotationOverlayView {
     private func showTextEditor(initialText: String, fontSize: CGFloat) {
         guard let window else { return }
 
-        let editor = OverlayTextEditorView(initialText: initialText, fontSize: fontSize, color: accentColor)
+        let editor = OverlayTextEditorView(initialText: initialText, fontSize: fontSize, color: textColor)
         editor.onCommit = { [weak self] in self?.dismissTextEditor(commit: true) }
         editor.onCancel = { [weak self] in self?.dismissTextEditor(commit: false) }
         editor.onTextChange = { [weak self] in self?.layoutTextEditor() }
@@ -86,7 +86,7 @@ extension LiveAnnotationOverlayView {
         pushUndoSnapshot(annotations)
         let newAnnotation = LiveAnnotation(
             tool: .text,
-            color: accentColor,
+            color: textColor,
             startPoint: point,
             endPoint: point,
             text: text,

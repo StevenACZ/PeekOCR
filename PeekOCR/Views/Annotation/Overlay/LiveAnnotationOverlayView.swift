@@ -9,7 +9,7 @@ final class LiveAnnotationOverlayView: NSView {
         case movingSelection(origin: CGPoint, initialRect: CGRect, initialAnnotations: [LiveAnnotation])
         case resizingSelection(handle: SelectionHandle, initialRect: CGRect, initialAnnotations: [LiveAnnotation])
         case movingAnnotation(id: UUID, origin: CGPoint, initialAnnotation: LiveAnnotation)
-        case resizingAnnotation(id: UUID, handle: SelectionHandle, initialAnnotation: LiveAnnotation)
+        case resizingAnnotation(id: UUID, handle: AnnotationHandle, initialAnnotation: LiveAnnotation)
         case drawingAnnotation(annotation: LiveAnnotation)
     }
 
@@ -27,6 +27,23 @@ final class LiveAnnotationOverlayView: NSView {
             case .bottomRight: return CGPoint(x: rect.maxX, y: rect.minY)
             }
         }
+
+        var opposite: SelectionHandle {
+            switch self {
+            case .topLeft: return .bottomRight
+            case .topRight: return .bottomLeft
+            case .bottomLeft: return .topRight
+            case .bottomRight: return .topLeft
+            }
+        }
+    }
+
+    /// Grab points on a selected annotation: rect corners for box-like
+    /// annotations, the two endpoints for arrows.
+    enum AnnotationHandle: Equatable {
+        case corner(SelectionHandle)
+        case arrowStart
+        case arrowEnd
     }
 
     var selectionRectInScreen: CGRect? {
@@ -97,6 +114,8 @@ final class LiveAnnotationOverlayView: NSView {
     let appSettings = AppSettings.shared
     let accentColor = NSColor.systemBlue
     let annotationColor = NSColor.systemYellow
+    /// Thumbnail-style lettering reads best as white fill over the black outline.
+    let textColor = NSColor.white
     let minimumSelectionSize = CGSize(width: 40, height: 40)
     let minimumHighlightSize = CGSize(width: 12, height: 12)
     let annotationHandleSize: CGFloat = 10
@@ -189,6 +208,9 @@ final class LiveAnnotationOverlayView: NSView {
                 return
             case "h":
                 selectedTool = .highlight
+                return
+            case "p":
+                selectedTool = .pen
                 return
             default:
                 break

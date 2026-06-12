@@ -29,6 +29,7 @@ final class AppSettings: ObservableObject {
         static let launchAtLogin = "launchAtLogin"
         static let defaultAnnotationStrokeWidth = "defaultAnnotationStrokeWidth"
         static let defaultAnnotationFontSize = "defaultAnnotationFontSize"
+        static let defaultPenStrokeWidth = "defaultPenStrokeWidth"
     }
 
     // MARK: - Default Values
@@ -56,6 +57,7 @@ final class AppSettings: ObservableObject {
         // Annotation defaults
         static let annotationStrokeWidth: Double = 3.0
         static let annotationFontSize: Double = 16.0
+        static let penStrokeWidth: Double = 4.0
     }
 
     // MARK: - Hotkey Settings
@@ -111,6 +113,10 @@ final class AppSettings: ObservableObject {
         didSet { defaults.set(defaultAnnotationFontSize, forKey: Keys.defaultAnnotationFontSize) }
     }
 
+    @Published var defaultPenStrokeWidth: Double {
+        didSet { defaults.set(defaultPenStrokeWidth, forKey: Keys.defaultPenStrokeWidth) }
+    }
+
     // MARK: - Initialization
 
     private init() {
@@ -162,6 +168,9 @@ final class AppSettings: ObservableObject {
 
         let savedFontSize = defaults.double(forKey: Keys.defaultAnnotationFontSize)
         self.defaultAnnotationFontSize = savedFontSize > 0 ? savedFontSize : Defaults.annotationFontSize
+
+        let savedPenStrokeWidth = defaults.double(forKey: Keys.defaultPenStrokeWidth)
+        self.defaultPenStrokeWidth = savedPenStrokeWidth > 0 ? savedPenStrokeWidth : Defaults.penStrokeWidth
     }
 
     // MARK: - Helpers

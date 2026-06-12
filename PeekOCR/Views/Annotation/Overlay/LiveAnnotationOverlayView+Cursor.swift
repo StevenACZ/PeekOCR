@@ -58,7 +58,7 @@ extension LiveAnnotationOverlayView {
                 return .iBeam
             case .select:
                 return .openHand
-            case .arrow, .highlight:
+            case .arrow, .highlight, .pen:
                 return .crosshair
             }
         }

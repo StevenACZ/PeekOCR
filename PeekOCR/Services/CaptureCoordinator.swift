@@ -241,7 +241,7 @@ final class CaptureCoordinator: ObservableObject {
             switch annotation.tool {
             case .text:
                 return session.selectionRect.contains(annotation.startPoint)
-            case .arrow, .highlight:
+            case .arrow, .highlight, .pen:
                 return session.selectionRect.intersects(annotation.bounds)
             case .select:
                 return false

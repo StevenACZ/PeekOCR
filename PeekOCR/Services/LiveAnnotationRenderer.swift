@@ -65,9 +65,25 @@ enum LiveAnnotationRenderer {
             drawOverlayText(annotation, in: view, window: window)
         case .highlight:
             drawOverlayHighlight(annotation, in: view, window: window)
+        case .pen:
+            drawOverlayPen(annotation, in: view, window: window)
         case .select:
             break
         }
+    }
+
+    private static func drawOverlayPen(_ annotation: LiveAnnotation, in view: NSView, window: NSWindow) {
+        guard annotation.points.count > 1 else { return }
+        let path = NSBezierPath()
+        path.lineWidth = annotation.strokeWidth
+        path.lineCapStyle = .round
+        path.lineJoinStyle = .round
+        path.move(to: pointInView(annotation.points[0], view: view, window: window))
+        for point in annotation.points.dropFirst() {
+            path.line(to: pointInView(point, view: view, window: window))
+        }
+        annotation.color.setStroke()
+        path.stroke()
     }
 
     private static func drawOverlayArrow(_ annotation: LiveAnnotation, in view: NSView, window: NSWindow) {
@@ -119,9 +135,30 @@ enum LiveAnnotationRenderer {
             drawRenderedText(annotation, in: context, selectionRectInScreen: selectionRectInScreen, scaleFactor: scaleFactor)
         case .highlight:
             drawRenderedHighlight(annotation, in: context, selectionRectInScreen: selectionRectInScreen, scaleFactor: scaleFactor)
+        case .pen:
+            drawRenderedPen(annotation, in: context, selectionRectInScreen: selectionRectInScreen, scaleFactor: scaleFactor)
         case .select:
             break
         }
+    }
+
+    private static func drawRenderedPen(
+        _ annotation: LiveAnnotation, in context: CGContext, selectionRectInScreen: CGRect, scaleFactor: CGFloat
+    ) {
+        guard annotation.points.count > 1 else { return }
+        context.saveGState()
+        context.setStrokeColor(annotation.color.cgColor)
+        context.setLineWidth(annotation.strokeWidth * scaleFactor)
+        context.setLineCap(.round)
+        context.setLineJoin(.round)
+        context.move(
+            to: localPoint(annotation.points[0], selectionRectInScreen: selectionRectInScreen, scaleFactor: scaleFactor))
+        for point in annotation.points.dropFirst() {
+            context.addLine(
+                to: localPoint(point, selectionRectInScreen: selectionRectInScreen, scaleFactor: scaleFactor))
+        }
+        context.strokePath()
+        context.restoreGState()
     }
 
     private static func drawRenderedArrow(

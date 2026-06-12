@@ -25,7 +25,6 @@ extension LiveAnnotationOverlayView {
 
         if let annotationID = selectedAnnotationID,
             let annotation = annotations.first(where: { $0.id == annotationID }),
-            annotation.tool == .highlight,
             let handle = hitTestAnnotationResizeHandle(for: annotation, at: pointInScreen)
         {
             notifyActivationIfNeeded()
@@ -77,17 +76,22 @@ extension LiveAnnotationOverlayView {
             case .text:
                 notifyActivationIfNeeded()
                 beginTextInput(at: pointInScreen)
-            case .arrow, .highlight:
+            case .arrow, .highlight, .pen:
                 notifyActivationIfNeeded()
-                let annotation = LiveAnnotation(
+                var annotation = LiveAnnotation(
                     tool: selectedTool,
                     color: selectedTool == .highlight ? annotationColor : accentColor,
                     startPoint: pointInScreen,
                     endPoint: pointInScreen,
                     text: "",
                     fontSize: CGFloat(appSettings.defaultAnnotationFontSize),
-                    strokeWidth: CGFloat(appSettings.defaultAnnotationStrokeWidth)
+                    strokeWidth: selectedTool == .pen
+                        ? CGFloat(appSettings.defaultPenStrokeWidth)
+                        : CGFloat(appSettings.defaultAnnotationStrokeWidth)
                 )
+                if selectedTool == .pen {
+                    annotation.points = [pointInScreen]
+                }
                 interaction = .drawingAnnotation(annotation: annotation)
             }
             return
@@ -137,7 +141,11 @@ extension LiveAnnotationOverlayView {
             updateAnnotation(id: id, with: resizedAnnotation)
         case .drawingAnnotation(var annotation):
             guard let selectionRectInScreen else { return }
-            annotation.endPoint = clamp(pointInScreen, to: selectionRectInScreen)
+            let clampedPoint = clamp(pointInScreen, to: selectionRectInScreen)
+            if annotation.tool == .pen {
+                annotation.points.append(clampedPoint)
+            }
+            annotation.endPoint = clampedPoint
             interaction = .drawingAnnotation(annotation: annotation)
         }
     }
@@ -161,6 +169,12 @@ extension LiveAnnotationOverlayView {
                 }
             } else if annotation.tool == .highlight {
                 if annotation.bounds.width >= 12 && annotation.bounds.height >= 12 {
+                    pushUndoSnapshot(annotations)
+                    annotations.append(annotation)
+                    selectedAnnotationID = annotation.id
+                }
+            } else if annotation.tool == .pen {
+                if annotation.points.count >= 2 {
                     pushUndoSnapshot(annotations)
                     annotations.append(annotation)
                     selectedAnnotationID = annotation.id
