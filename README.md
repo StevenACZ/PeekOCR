@@ -5,7 +5,7 @@ screenshots, live annotation capture, GIF clip recording, and MP4/GIF export.
 
 ## Requirements
 
-- macOS 13.0 or later
+- macOS 15.0 or later
 - Apple Silicon Mac (`arm64`, M1 and newer)
 - Xcode with command line tools
 - Screen Recording permission for capture

@@ -189,32 +189,15 @@ private struct FooterSection: View {
         .padding(.vertical, 12)
     }
 
-    @ViewBuilder
     private var settingsButton: some View {
-        if #available(macOS 14.0, *) {
-            SettingsLink {
-                Label("Configuración", systemImage: "gear")
-                    .font(.caption)
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(isHoveringSettings ? .primary : .secondary)
-            .onHover { hovering in
-                isHoveringSettings = hovering
-            }
-        } else {
-            Button {
-                if #available(macOS 13.0, *) {
-                    NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
-                }
-            } label: {
-                Label("Configuración", systemImage: "gear")
-                    .font(.caption)
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(isHoveringSettings ? .primary : .secondary)
-            .onHover { hovering in
-                isHoveringSettings = hovering
-            }
+        SettingsLink {
+            Label("Configuración", systemImage: "gear")
+                .font(.caption)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(isHoveringSettings ? .primary : .secondary)
+        .onHover { hovering in
+            isHoveringSettings = hovering
         }
     }
 }
