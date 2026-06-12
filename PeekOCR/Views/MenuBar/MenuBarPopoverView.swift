@@ -25,7 +25,6 @@ struct MenuBarPopoverView: View {
             FooterSection()
         }
         .frame(width: Constants.UI.popoverWidth)
-        .background(Color(NSColor.windowBackgroundColor))
     }
 }
 
@@ -145,8 +144,15 @@ private struct HistorySection: View {
                             HistoryItemRow(item: item) {
                                 historyManager.copyItem(item)
                             }
+                            .transition(
+                                .asymmetric(
+                                    insertion: .move(edge: .top).combined(with: .opacity),
+                                    removal: .opacity
+                                )
+                            )
                         }
                     }
+                    .animation(.spring(duration: 0.35, bounce: 0.15), value: historyManager.items.map(\.id))
                 }
                 .frame(maxHeight: Constants.UI.historyMaxHeight)
             }

@@ -33,15 +33,20 @@ struct HistoryItemRow: View {
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, 10)
             .padding(.vertical, 6)
-            .background(isHovered ? Color.blue.opacity(0.1) : Color.clear)
+            .background(
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(isHovered ? Color.blue.opacity(0.12) : Color.clear)
+            )
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .animation(.easeOut(duration: 0.12), value: isHovered)
         .onHover { hovering in
             isHovered = hovering
         }
+        .padding(.horizontal, 6)
         .help("Clic para copiar")
     }
 }
