@@ -102,14 +102,19 @@ struct LiveAnnotation: Identifiable, Equatable {
         return rounded
     }
 
+    /// Outline thickness as a fraction of the font size. The stroke is centered
+    /// on the glyph edge, so half of it lands outside the letterform.
+    static let textOutlineFraction: CGFloat = 0.24
+
     /// Outline pass: a positive stroke width draws ONLY the contour, centered on
     /// the glyph edge. The fill pass painted on top covers the inner half, which
     /// leaves a thick, even border outside the letterforms (thumbnail style).
+    /// NSAttributedString expresses the stroke as a percentage of the font size.
     static func textOutlineAttributes(fontSize: CGFloat) -> [NSAttributedString.Key: Any] {
         [
             .font: textFont(ofSize: fontSize),
             .strokeColor: NSColor.black,
-            .strokeWidth: 24.0,
+            .strokeWidth: textOutlineFraction * 100,
         ]
     }
 
@@ -117,18 +122,6 @@ struct LiveAnnotation: Identifiable, Equatable {
         [
             .font: textFont(ofSize: fontSize),
             .foregroundColor: color,
-        ]
-    }
-
-    /// Single-pass approximation for NSTextView, which cannot draw two passes:
-    /// a negative stroke fills and strokes together. Slightly thinner border
-    /// than the final render, but close enough for live editing.
-    static func editorTextAttributes(fontSize: CGFloat, color: NSColor) -> [NSAttributedString.Key: Any] {
-        [
-            .font: textFont(ofSize: fontSize),
-            .foregroundColor: color,
-            .strokeColor: NSColor.black,
-            .strokeWidth: -12.0,
         ]
     }
 
