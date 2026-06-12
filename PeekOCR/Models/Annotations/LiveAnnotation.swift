@@ -125,6 +125,21 @@ struct LiveAnnotation: Identifiable, Equatable {
         ]
     }
 
+    /// Editor preview: full-weight fill plus a strong dark halo. NSTextView
+    /// cannot reproduce the two-pass outline, but a native shadow keeps the
+    /// lettering crisp and clearly visible against the editor's dark box.
+    static func editorTextAttributes(fontSize: CGFloat, color: NSColor) -> [NSAttributedString.Key: Any] {
+        let shadow = NSShadow()
+        shadow.shadowColor = NSColor.black.withAlphaComponent(0.95)
+        shadow.shadowBlurRadius = max(3, fontSize * 0.15)
+        shadow.shadowOffset = .zero
+        return [
+            .font: textFont(ofSize: fontSize),
+            .foregroundColor: color,
+            .shadow: shadow,
+        ]
+    }
+
     /// Multi-line measurement; a trailing newline still reserves a visible line.
     static func textSize(for text: String, fontSize: CGFloat) -> CGSize {
         var measured = text.isEmpty ? " " : text

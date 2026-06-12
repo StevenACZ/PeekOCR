@@ -22,20 +22,8 @@ final class OverlayTextEditorView: NSView {
 
     init(initialText: String, fontSize: CGFloat, color: NSColor) {
         self.fontSize = fontSize
-        self.textInset = CGSize(width: max(3, ceil(fontSize * LiveAnnotation.textOutlineFraction / 2)), height: 0)
-
-        // TextKit 1 stack with an outline-capable layout manager, so the editor
-        // shows the exact two-pass lettering the final render produces.
-        let textStorage = NSTextStorage()
-        let layoutManager = OutlineGlyphLayoutManager()
-        layoutManager.outlineWidth = fontSize * LiveAnnotation.textOutlineFraction
-        textStorage.addLayoutManager(layoutManager)
-        let textContainer = NSTextContainer(
-            size: CGSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude))
-        textContainer.widthTracksTextView = false
-        textContainer.lineFragmentPadding = 0
-        layoutManager.addTextContainer(textContainer)
-        self.textView = OverlayTextView(frame: .zero, textContainer: textContainer)
+        self.textInset = CGSize(width: max(3, ceil(fontSize * 0.15)), height: 0)
+        self.textView = OverlayTextView()
 
         super.init(frame: .zero)
 
@@ -46,7 +34,7 @@ final class OverlayTextEditorView: NSView {
         layer?.borderColor = color.withAlphaComponent(0.6).cgColor
 
         textView.string = initialText
-        let attributes = LiveAnnotation.textFillAttributes(fontSize: fontSize, color: color)
+        let attributes = LiveAnnotation.editorTextAttributes(fontSize: fontSize, color: color)
         textView.typingAttributes = attributes
         textView.textStorage?.setAttributes(
             attributes, range: NSRange(location: 0, length: (initialText as NSString).length))
@@ -55,6 +43,10 @@ final class OverlayTextEditorView: NSView {
         textView.isRichText = false
         textView.allowsUndo = true
         textView.textContainerInset = textInset
+        textView.textContainer?.lineFragmentPadding = 0
+        textView.textContainer?.widthTracksTextView = false
+        textView.textContainer?.containerSize = CGSize(
+            width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
         textView.isHorizontallyResizable = false
         textView.isVerticallyResizable = false
         textView.delegate = self
@@ -102,26 +94,6 @@ final class OverlayTextEditorView: NSView {
 extension OverlayTextEditorView: NSTextViewDelegate {
     func textDidChange(_ notification: Notification) {
         onTextChange?()
-    }
-}
-
-/// Draws each glyph run twice: a thick rounded black contour first, then the
-/// regular fill on top — the same two-pass lettering as the final render.
-private final class OutlineGlyphLayoutManager: NSLayoutManager {
-    var outlineWidth: CGFloat = 0
-
-    override func drawGlyphs(forGlyphRange glyphsToShow: NSRange, at origin: NSPoint) {
-        if outlineWidth > 0, let context = NSGraphicsContext.current?.cgContext {
-            context.saveGState()
-            context.setLineJoin(.round)
-            context.setLineCap(.round)
-            context.setLineWidth(outlineWidth)
-            context.setStrokeColor(NSColor.black.cgColor)
-            context.setTextDrawingMode(.stroke)
-            super.drawGlyphs(forGlyphRange: glyphsToShow, at: origin)
-            context.restoreGState()
-        }
-        super.drawGlyphs(forGlyphRange: glyphsToShow, at: origin)
     }
 }
 

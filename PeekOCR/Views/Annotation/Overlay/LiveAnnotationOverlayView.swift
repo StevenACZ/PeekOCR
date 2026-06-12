@@ -224,9 +224,6 @@ final class LiveAnnotationOverlayView: NSView {
         case 53:  // esc
             if isEditingText {
                 dismissTextEditor(commit: false)
-            } else if selectedAnnotationID != nil {
-                selectedAnnotationID = nil
-                needsDisplay = true
             } else {
                 onCancel?()
             }
