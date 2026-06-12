@@ -5,6 +5,24 @@ compact and avoid local machine, signing, or private environment details.
 
 ## Unreleased
 
+- OCR and screenshot hotkeys now use the app's own dimmed overlay instead of
+  the native picker: the screen dims the instant the hotkey fires, a live
+  W x H badge tracks the drag, and releasing the mouse captures immediately
+  with the same flash and sound feedback as annotated captures.
+- Thumbnail-style annotation text: white system-rounded heavy lettering with
+  a thick black outline, readable on any background and identical in the
+  editor, the live overlay, and the final image.
+- Multi-line text editing: Enter inserts a new line, Cmd+Enter commits, Esc
+  cancels; standard editing keys (undo, copy, paste, select all) work inside
+  the editor without touching annotation history.
+- Every selected annotation is now resizable by its handles: text corners
+  scale the font tracking the cursor, arrows expose endpoint grips, pen
+  strokes and highlights scale their whole shape.
+- New freehand pen tool with its own configurable default stroke width.
+- Tool shortcuts moved to the home row in toolbar order: A select, S arrow,
+  D text, F highlight, G pen.
+- Esc now cancels the capture directly (or just the text editor when one is
+  open).
 - Annotated capture overlay now appears instantly when the hotkey fires (no
   first-click needed), with a quick fade-in, a clearer initial dim, and an
   immediate crosshair cursor.
