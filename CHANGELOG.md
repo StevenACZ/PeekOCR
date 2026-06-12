@@ -5,6 +5,27 @@ compact and avoid local machine, signing, or private environment details.
 
 ## Unreleased
 
+- Annotated capture overlay now appears instantly when the hotkey fires (no
+  first-click needed), with a quick fade-in, a clearer initial dim, and an
+  immediate crosshair cursor.
+- Reliable annotation editing: transactional undo (no-op clicks no longer eat
+  ⌘Z), new redo (⇧⌘Z), and Delete/forward-delete removes the selected
+  annotation; Esc deselects before cancelling.
+- Region capture moved to ScreenCaptureKit: no helper process or temp file,
+  the app's own windows are excluded from the capture, and the old 120ms
+  settle delay is gone. A brief flash confirms the capture.
+- OCR migrated to the modern Swift Vision API with QR and text detection
+  running in parallel and automatic language detection.
+- Selectable capture sounds (bundled shutter or system sounds), optional OCR
+  copy confirmation sound, and zero-latency audio preloading.
+- Modern menu bar popover: rounded hover states, icon bounce effects, spring
+  history transitions, and a translucent material background.
+- Annotation toolbar buttons now draw SF Symbol icons with their shortcut.
+- Layered xcconfig signing: public builds sign ad-hoc out of the box; a
+  git-ignored local override keeps a stable identity. The team ID no longer
+  lives in the project file.
+- Raised the minimum system requirement to macOS 15.
+
 ## 1.8.3 - Developer ID DMG - 2026-05-29
 
 - Distribution-only patch: the macOS DMG is built with Developer ID signing,
