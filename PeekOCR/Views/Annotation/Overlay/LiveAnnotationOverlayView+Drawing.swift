@@ -104,7 +104,10 @@ extension LiveAnnotationOverlayView {
     }
 
     func drawInstructions(in selectionRect: CGRect) {
-        let text = "Enter captura • Esc cancela • ⌘Z deshacer • ⇧⌘Z rehacer • ⌫ elimina"
+        let text =
+            isEditingText
+            ? "↩ nueva línea • ⌘↩ guardar texto • Esc cancela texto"
+            : "Enter captura • Esc cancela • ⌘Z deshacer • ⇧⌘Z rehacer • ⌫ elimina"
         let attributes: [NSAttributedString.Key: Any] = [
             .font: NSFont.systemFont(ofSize: 12, weight: .semibold),
             .foregroundColor: NSColor.white,

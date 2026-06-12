@@ -101,12 +101,9 @@ enum LiveAnnotationRenderer {
 
     private static func drawOverlayText(_ annotation: LiveAnnotation, in view: NSView, window: NSWindow) {
         guard !annotation.text.isEmpty else { return }
-        let point = pointInView(annotation.startPoint, view: view, window: window)
-        let attributes: [NSAttributedString.Key: Any] = [
-            .font: NSFont.systemFont(ofSize: annotation.fontSize, weight: .bold),
-            .foregroundColor: annotation.color,
-        ]
-        (annotation.text as NSString).draw(at: point, withAttributes: attributes)
+        let rect = rectInView(annotation.bounds, view: view, window: window)
+        let attributes = LiveAnnotation.textAttributes(fontSize: annotation.fontSize, color: annotation.color)
+        (annotation.text as NSString).draw(with: rect, options: [.usesLineFragmentOrigin], attributes: attributes)
     }
 
     private static func drawRenderedAnnotation(
@@ -178,19 +175,19 @@ enum LiveAnnotationRenderer {
         _ annotation: LiveAnnotation, in context: CGContext, selectionRectInScreen: CGRect, scaleFactor: CGFloat
     ) {
         guard !annotation.text.isEmpty else { return }
-        let origin = localPoint(annotation.startPoint, selectionRectInScreen: selectionRectInScreen, scaleFactor: scaleFactor)
-        let font = CTFontCreateWithName("Helvetica-Bold" as CFString, annotation.fontSize * scaleFactor, nil)
-        let attributes: [NSAttributedString.Key: Any] = [
-            .font: font,
-            .foregroundColor: annotation.color.cgColor,
-        ]
-        let attributed = NSAttributedString(string: annotation.text, attributes: attributes)
-        let line = CTLineCreateWithAttributedString(attributed)
 
-        context.saveGState()
-        context.textPosition = origin
-        CTLineDraw(line, context)
-        context.restoreGState()
+        // Same NSStringDrawing path as the live overlay so font, layout, and
+        // multi-line behavior match exactly (just scaled to image pixels).
+        let scaledFontSize = annotation.fontSize * scaleFactor
+        let textSize = LiveAnnotation.textSize(for: annotation.text, fontSize: scaledFontSize)
+        let topLeft = localPoint(annotation.startPoint, selectionRectInScreen: selectionRectInScreen, scaleFactor: scaleFactor)
+        let rect = CGRect(x: topLeft.x, y: topLeft.y - textSize.height, width: textSize.width, height: textSize.height)
+        let attributes = LiveAnnotation.textAttributes(fontSize: scaledFontSize, color: annotation.color)
+
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = NSGraphicsContext(cgContext: context, flipped: false)
+        (annotation.text as NSString).draw(with: rect, options: [.usesLineFragmentOrigin], attributes: attributes)
+        NSGraphicsContext.restoreGraphicsState()
     }
 
     private static func pointInView(_ point: CGPoint, view: NSView, window: NSWindow) -> CGPoint {

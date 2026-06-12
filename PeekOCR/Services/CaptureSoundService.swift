@@ -34,7 +34,7 @@ final class CaptureSoundService {
     /// Subtle confirmation when OCR text or a QR payload lands on the clipboard.
     func playOCRFeedback() {
         guard settings.captureSoundEnabled, settings.ocrFeedbackEnabled else { return }
-        playSystemSound("Tink", volume: Float(settings.captureSoundVolume) * 0.8)
+        playSystemSound("Glass", volume: Float(settings.captureSoundVolume) * 0.7)
     }
 
     /// Plays a sound once so the user can audition it from Settings.
@@ -60,12 +60,13 @@ final class CaptureSoundService {
     }
 
     private func playSystemSound(_ name: String, volume: Float) {
-        guard let sound = NSSound(named: name) else {
+        // Play on a fresh copy: NSSound(named:) returns a shared cached instance,
+        // and re-triggering it mid-playback clips the attack into a dry click.
+        guard let sound = NSSound(named: name)?.copy() as? NSSound else {
             AppLogger.capture.error("CaptureSoundService: system sound \(name) not found")
             return
         }
         sound.volume = volume
-        sound.stop()
         sound.play()
     }
 

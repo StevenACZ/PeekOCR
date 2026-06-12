@@ -33,7 +33,7 @@ extension LiveAnnotationOverlayView {
     }
 
     func undoLastAnnotationChange() {
-        removeTextField(commit: false)
+        dismissTextEditor(commit: false)
         pendingUndoSnapshot = nil
         guard let previousAnnotations = annotationHistory.popLast() else { return }
         annotationRedoStack.append(annotations)
@@ -43,7 +43,7 @@ extension LiveAnnotationOverlayView {
     }
 
     func redoLastAnnotationChange() {
-        removeTextField(commit: false)
+        dismissTextEditor(commit: false)
         pendingUndoSnapshot = nil
         guard let nextAnnotations = annotationRedoStack.popLast() else { return }
         annotationHistory.append(annotations)
@@ -53,12 +53,17 @@ extension LiveAnnotationOverlayView {
     }
 
     func deleteSelectedAnnotation() {
-        guard let selectedAnnotationID,
-            let index = annotations.firstIndex(where: { $0.id == selectedAnnotationID })
-        else { return }
+        guard let selectedAnnotationID else { return }
+        deleteAnnotation(id: selectedAnnotationID)
+    }
+
+    func deleteAnnotation(id: UUID) {
+        guard let index = annotations.firstIndex(where: { $0.id == id }) else { return }
         pushUndoSnapshot(annotations)
         annotations.remove(at: index)
-        self.selectedAnnotationID = nil
+        if selectedAnnotationID == id {
+            selectedAnnotationID = nil
+        }
         interaction = .none
     }
 

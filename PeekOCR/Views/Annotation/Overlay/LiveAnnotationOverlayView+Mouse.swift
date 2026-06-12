@@ -7,13 +7,13 @@ extension LiveAnnotationOverlayView {
         guard let window else { return }
         let pointInScreen = screenPoint(from: event.locationInWindow, window: window)
 
-        if textField != nil {
+        if isEditingText {
             if handleToolbarClick(at: pointInScreen) {
-                removeTextField(commit: true)
+                dismissTextEditor(commit: true)
                 return
             }
 
-            removeTextField(commit: true)
+            dismissTextEditor(commit: true)
             return
         }
 
@@ -21,7 +21,7 @@ extension LiveAnnotationOverlayView {
             return
         }
 
-        removeTextField(commit: true)
+        dismissTextEditor(commit: true)
 
         if let annotationID = selectedAnnotationID,
             let annotation = annotations.first(where: { $0.id == annotationID }),

@@ -45,18 +45,17 @@ struct LiveAnnotation: Identifiable, Equatable {
     var fontSize: CGFloat = 18
     var strokeWidth: CGFloat = 3
 
+    /// Text annotations anchor at their TOP-left corner (`startPoint`);
+    /// multi-line text grows downward from there.
     var bounds: CGRect {
         switch tool {
         case .text:
-            let attributes: [NSAttributedString.Key: Any] = [
-                .font: NSFont.systemFont(ofSize: fontSize, weight: .bold)
-            ]
-            let textSize = max(text.isEmpty ? "Texto" : text, " ").size(withAttributes: attributes)
+            let textSize = LiveAnnotation.textSize(for: text.isEmpty ? "Texto" : text, fontSize: fontSize)
             return CGRect(
                 x: startPoint.x,
-                y: startPoint.y,
-                width: max(44, textSize.width),
-                height: max(fontSize * 1.3, textSize.height)
+                y: startPoint.y - textSize.height,
+                width: textSize.width,
+                height: textSize.height
             )
         case .arrow, .highlight, .select:
             return CGRect(
@@ -66,5 +65,34 @@ struct LiveAnnotation: Identifiable, Equatable {
                 height: abs(endPoint.y - startPoint.y)
             )
         }
+    }
+
+    // MARK: - Shared text typography
+
+    /// Single source of truth for annotation text rendering: the live overlay,
+    /// the final image render, and the floating editor must all match.
+    static func textFont(ofSize fontSize: CGFloat) -> NSFont {
+        .systemFont(ofSize: fontSize, weight: .bold)
+    }
+
+    static func textAttributes(fontSize: CGFloat, color: NSColor) -> [NSAttributedString.Key: Any] {
+        [
+            .font: textFont(ofSize: fontSize),
+            .foregroundColor: color,
+        ]
+    }
+
+    /// Multi-line measurement; a trailing newline still reserves a visible line.
+    static func textSize(for text: String, fontSize: CGFloat) -> CGSize {
+        var measured = text.isEmpty ? " " : text
+        if measured.hasSuffix("\n") {
+            measured += " "
+        }
+        let bounding = (measured as NSString).boundingRect(
+            with: CGSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude),
+            options: [.usesLineFragmentOrigin],
+            attributes: [.font: textFont(ofSize: fontSize)]
+        )
+        return CGSize(width: max(44, ceil(bounding.width)), height: ceil(bounding.height))
     }
 }

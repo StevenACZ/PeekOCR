@@ -39,8 +39,8 @@ final class LiveAnnotationOverlayView: NSView {
     var selectedTool: LiveAnnotationTool = .select {
         didSet {
             if oldValue != selectedTool {
-                if textField != nil {
-                    removeTextField(commit: true)
+                if isEditingText {
+                    dismissTextEditor(commit: true)
                 }
                 selectedAnnotationID = nil
                 if case .drawingAnnotation = interaction {
@@ -88,7 +88,7 @@ final class LiveAnnotationOverlayView: NSView {
     }
     var pendingTextPoint: CGPoint?
     var editingAnnotationID: UUID?
-    var textField: NSTextField?
+    var textEditor: OverlayTextEditorView?
     var selectedAnnotationID: UUID?
     var annotationHistory: [[LiveAnnotation]] = []
     var annotationRedoStack: [[LiveAnnotation]] = []
@@ -120,7 +120,7 @@ final class LiveAnnotationOverlayView: NSView {
         editingAnnotationID = nil
         selectedAnnotationID = nil
         didActivate = false
-        removeTextField(commit: false)
+        dismissTextEditor(commit: false)
         needsDisplay = true
     }
 
@@ -199,8 +199,8 @@ final class LiveAnnotationOverlayView: NSView {
         case 51, 117:  // delete / forward delete
             deleteSelectedAnnotation()
         case 53:  // esc
-            if textField != nil {
-                removeTextField(commit: false)
+            if isEditingText {
+                dismissTextEditor(commit: false)
             } else if selectedAnnotationID != nil {
                 selectedAnnotationID = nil
                 needsDisplay = true
@@ -208,8 +208,8 @@ final class LiveAnnotationOverlayView: NSView {
                 onCancel?()
             }
         case 36, 76:  // return / enter
-            if textField != nil {
-                removeTextField(commit: true)
+            if isEditingText {
+                dismissTextEditor(commit: true)
                 return
             }
             guard let selectionRectInScreen else { return }
