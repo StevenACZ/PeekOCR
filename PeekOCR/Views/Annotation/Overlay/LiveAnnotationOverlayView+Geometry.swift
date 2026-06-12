@@ -119,15 +119,17 @@ extension LiveAnnotationOverlayView {
     }
 
     /// Dragging a corner scales the font; the opposite corner stays anchored.
+    /// The scale tracks the cursor's diagonal distance to the anchor, so the
+    /// grabbed corner follows the mouse instead of racing ahead of it.
     private func resizeTextAnnotation(_ annotation: LiveAnnotation, corner: SelectionHandle, point: CGPoint) -> LiveAnnotation {
         let initialBounds = annotation.bounds
         guard initialBounds.width > 0, initialBounds.height > 0 else { return annotation }
 
         let anchor = corner.opposite.point(for: initialBounds)
-        let scale = max(
-            abs(point.x - anchor.x) / initialBounds.width,
-            abs(point.y - anchor.y) / initialBounds.height
-        )
+        let initialDiagonal = hypot(initialBounds.width, initialBounds.height)
+        let newDiagonal = hypot(point.x - anchor.x, point.y - anchor.y)
+        guard initialDiagonal > 0 else { return annotation }
+        let scale = newDiagonal / initialDiagonal
         let newFontSize = min(max(annotation.fontSize * scale, 9), 160)
 
         var updated = annotation

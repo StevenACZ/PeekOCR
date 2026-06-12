@@ -11,6 +11,9 @@ final class OverlayTextEditorView: NSView {
 
     /// Inner padding between the rounded background and the text itself.
     let padding = CGSize(width: 8, height: 6)
+    /// Extra horizontal room inside the text view so the black outline of the
+    /// first/last glyphs doesn't get clipped by the view bounds.
+    private let textInset = CGSize(width: 3, height: 0)
 
     private let textView = OverlayTextView()
     private let fontSize: CGFloat
@@ -28,7 +31,7 @@ final class OverlayTextEditorView: NSView {
         layer?.borderColor = color.withAlphaComponent(0.6).cgColor
 
         textView.string = initialText
-        let attributes = LiveAnnotation.textAttributes(fontSize: fontSize, color: color)
+        let attributes = LiveAnnotation.editorTextAttributes(fontSize: fontSize, color: color)
         textView.typingAttributes = attributes
         textView.textStorage?.setAttributes(
             attributes, range: NSRange(location: 0, length: (initialText as NSString).length))
@@ -36,7 +39,7 @@ final class OverlayTextEditorView: NSView {
         textView.drawsBackground = false
         textView.isRichText = false
         textView.allowsUndo = true
-        textView.textContainerInset = .zero
+        textView.textContainerInset = textInset
         textView.textContainer?.lineFragmentPadding = 0
         textView.textContainer?.widthTracksTextView = false
         textView.textContainer?.containerSize = CGSize(
@@ -58,8 +61,20 @@ final class OverlayTextEditorView: NSView {
     var desiredSize: CGSize {
         let textSize = LiveAnnotation.textSize(for: textView.string, fontSize: fontSize)
         return CGSize(
-            width: max(140, textSize.width) + padding.width * 2,
+            width: max(140, textSize.width) + (padding.width + textInset.width) * 2,
             height: textSize.height + padding.height * 2
+        )
+    }
+
+    /// Frame so the first typed glyph lands exactly at `topLeft` (the point
+    /// where the committed annotation will render).
+    func frame(anchoredAtTextTopLeft topLeft: CGPoint) -> CGRect {
+        let size = desiredSize
+        return CGRect(
+            x: topLeft.x - padding.width - textInset.width,
+            y: topLeft.y + padding.height - size.height,
+            width: size.width,
+            height: size.height
         )
     }
 

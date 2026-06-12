@@ -196,20 +196,21 @@ final class LiveAnnotationOverlayView: NSView {
         }
 
         if !modifiers.contains(.command), let characters = event.charactersIgnoringModifiers?.lowercased() {
+            // Home-row tool shortcuts, matching toolbar order (A S D F G).
             switch characters {
-            case "s":
+            case "a":
                 selectedTool = .select
                 return
-            case "a":
+            case "s":
                 selectedTool = .arrow
                 return
-            case "t":
+            case "d":
                 selectedTool = .text
                 return
-            case "h":
+            case "f":
                 selectedTool = .highlight
                 return
-            case "p":
+            case "g":
                 selectedTool = .pen
                 return
             default:

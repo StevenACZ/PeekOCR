@@ -36,18 +36,11 @@ extension LiveAnnotationOverlayView {
     }
 
     /// Keeps the editor glued to the annotation anchor: `pendingTextPoint` is the
-    /// text's top-left corner and the editor chrome extends past it by its padding,
-    /// so the typed text sits exactly where the annotation will render.
+    /// text's top-left corner, so the typed text sits exactly where the
+    /// annotation will render.
     func layoutTextEditor() {
         guard let textEditor, let point = pendingTextPoint else { return }
-        let topLeftInView = viewPoint(from: point)
-        let size = textEditor.desiredSize
-        textEditor.frame = CGRect(
-            x: topLeftInView.x - textEditor.padding.width,
-            y: topLeftInView.y + textEditor.padding.height - size.height,
-            width: size.width,
-            height: size.height
-        )
+        textEditor.frame = textEditor.frame(anchoredAtTextTopLeft: viewPoint(from: point))
     }
 
     func dismissTextEditor(commit: Bool) {

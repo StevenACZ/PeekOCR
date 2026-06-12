@@ -118,8 +118,23 @@ enum LiveAnnotationRenderer {
     private static func drawOverlayText(_ annotation: LiveAnnotation, in view: NSView, window: NSWindow) {
         guard !annotation.text.isEmpty else { return }
         let rect = rectInView(annotation.bounds, view: view, window: window)
-        let attributes = LiveAnnotation.textAttributes(fontSize: annotation.fontSize, color: annotation.color)
-        (annotation.text as NSString).draw(with: rect, options: [.usesLineFragmentOrigin], attributes: attributes)
+        drawThumbnailText(annotation.text, in: rect, fontSize: annotation.fontSize, color: annotation.color)
+    }
+
+    /// Two-pass thumbnail lettering: thick rounded black outline first, color
+    /// fill on top. Both the live overlay and the final render go through here.
+    private static func drawThumbnailText(_ text: String, in rect: CGRect, fontSize: CGFloat, color: NSColor) {
+        guard let cgContext = NSGraphicsContext.current?.cgContext else { return }
+        cgContext.saveGState()
+        cgContext.setLineJoin(.round)
+        cgContext.setLineCap(.round)
+        (text as NSString).draw(
+            with: rect, options: [.usesLineFragmentOrigin],
+            attributes: LiveAnnotation.textOutlineAttributes(fontSize: fontSize))
+        (text as NSString).draw(
+            with: rect, options: [.usesLineFragmentOrigin],
+            attributes: LiveAnnotation.textFillAttributes(fontSize: fontSize, color: color))
+        cgContext.restoreGState()
     }
 
     private static func drawRenderedAnnotation(
@@ -219,11 +234,10 @@ enum LiveAnnotationRenderer {
         let textSize = LiveAnnotation.textSize(for: annotation.text, fontSize: scaledFontSize)
         let topLeft = localPoint(annotation.startPoint, selectionRectInScreen: selectionRectInScreen, scaleFactor: scaleFactor)
         let rect = CGRect(x: topLeft.x, y: topLeft.y - textSize.height, width: textSize.width, height: textSize.height)
-        let attributes = LiveAnnotation.textAttributes(fontSize: scaledFontSize, color: annotation.color)
 
         NSGraphicsContext.saveGraphicsState()
         NSGraphicsContext.current = NSGraphicsContext(cgContext: context, flipped: false)
-        (annotation.text as NSString).draw(with: rect, options: [.usesLineFragmentOrigin], attributes: attributes)
+        drawThumbnailText(annotation.text, in: rect, fontSize: scaledFontSize, color: annotation.color)
         NSGraphicsContext.restoreGraphicsState()
     }
 

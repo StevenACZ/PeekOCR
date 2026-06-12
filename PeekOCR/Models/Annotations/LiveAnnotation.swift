@@ -28,13 +28,14 @@ enum LiveAnnotationTool: String, CaseIterable {
         }
     }
 
+    /// Home-row keys in toolbar order so every tool is reachable without looking.
     var shortcutKey: String {
         switch self {
-        case .select: return "S"
-        case .arrow: return "A"
-        case .text: return "T"
-        case .highlight: return "H"
-        case .pen: return "P"
+        case .select: return "A"
+        case .arrow: return "S"
+        case .text: return "D"
+        case .highlight: return "F"
+        case .pen: return "G"
         }
     }
 }
@@ -101,14 +102,33 @@ struct LiveAnnotation: Identifiable, Equatable {
         return rounded
     }
 
-    static func textAttributes(fontSize: CGFloat, color: NSColor) -> [NSAttributedString.Key: Any] {
-        // Thumbnail-style lettering: a negative stroke width fills AND strokes,
-        // so the thick black outline keeps text readable on any background.
+    /// Outline pass: a positive stroke width draws ONLY the contour, centered on
+    /// the glyph edge. The fill pass painted on top covers the inner half, which
+    /// leaves a thick, even border outside the letterforms (thumbnail style).
+    static func textOutlineAttributes(fontSize: CGFloat) -> [NSAttributedString.Key: Any] {
+        [
+            .font: textFont(ofSize: fontSize),
+            .strokeColor: NSColor.black,
+            .strokeWidth: 24.0,
+        ]
+    }
+
+    static func textFillAttributes(fontSize: CGFloat, color: NSColor) -> [NSAttributedString.Key: Any] {
+        [
+            .font: textFont(ofSize: fontSize),
+            .foregroundColor: color,
+        ]
+    }
+
+    /// Single-pass approximation for NSTextView, which cannot draw two passes:
+    /// a negative stroke fills and strokes together. Slightly thinner border
+    /// than the final render, but close enough for live editing.
+    static func editorTextAttributes(fontSize: CGFloat, color: NSColor) -> [NSAttributedString.Key: Any] {
         [
             .font: textFont(ofSize: fontSize),
             .foregroundColor: color,
             .strokeColor: NSColor.black,
-            .strokeWidth: -8.0,
+            .strokeWidth: -12.0,
         ]
     }
 
