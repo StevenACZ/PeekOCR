@@ -5,6 +5,21 @@ compact and avoid local machine, signing, or private environment details.
 
 ## Unreleased
 
+- Screen recording rebuilt on ScreenCaptureKit: recordings start the instant
+  the region is picked, stop cleanly, capture at full Retina resolution, and
+  no longer rely on the screencapture helper process.
+- Clip region selection uses the same dimmed quick-select overlay as
+  screenshots; pressing Space records the full screen under the cursor.
+- Pause and resume while recording: segments are joined seamlessly on stop
+  without re-encoding. The HUD gains pause/stop controls, a quality readout
+  (resolution, FPS, format, audio), and sits bottom-center when recording the
+  full screen.
+- The duration limit is now optional: cap clips between 3-60 seconds or
+  record without a limit until stopped, with a count-up timer.
+- New recording options: capture FPS (15/30/60), cursor visibility, and
+  optional system audio that is kept in the exported MP4.
+- Video export FPS is selectable (24/30/60) and GIF export now reaches 30 FPS.
+- The app's own windows (recording frame, HUD) never appear in recordings.
 - OCR and screenshot hotkeys now use the app's own dimmed overlay instead of
   the native picker: the screen dims the instant the hotkey fires, a live
   W x H badge tracks the drag, and releasing the mouse captures immediately
