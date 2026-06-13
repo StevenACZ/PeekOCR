@@ -65,6 +65,12 @@ final class LiveAnnotationOverlayWindowController: NSWindowController {
         }
     }
 
+    /// Cancel an in-flight session programmatically (e.g. the clip hotkey
+    /// fired again while the user was still selecting the region).
+    func cancelSession() {
+        finish(with: nil)
+    }
+
     // MARK: - Private
 
     private func makeOverlay(

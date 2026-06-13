@@ -104,7 +104,9 @@ private struct QuickActionsSection: View {
             }
 
             MenuBarActionButton(
-                title: "Grabar Clip (\(clipSettings.maxDurationSeconds)s)",
+                title: clipSettings.durationLimitEnabled
+                    ? "Grabar Clip (\(clipSettings.maxDurationSeconds)s)"
+                    : "Grabar Clip",
                 icon: "film",
                 shortcut: settings.gifHotKeyDisplayString()
             ) {

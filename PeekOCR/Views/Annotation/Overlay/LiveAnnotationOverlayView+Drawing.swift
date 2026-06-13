@@ -36,7 +36,11 @@ extension LiveAnnotationOverlayView {
         } else {
             NSColor.black.withAlphaComponent(0.25).setFill()
             bounds.fill()
-            drawCenteredHint(text: "Arrastra para seleccionar la zona a capturar • Esc cancela")
+            if mode == .quickSelect {
+                drawCenteredHint(text: "Arrastra para seleccionar • Espacio = pantalla completa • Esc cancela")
+            } else {
+                drawCenteredHint(text: "Arrastra para seleccionar la zona a capturar • Esc cancela")
+            }
         }
     }
 

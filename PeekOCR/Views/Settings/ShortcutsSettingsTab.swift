@@ -52,8 +52,10 @@ struct ShortcutsSettingsTab: View {
                 )
 
                 ShortcutRecorderRow(
-                    title: "Grabar Clip (\(clipSettings.maxDurationSeconds)s)",
-                    description: "Graba un clip corto y lo exporta como GIF o Video",
+                    title: clipSettings.durationLimitEnabled
+                        ? "Grabar Clip (\(clipSettings.maxDurationSeconds)s)"
+                        : "Grabar Clip",
+                    description: "Graba un clip o la pantalla completa y lo exporta como GIF o Video",
                     icon: "film",
                     currentShortcut: settings.gifHotKeyDisplayString(),
                     onRecord: { modifiers, keyCode in

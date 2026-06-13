@@ -14,6 +14,7 @@ struct ClipSettingsTab: View {
     var body: some View {
         Form {
             durationSection
+            recordingSection
             defaultsSection
             gifDefaultsSection
             videoDefaultsSection
@@ -24,42 +25,71 @@ struct ClipSettingsTab: View {
 
     private var durationSection: some View {
         Section {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Text("Duración máxima")
-                    Spacer()
-                    Text("\(settings.maxDurationSeconds)s")
-                        .monospacedDigit()
-                        .foregroundStyle(.secondary)
-                }
+            Toggle("Limitar duración", isOn: $settings.durationLimitEnabled)
 
-                Slider(
-                    value: Binding(
-                        get: { Double(settings.maxDurationSeconds) },
-                        set: { settings.maxDurationSeconds = Int($0.rounded()) }
-                    ),
-                    in: Double(Constants.Gif.maxDurationRange.lowerBound)...Double(Constants.Gif.maxDurationRange.upperBound),
-                    step: 1
-                )
-                .labelsHidden()
-                .frame(maxWidth: .infinity)
+            if settings.durationLimitEnabled {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text("Duración máxima")
+                        Spacer()
+                        Text("\(settings.maxDurationSeconds)s")
+                            .monospacedDigit()
+                            .foregroundStyle(.secondary)
+                    }
 
-                HStack {
-                    Text("\(Constants.Gif.maxDurationRange.lowerBound)s")
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
-                    Spacer()
-                    Text("\(Constants.Gif.maxDurationRange.upperBound)s")
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
+                    Slider(
+                        value: Binding(
+                            get: { Double(settings.maxDurationSeconds) },
+                            set: { settings.maxDurationSeconds = Int($0.rounded()) }
+                        ),
+                        in: Double(Constants.Gif.maxDurationRange.lowerBound)...Double(Constants.Gif.maxDurationRange.upperBound),
+                        step: 1
+                    )
+                    .labelsHidden()
+                    .frame(maxWidth: .infinity)
+
+                    HStack {
+                        Text("\(Constants.Gif.maxDurationRange.lowerBound)s")
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                        Spacer()
+                        Text("\(Constants.Gif.maxDurationRange.upperBound)s")
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                    }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
         } header: {
             Text("Clip")
         } footer: {
             Text(
-                "El clip se detiene automáticamente al llegar al límite. Mínimo \(Constants.Gif.maxDurationRange.lowerBound)s, máximo \(Constants.Gif.maxDurationRange.upperBound)s."
+                settings.durationLimitEnabled
+                    ? "El clip se detiene automáticamente al llegar al límite. Mínimo \(Constants.Gif.maxDurationRange.lowerBound)s, máximo \(Constants.Gif.maxDurationRange.upperBound)s."
+                    : "Sin límite: la grabación continúa hasta que la detengas con el botón Stop o el atajo."
+            )
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        }
+    }
+
+    private var recordingSection: some View {
+        Section {
+            Picker("FPS de grabación", selection: $settings.recordingFps) {
+                ForEach(Constants.Gif.recordingFpsOptions, id: \.self) { fps in
+                    Text("\(fps)").tag(fps)
+                }
+            }
+            .pickerStyle(.segmented)
+
+            Toggle("Mostrar el cursor", isOn: $settings.recordingShowsCursor)
+
+            Toggle("Grabar audio del sistema", isOn: $settings.recordingCapturesSystemAudio)
+        } header: {
+            Text("Grabación")
+        } footer: {
+            Text(
+                "Durante la selección, pulsa Espacio para grabar la pantalla completa. El audio del sistema se conserva al exportar MP4 (el GIF no lleva audio); macOS puede pedir el permiso de grabación de audio la primera vez."
             )
             .font(.caption)
             .foregroundStyle(.secondary)
@@ -93,9 +123,9 @@ struct ClipSettingsTab: View {
             .pickerStyle(.segmented)
 
             Picker("FPS", selection: $settings.gifFps) {
-                Text("1").tag(1)
-                Text("15").tag(15)
-                Text("20").tag(20)
+                ForEach(Constants.Gif.gifFpsOptions, id: \.self) { fps in
+                    Text("\(fps)").tag(fps)
+                }
             }
             .pickerStyle(.segmented)
 
@@ -119,13 +149,12 @@ struct ClipSettingsTab: View {
             .pickerStyle(.segmented)
             .help(settings.videoResolution.helpText)
 
-            HStack {
-                Text("FPS")
-                Spacer()
-                Text("30")
-                    .monospacedDigit()
-                    .foregroundStyle(.secondary)
+            Picker("FPS", selection: $settings.videoFps) {
+                ForEach(Constants.Gif.videoFpsOptions, id: \.self) { fps in
+                    Text("\(fps)").tag(fps)
+                }
             }
+            .pickerStyle(.segmented)
 
             Picker("Codec", selection: $settings.videoCodec) {
                 ForEach(VideoExportCodec.allCases) { codec in
@@ -134,7 +163,7 @@ struct ClipSettingsTab: View {
             }
             .pickerStyle(.segmented)
         } header: {
-            Text("Video (MP4 sin audio)")
+            Text("Video (MP4)")
         } footer: {
             Text("H.264 es más compatible. HEVC suele ser más ligero pero puede ser menos compatible.")
                 .font(.caption)

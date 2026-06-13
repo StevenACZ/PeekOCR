@@ -248,6 +248,13 @@ final class LiveAnnotationOverlayView: NSView {
             }
             guard let selectionRectInScreen else { return }
             onComplete?(selectionRectInScreen, overlayScreen, annotations)
+        case 49:  // space: full-screen pick (quick select only)
+            guard mode == .quickSelect, case .none = interaction else {
+                super.keyDown(with: event)
+                return
+            }
+            notifyActivationIfNeeded()
+            onComplete?(overlayScreen.frame, overlayScreen, [])
         default:
             super.keyDown(with: event)
         }

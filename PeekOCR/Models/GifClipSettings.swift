@@ -31,25 +31,37 @@ final class GifClipSettings: ObservableObject {
 
     private enum Keys {
         static let maxDurationSeconds = "gifClipMaxDurationSeconds"
+        static let durationLimitEnabled = "gifClipDurationLimitEnabled"
         static let defaultExportFormat = "gifClipDefaultExportFormat"
+
+        static let recordingFps = "gifClipRecordingFps"
+        static let recordingShowsCursor = "gifClipRecordingShowsCursor"
+        static let recordingCapturesSystemAudio = "gifClipRecordingCapturesSystemAudio"
 
         static let gifProfile = "gifClipGifProfile"
         static let gifFps = "gifClipGifFps"
         static let gifLoopEnabled = "gifClipGifLoopEnabled"
 
         static let videoResolution = "gifClipVideoResolution"
+        static let videoFps = "gifClipVideoFps"
         static let videoCodec = "gifClipVideoCodec"
     }
 
     struct Defaults {
         static let maxDurationSeconds = Constants.Gif.defaultMaxDurationSeconds
+        static let durationLimitEnabled = true
         static let exportFormat: ClipExportFormat = .gif
+
+        static let recordingFps = 30
+        static let recordingShowsCursor = true
+        static let recordingCapturesSystemAudio = false
 
         static let gifProfile: GifExportProfile = .high
         static let gifFps = 15
         static let gifLoopEnabled = true
 
         static let videoResolution: VideoExportResolution = .p1080
+        static let videoFps = 30
         static let videoCodec: VideoExportCodec = .h264
     }
 
@@ -66,10 +78,40 @@ final class GifClipSettings: ObservableObject {
         }
     }
 
+    @Published var durationLimitEnabled: Bool {
+        didSet { defaults.set(durationLimitEnabled, forKey: Keys.durationLimitEnabled) }
+    }
+
+    /// nil means "record until the user stops".
+    var effectiveMaxDurationSeconds: Int? {
+        durationLimitEnabled ? maxDurationSeconds : nil
+    }
+
     // MARK: - Default Export Format
 
     @Published var defaultExportFormat: ClipExportFormat {
         didSet { defaults.set(defaultExportFormat.rawValue, forKey: Keys.defaultExportFormat) }
+    }
+
+    // MARK: - Recording
+
+    @Published var recordingFps: Int {
+        didSet {
+            let clamped = min(60, max(1, recordingFps))
+            if clamped != recordingFps {
+                recordingFps = clamped
+                return
+            }
+            defaults.set(recordingFps, forKey: Keys.recordingFps)
+        }
+    }
+
+    @Published var recordingShowsCursor: Bool {
+        didSet { defaults.set(recordingShowsCursor, forKey: Keys.recordingShowsCursor) }
+    }
+
+    @Published var recordingCapturesSystemAudio: Bool {
+        didSet { defaults.set(recordingCapturesSystemAudio, forKey: Keys.recordingCapturesSystemAudio) }
     }
 
     // MARK: - GIF Defaults
@@ -80,7 +122,7 @@ final class GifClipSettings: ObservableObject {
 
     @Published var gifFps: Int {
         didSet {
-            let clamped = min(20, max(1, gifFps))
+            let clamped = min(Constants.Gif.gifMaxFps, max(1, gifFps))
             if clamped != gifFps {
                 gifFps = clamped
                 return
@@ -99,6 +141,17 @@ final class GifClipSettings: ObservableObject {
         didSet { defaults.set(videoResolution.rawValue, forKey: Keys.videoResolution) }
     }
 
+    @Published var videoFps: Int {
+        didSet {
+            let clamped = min(60, max(1, videoFps))
+            if clamped != videoFps {
+                videoFps = clamped
+                return
+            }
+            defaults.set(videoFps, forKey: Keys.videoFps)
+        }
+    }
+
     @Published var videoCodec: VideoExportCodec {
         didSet { defaults.set(videoCodec.rawValue, forKey: Keys.videoCodec) }
     }
@@ -111,12 +164,33 @@ final class GifClipSettings: ObservableObject {
         self.maxDurationSeconds = min(
             Constants.Gif.maxDurationRange.upperBound, max(Constants.Gif.maxDurationRange.lowerBound, rawMaxDuration))
 
+        if defaults.object(forKey: Keys.durationLimitEnabled) != nil {
+            self.durationLimitEnabled = defaults.bool(forKey: Keys.durationLimitEnabled)
+        } else {
+            self.durationLimitEnabled = Defaults.durationLimitEnabled
+        }
+
         if let raw = defaults.string(forKey: Keys.defaultExportFormat),
             let format = ClipExportFormat(rawValue: raw)
         {
             self.defaultExportFormat = format
         } else {
             self.defaultExportFormat = Defaults.exportFormat
+        }
+
+        let savedRecordingFps = defaults.integer(forKey: Keys.recordingFps)
+        self.recordingFps = min(60, max(1, savedRecordingFps > 0 ? savedRecordingFps : Defaults.recordingFps))
+
+        if defaults.object(forKey: Keys.recordingShowsCursor) != nil {
+            self.recordingShowsCursor = defaults.bool(forKey: Keys.recordingShowsCursor)
+        } else {
+            self.recordingShowsCursor = Defaults.recordingShowsCursor
+        }
+
+        if defaults.object(forKey: Keys.recordingCapturesSystemAudio) != nil {
+            self.recordingCapturesSystemAudio = defaults.bool(forKey: Keys.recordingCapturesSystemAudio)
+        } else {
+            self.recordingCapturesSystemAudio = Defaults.recordingCapturesSystemAudio
         }
 
         if let raw = defaults.string(forKey: Keys.gifProfile),
@@ -128,7 +202,7 @@ final class GifClipSettings: ObservableObject {
         }
 
         let savedGifFps = defaults.integer(forKey: Keys.gifFps)
-        self.gifFps = min(20, max(1, savedGifFps > 0 ? savedGifFps : Defaults.gifFps))
+        self.gifFps = min(Constants.Gif.gifMaxFps, max(1, savedGifFps > 0 ? savedGifFps : Defaults.gifFps))
 
         if defaults.object(forKey: Keys.gifLoopEnabled) != nil {
             self.gifLoopEnabled = defaults.bool(forKey: Keys.gifLoopEnabled)
@@ -143,6 +217,9 @@ final class GifClipSettings: ObservableObject {
         } else {
             self.videoResolution = Defaults.videoResolution
         }
+
+        let savedVideoFps = defaults.integer(forKey: Keys.videoFps)
+        self.videoFps = min(60, max(1, savedVideoFps > 0 ? savedVideoFps : Defaults.videoFps))
 
         if let raw = defaults.string(forKey: Keys.videoCodec),
             let codec = VideoExportCodec(rawValue: raw)
@@ -166,7 +243,7 @@ final class GifClipSettings: ObservableObject {
     func makeDefaultVideoOptions() -> VideoExportOptions {
         VideoExportOptions(
             resolution: videoResolution,
-            fps: 30,
+            fps: videoFps,
             codec: videoCodec
         )
     }

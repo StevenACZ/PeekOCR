@@ -131,7 +131,9 @@ extension GifClipEditorView {
         }
 
         AppLogger.capture.info("GIF clip re-record requested")
-        guard let newVideoURL = await GifRecordingController.shared.record(maxDurationSeconds: GifClipSettings.shared.maxDurationSeconds)
+        guard
+            let newVideoURL = await ClipRecordingController.shared.record(
+                maxDurationSeconds: GifClipSettings.shared.effectiveMaxDurationSeconds)
         else {
             AppLogger.capture.info("GIF clip re-record cancelled")
             return

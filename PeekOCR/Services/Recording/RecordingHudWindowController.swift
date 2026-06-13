@@ -1,16 +1,16 @@
 //
-//  GifRecordingHudWindowController.swift
+//  RecordingHudWindowController.swift
 //  PeekOCR
 //
-//  Presents a small, non-activating HUD window during GIF recording.
+//  Presents a small, non-activating HUD window during clip recording.
 //
 
 import AppKit
 
 /// Window controller for the recording HUD (timer + controls).
 @MainActor
-final class GifRecordingHudWindowController: NSWindowController {
-    private let hudView = GifRecordingHudView(frame: .zero)
+final class RecordingHudWindowController: NSWindowController {
+    private let hudView = RecordingHudView(frame: .zero)
 
     override init(window: NSWindow?) {
         super.init(window: window)
@@ -25,11 +25,15 @@ final class GifRecordingHudWindowController: NSWindowController {
         on screen: NSScreen,
         selectionRectInScreen: CGRect,
         maxDurationSeconds: Int,
-        onStop: @escaping () -> Void
+        quality: String,
+        onStop: @escaping () -> Void,
+        onTogglePause: @escaping () -> Void
     ) {
         hudView.maxDurationSeconds = max(0, maxDurationSeconds)
         hudView.elapsedSeconds = 0
+        hudView.qualityText = quality
         hudView.onStop = onStop
+        hudView.onTogglePause = onTogglePause
 
         let panel = createHudPanel()
         panel.contentView = hudView
@@ -46,6 +50,10 @@ final class GifRecordingHudWindowController: NSWindowController {
     func update(elapsedSeconds: Int, maxDurationSeconds: Int) {
         hudView.maxDurationSeconds = max(0, maxDurationSeconds)
         hudView.elapsedSeconds = max(0, elapsedSeconds)
+    }
+
+    func setPaused(_ paused: Bool) {
+        hudView.isPaused = paused
     }
 
     func closeHud() {
@@ -99,6 +107,18 @@ final class GifRecordingHudWindowController: NSWindowController {
             return safeFrame.contains(rect) && !rect.intersects(avoidanceRect)
         }
 
+        let bottomCenter = clampToSafeFrame(
+            CGPoint(
+                x: safeFrame.midX - size.width / 2,
+                y: safeFrame.minY
+            ))
+
+        // Full-screen recordings leave no room outside the region: pin the HUD
+        // bottom-center (the capture filter keeps it out of the video anyway).
+        if selectionRectInScreen.contains(screen.visibleFrame.insetBy(dx: 1, dy: 1)) {
+            return bottomCenter
+        }
+
         let centeredAbove = clampToSafeFrame(
             CGPoint(
                 x: selectionRectInScreen.midX - size.width / 2,
@@ -133,6 +153,6 @@ final class GifRecordingHudWindowController: NSWindowController {
         }
 
         // Fallback if the selection covers most of the screen.
-        return clampToSafeFrame(CGPoint(x: safeFrame.maxX - size.width, y: safeFrame.maxY - size.height))
+        return bottomCenter
     }
 }

@@ -41,8 +41,7 @@ final class CaptureCoordinator: ObservableObject {
     // MARK: - Services
 
     private let nativeScreenCapture = NativeScreenCaptureService.shared
-    private let nativeScreenRecording = NativeScreenRecordingService.shared
-    private let gifRecordingController = GifRecordingController.shared
+    private let clipRecordingController = ClipRecordingController.shared
     private let ocrService = OCRService.shared
     private let pasteboardService = PasteboardService.shared
     private let screenshotService = ScreenshotService.shared
@@ -69,8 +68,10 @@ final class CaptureCoordinator: ObservableObject {
 
         if isCapturing {
             if currentMode == .gifClip, mode == .gifClip {
-                AppLogger.capture.info("Stopping GIF recording via hotkey")
-                gifRecordingController.stop()
+                AppLogger.capture.info("Stopping clip recording via hotkey")
+                Task { @MainActor in
+                    self.clipRecordingController.stop()
+                }
                 return
             }
             AppLogger.capture.warning("Capture already in progress, ignoring request for mode: \(mode.description)")
@@ -83,11 +84,12 @@ final class CaptureCoordinator: ObservableObject {
 
         AppLogger.capture.info("Starting capture - mode: \(mode.description)")
 
-        // Use native macOS screencapture for the fast modes and a custom live overlay for annotated capture.
+        // ScreenCaptureKit grabs the pixels for every mode; the app's own quick-select
+        // or annotation overlay handles the region pick.
         Task { @MainActor in
             switch mode {
             case .gifClip:
-                await captureGifClipWithNativeRecorder()
+                await captureClipWithScreenRecorder()
             case .annotatedScreenshot:
                 await captureAnnotatedScreenshotWithLiveOverlay()
             case .ocr, .screenshot:
@@ -106,7 +108,9 @@ final class CaptureCoordinator: ObservableObject {
             AppLogger.capture.info(
                 "Capture cancelled - mode: \(self.currentMode.description), elapsed: \(String(format: "%.2f", elapsed))s")
             if currentMode == .gifClip {
-                gifRecordingController.stop()
+                Task { @MainActor in
+                    self.clipRecordingController.stop()
+                }
             }
         } else {
             AppLogger.capture.debug("Cancel called but no capture was in progress")
@@ -279,9 +283,10 @@ final class CaptureCoordinator: ObservableObject {
 
     // MARK: - GIF Clip Processing
 
-    private func captureGifClipWithNativeRecorder() async {
+    @MainActor
+    private func captureClipWithScreenRecorder() async {
         let startTime = CFAbsoluteTimeGetCurrent()
-        AppLogger.capture.debug("Invoking native screen recording")
+        AppLogger.capture.debug("Starting ScreenCaptureKit clip recording")
 
         defer {
             let elapsed = CFAbsoluteTimeGetCurrent() - startTime
@@ -289,14 +294,9 @@ final class CaptureCoordinator: ObservableObject {
             isCapturing = false
         }
 
-        let supported = await nativeScreenRecording.supportsInteractiveVideoCapture()
-        guard supported else {
-            AppLogger.capture.error("screencapture video recording flags are not supported on this OS")
-            return
-        }
-
         let clipSettings = GifClipSettings.shared
-        guard let videoURL = await gifRecordingController.record(maxDurationSeconds: clipSettings.maxDurationSeconds) else {
+        guard let videoURL = await clipRecordingController.record(maxDurationSeconds: clipSettings.effectiveMaxDurationSeconds)
+        else {
             AppLogger.capture.info("GIF clip recording cancelled")
             return
         }
