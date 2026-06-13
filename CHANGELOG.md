@@ -3,7 +3,7 @@
 All notable changes are grouped from the real project history. Public notes stay
 compact and avoid local machine, signing, or private environment details.
 
-## Unreleased
+## 1.9.0 - Quick-Select Capture & ScreenCaptureKit Recording - 2026-06-12
 
 - Screen recording rebuilt on ScreenCaptureKit: recordings start the instant
   the region is picked, stop cleanly, capture at full Retina resolution, and
