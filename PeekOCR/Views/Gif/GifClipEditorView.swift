@@ -98,7 +98,6 @@ struct GifClipEditorView: View {
                 videoOptions: $videoOptions,
                 outputDirectory: saveDirectory,
                 selectionDurationSeconds: selectionDuration,
-                sourceNominalFps: state.sourceNominalFps,
                 exportDisabledMessage: exportDisabledMessage
             )
         }

@@ -18,7 +18,7 @@ struct GeneralSettingsTab: View {
         Form {
             Section {
                 Toggle("Iniciar PeekOCR con macOS", isOn: $launchAtLoginEnabled)
-                    .onChange(of: launchAtLoginEnabled) { newValue in
+                    .onChange(of: launchAtLoginEnabled) { _, newValue in
                         settings.launchAtLogin = newValue
                     }
             } header: {
@@ -32,6 +32,16 @@ struct GeneralSettingsTab: View {
             Section {
                 Toggle("Reproducir sonido de captura", isOn: $soundSettings.captureSoundEnabled)
 
+                Picker("Sonido", selection: $soundSettings.captureSound) {
+                    ForEach(CaptureSound.allCases) { sound in
+                        Text(sound.displayName).tag(sound)
+                    }
+                }
+                .disabled(!soundSettings.captureSoundEnabled)
+                .onChange(of: soundSettings.captureSound) { _, newSound in
+                    CaptureSoundService.shared.preview(newSound)
+                }
+
                 HStack {
                     Text("Volumen")
                     Slider(value: $soundSettings.captureSoundVolume, in: 0...1)
@@ -42,8 +52,11 @@ struct GeneralSettingsTab: View {
                         .frame(width: 44, alignment: .trailing)
                 }
 
+                Toggle("Sonido al copiar texto (OCR)", isOn: $soundSettings.ocrFeedbackEnabled)
+                    .disabled(!soundSettings.captureSoundEnabled)
+
                 Button("Probar sonido") {
-                    CaptureSoundService.shared.play()
+                    CaptureSoundService.shared.preview(soundSettings.captureSound)
                 }
                 .disabled(!soundSettings.captureSoundEnabled)
             } header: {

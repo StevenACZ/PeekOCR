@@ -5,7 +5,7 @@ screenshots, live annotation capture, GIF clip recording, and MP4/GIF export.
 
 ## Requirements
 
-- macOS 13.0 or later
+- macOS 15.0 or later
 - Apple Silicon Mac (`arm64`, M1 and newer)
 - Xcode with command line tools
 - Screen Recording permission for capture
@@ -17,12 +17,15 @@ screenshots, live annotation capture, GIF clip recording, and MP4/GIF export.
 - QR content detection and copy.
 - Screenshot capture with configurable format, quality, scale, and save
   location.
-- Live annotated screenshot flow with region adjustment, arrows, text,
-  highlights, move/resize, and undo before export.
+- Instant dimmed selection overlay for every capture mode, with live
+  dimensions readout and flash feedback.
+- Live annotated screenshot flow with region adjustment, arrows,
+  thumbnail-style outlined text (multi-line), highlights, freehand pen,
+  move/resize handles, and undo/redo before export.
 - GIF clip recording up to 10 seconds, with trim preview and GIF/MP4 export.
 - Guided permission setup through the menu bar reminder, settings rows, and
   missing-permissions window.
-- Optional capture sound for successful screenshot/frame saves.
+- Selectable capture sounds plus an optional OCR copy confirmation.
 - Recent capture history from the menu bar.
 
 ## Quick Start

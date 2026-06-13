@@ -45,6 +45,15 @@ Include:
 
 ## Signing
 
-The tracked project is configured for local contributor builds. Maintainers
-configure Apple Development, Developer ID, notarization, and release packaging
+The tracked project signs ad-hoc by default (`SigningDefaults.xcconfig`), so a
+fresh clone builds with zero setup. For day-to-day development, create the
+git-ignored override so macOS keeps the TCC permission grants (Screen
+Recording, Accessibility) across reinstalls:
+
+```bash
+cp Signing.xcconfig.example Signing.xcconfig
+# then set your Apple Developer Team ID inside Signing.xcconfig
+```
+
+Maintainers configure Developer ID, notarization, and release packaging
 outside the public repo when preparing release artifacts.

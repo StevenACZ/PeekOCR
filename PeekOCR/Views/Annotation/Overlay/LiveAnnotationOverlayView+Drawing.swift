@@ -23,18 +23,44 @@ extension LiveAnnotationOverlayView {
             border.lineWidth = 2
             border.stroke()
 
-            drawSelectionHandles(in: selectionRect)
-            LiveAnnotationRenderer.drawOverlayAnnotations(
-                annotationsForDrawing, in: self, window: window, selectionRectInScreen: selectionRectInScreen)
-            drawSelectedAnnotationIfNeeded(in: self, window: window)
-            drawToolbar(in: selectionRect)
-            drawInstructions(in: selectionRect)
+            if mode == .quickSelect {
+                drawSelectionSizeBadge(in: selectionRect)
+            } else {
+                drawSelectionHandles(in: selectionRect)
+                LiveAnnotationRenderer.drawOverlayAnnotations(
+                    annotationsForDrawing, in: self, window: window, selectionRectInScreen: selectionRectInScreen)
+                drawSelectedAnnotationIfNeeded(in: self, window: window)
+                drawToolbar(in: selectionRect)
+                drawInstructions(in: selectionRect)
+            }
         } else {
-            NSColor.black.withAlphaComponent(0.12).setFill()
+            NSColor.black.withAlphaComponent(0.25).setFill()
             bounds.fill()
-            drawCenteredHint(
-                text: "Arrastra para seleccionar • S mover/ajustar • A flecha • T texto • H highlight • Enter capturar • Esc cancelar")
+            if mode == .quickSelect {
+                drawCenteredHint(text: "Arrastra para seleccionar • Espacio = pantalla completa • Esc cancela")
+            } else {
+                drawCenteredHint(text: "Arrastra para seleccionar la zona a capturar • Esc cancela")
+            }
         }
+    }
+
+    /// Live "W × H" readout under the selection while picking a region.
+    func drawSelectionSizeBadge(in selectionRect: CGRect) {
+        let text = "\(Int(selectionRect.width)) × \(Int(selectionRect.height))"
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .semibold),
+            .foregroundColor: NSColor.white,
+        ]
+        let size = (text as NSString).size(withAttributes: attributes)
+        let rect = CGRect(
+            x: selectionRect.maxX - size.width - 18,
+            y: max(selectionRect.minY - 26, 8),
+            width: size.width + 14,
+            height: size.height + 6
+        )
+        NSColor.black.withAlphaComponent(0.7).setFill()
+        NSBezierPath(roundedRect: rect, xRadius: rect.height / 2, yRadius: rect.height / 2).fill()
+        (text as NSString).draw(at: CGPoint(x: rect.minX + 7, y: rect.minY + 3), withAttributes: attributes)
     }
 
     var annotationsForDrawing: [LiveAnnotation] {
@@ -66,30 +92,49 @@ extension LiveAnnotationOverlayView {
         }.insetBy(dx: -8, dy: -8).standardized
         guard !background.isNull else { return }
 
-        NSColor.black.withAlphaComponent(0.7).setFill()
-        NSBezierPath(roundedRect: background, xRadius: 12, yRadius: 12).fill()
+        NSColor.black.withAlphaComponent(0.72).setFill()
+        NSBezierPath(roundedRect: background, xRadius: 14, yRadius: 14).fill()
 
         for tool in LiveAnnotationTool.allCases {
             guard let frame = buttons[tool] else { continue }
             let selected = tool == selectedTool
             let fill = selected ? accentColor.withAlphaComponent(0.9) : NSColor.white.withAlphaComponent(0.08)
             fill.setFill()
-            NSBezierPath(roundedRect: frame, xRadius: 8, yRadius: 8).fill()
+            NSBezierPath(roundedRect: frame, xRadius: 9, yRadius: 9).fill()
+
+            let symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 15, weight: .semibold)
+                .applying(.init(paletteColors: [.white]))
+            if let icon = NSImage(systemSymbolName: tool.iconName, accessibilityDescription: tool.displayName)?
+                .withSymbolConfiguration(symbolConfiguration)
+            {
+                let iconRect = CGRect(
+                    x: frame.midX - icon.size.width / 2,
+                    y: frame.maxY - icon.size.height - 7,
+                    width: icon.size.width,
+                    height: icon.size.height
+                )
+                icon.draw(in: iconRect)
+            }
 
             let paragraph = NSMutableParagraphStyle()
             paragraph.alignment = .center
             let attributes: [NSAttributedString.Key: Any] = [
-                .font: NSFont.systemFont(ofSize: 11, weight: .semibold),
-                .foregroundColor: NSColor.white,
+                .font: NSFont.systemFont(ofSize: 9, weight: .bold),
+                .foregroundColor: NSColor.white.withAlphaComponent(selected ? 0.95 : 0.55),
                 .paragraphStyle: paragraph,
             ]
-            let title = "\(tool.displayName)\n\(tool.shortcutKey)"
-            title.draw(in: frame.insetBy(dx: 6, dy: 8), withAttributes: attributes)
+            (tool.shortcutKey as NSString).draw(
+                in: CGRect(x: frame.minX, y: frame.minY + 4, width: frame.width, height: 12),
+                withAttributes: attributes
+            )
         }
     }
 
     func drawInstructions(in selectionRect: CGRect) {
-        let text = "Arrastra bordes para ajustar • Arrastra dentro para mover • Enter captura • Esc cancela"
+        let text =
+            isEditingText
+            ? "↩ nueva línea • ⌘↩ guardar texto • Esc cancela texto"
+            : "Enter captura • Esc cancela • ⌘Z deshacer • ⇧⌘Z rehacer • ⌫ elimina"
         let attributes: [NSAttributedString.Key: Any] = [
             .font: NSFont.systemFont(ofSize: 12, weight: .semibold),
             .foregroundColor: NSColor.white,
@@ -135,26 +180,36 @@ extension LiveAnnotationOverlayView {
         path.setLineDash([6, 4], count: 2, phase: 0)
         path.stroke()
 
-        if annotation.tool == .highlight {
-            drawAnnotationResizeHandles(for: annotation)
-        }
+        drawAnnotationResizeHandles(for: annotation)
     }
 
     func drawAnnotationResizeHandles(for annotation: LiveAnnotation) {
-        for handle in SelectionHandle.allCases {
-            let point = viewPoint(from: handle.point(for: annotation.bounds))
-            let handleRect = CGRect(
-                x: point.x - annotationHandleSize / 2,
-                y: point.y - annotationHandleSize / 2,
-                width: annotationHandleSize,
-                height: annotationHandleSize
-            )
-            NSColor.white.setFill()
-            NSBezierPath(ovalIn: handleRect).fill()
-            annotation.color.setStroke()
-            let stroke = NSBezierPath(ovalIn: handleRect)
-            stroke.lineWidth = 1.5
-            stroke.stroke()
+        switch annotation.tool {
+        case .arrow:
+            drawHandleDot(at: annotation.startPoint, accent: annotation.color)
+            drawHandleDot(at: annotation.endPoint, accent: annotation.color)
+        case .highlight, .text, .pen:
+            for handle in SelectionHandle.allCases {
+                drawHandleDot(at: handle.point(for: annotation.bounds), accent: annotation.color)
+            }
+        case .select:
+            break
         }
+    }
+
+    private func drawHandleDot(at screenPoint: CGPoint, accent: NSColor) {
+        let point = viewPoint(from: screenPoint)
+        let handleRect = CGRect(
+            x: point.x - annotationHandleSize / 2,
+            y: point.y - annotationHandleSize / 2,
+            width: annotationHandleSize,
+            height: annotationHandleSize
+        )
+        NSColor.white.setFill()
+        NSBezierPath(ovalIn: handleRect).fill()
+        accent.setStroke()
+        let stroke = NSBezierPath(ovalIn: handleRect)
+        stroke.lineWidth = 1.5
+        stroke.stroke()
     }
 }

@@ -65,9 +65,25 @@ enum LiveAnnotationRenderer {
             drawOverlayText(annotation, in: view, window: window)
         case .highlight:
             drawOverlayHighlight(annotation, in: view, window: window)
+        case .pen:
+            drawOverlayPen(annotation, in: view, window: window)
         case .select:
             break
         }
+    }
+
+    private static func drawOverlayPen(_ annotation: LiveAnnotation, in view: NSView, window: NSWindow) {
+        guard annotation.points.count > 1 else { return }
+        let path = NSBezierPath()
+        path.lineWidth = annotation.strokeWidth
+        path.lineCapStyle = .round
+        path.lineJoinStyle = .round
+        path.move(to: pointInView(annotation.points[0], view: view, window: window))
+        for point in annotation.points.dropFirst() {
+            path.line(to: pointInView(point, view: view, window: window))
+        }
+        annotation.color.setStroke()
+        path.stroke()
     }
 
     private static func drawOverlayArrow(_ annotation: LiveAnnotation, in view: NSView, window: NSWindow) {
@@ -101,12 +117,24 @@ enum LiveAnnotationRenderer {
 
     private static func drawOverlayText(_ annotation: LiveAnnotation, in view: NSView, window: NSWindow) {
         guard !annotation.text.isEmpty else { return }
-        let point = pointInView(annotation.startPoint, view: view, window: window)
-        let attributes: [NSAttributedString.Key: Any] = [
-            .font: NSFont.systemFont(ofSize: annotation.fontSize, weight: .bold),
-            .foregroundColor: annotation.color,
-        ]
-        (annotation.text as NSString).draw(at: point, withAttributes: attributes)
+        let rect = rectInView(annotation.bounds, view: view, window: window)
+        drawThumbnailText(annotation.text, in: rect, fontSize: annotation.fontSize, color: annotation.color)
+    }
+
+    /// Two-pass thumbnail lettering: thick rounded black outline first, color
+    /// fill on top. Both the live overlay and the final render go through here.
+    private static func drawThumbnailText(_ text: String, in rect: CGRect, fontSize: CGFloat, color: NSColor) {
+        guard let cgContext = NSGraphicsContext.current?.cgContext else { return }
+        cgContext.saveGState()
+        cgContext.setLineJoin(.round)
+        cgContext.setLineCap(.round)
+        (text as NSString).draw(
+            with: rect, options: [.usesLineFragmentOrigin],
+            attributes: LiveAnnotation.textOutlineAttributes(fontSize: fontSize))
+        (text as NSString).draw(
+            with: rect, options: [.usesLineFragmentOrigin],
+            attributes: LiveAnnotation.textFillAttributes(fontSize: fontSize, color: color))
+        cgContext.restoreGState()
     }
 
     private static func drawRenderedAnnotation(
@@ -122,9 +150,30 @@ enum LiveAnnotationRenderer {
             drawRenderedText(annotation, in: context, selectionRectInScreen: selectionRectInScreen, scaleFactor: scaleFactor)
         case .highlight:
             drawRenderedHighlight(annotation, in: context, selectionRectInScreen: selectionRectInScreen, scaleFactor: scaleFactor)
+        case .pen:
+            drawRenderedPen(annotation, in: context, selectionRectInScreen: selectionRectInScreen, scaleFactor: scaleFactor)
         case .select:
             break
         }
+    }
+
+    private static func drawRenderedPen(
+        _ annotation: LiveAnnotation, in context: CGContext, selectionRectInScreen: CGRect, scaleFactor: CGFloat
+    ) {
+        guard annotation.points.count > 1 else { return }
+        context.saveGState()
+        context.setStrokeColor(annotation.color.cgColor)
+        context.setLineWidth(annotation.strokeWidth * scaleFactor)
+        context.setLineCap(.round)
+        context.setLineJoin(.round)
+        context.move(
+            to: localPoint(annotation.points[0], selectionRectInScreen: selectionRectInScreen, scaleFactor: scaleFactor))
+        for point in annotation.points.dropFirst() {
+            context.addLine(
+                to: localPoint(point, selectionRectInScreen: selectionRectInScreen, scaleFactor: scaleFactor))
+        }
+        context.strokePath()
+        context.restoreGState()
     }
 
     private static func drawRenderedArrow(
@@ -178,19 +227,18 @@ enum LiveAnnotationRenderer {
         _ annotation: LiveAnnotation, in context: CGContext, selectionRectInScreen: CGRect, scaleFactor: CGFloat
     ) {
         guard !annotation.text.isEmpty else { return }
-        let origin = localPoint(annotation.startPoint, selectionRectInScreen: selectionRectInScreen, scaleFactor: scaleFactor)
-        let font = CTFontCreateWithName("Helvetica-Bold" as CFString, annotation.fontSize * scaleFactor, nil)
-        let attributes: [NSAttributedString.Key: Any] = [
-            .font: font,
-            .foregroundColor: annotation.color.cgColor,
-        ]
-        let attributed = NSAttributedString(string: annotation.text, attributes: attributes)
-        let line = CTLineCreateWithAttributedString(attributed)
 
-        context.saveGState()
-        context.textPosition = origin
-        CTLineDraw(line, context)
-        context.restoreGState()
+        // Same NSStringDrawing path as the live overlay so font, layout, and
+        // multi-line behavior match exactly (just scaled to image pixels).
+        let scaledFontSize = annotation.fontSize * scaleFactor
+        let textSize = LiveAnnotation.textSize(for: annotation.text, fontSize: scaledFontSize)
+        let topLeft = localPoint(annotation.startPoint, selectionRectInScreen: selectionRectInScreen, scaleFactor: scaleFactor)
+        let rect = CGRect(x: topLeft.x, y: topLeft.y - textSize.height, width: textSize.width, height: textSize.height)
+
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = NSGraphicsContext(cgContext: context, flipped: false)
+        drawThumbnailText(annotation.text, in: rect, fontSize: scaledFontSize, color: annotation.color)
+        NSGraphicsContext.restoreGraphicsState()
     }
 
     private static func pointInView(_ point: CGPoint, view: NSView, window: NSWindow) -> CGPoint {

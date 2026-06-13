@@ -20,7 +20,9 @@ final class LiveAnnotationOverlayWindowController: NSWindowController {
         fatalError("init(coder:) has not been implemented")
     }
 
-    func runSession() async -> (selectionRect: CGRect, screen: NSScreen, annotations: [LiveAnnotation])? {
+    func runSession(
+        mode: LiveAnnotationOverlayView.OverlayMode = .annotate
+    ) async -> (selectionRect: CGRect, screen: NSScreen, annotations: [LiveAnnotation])? {
         let screens = DisplayEnumerator.activeScreens()
         guard !screens.isEmpty else { return nil }
 
@@ -28,23 +30,52 @@ final class LiveAnnotationOverlayWindowController: NSWindowController {
         activeDisplayID = nil
 
         for (displayID, screen) in screens {
-            let overlay = makeOverlay(for: screen, displayID: displayID)
+            let overlay = makeOverlay(for: screen, displayID: displayID, mode: mode)
             overlays[displayID] = overlay
-            overlay.window.makeKeyAndOrderFront(nil)
-            overlay.window.makeFirstResponder(overlay.view)
+            overlay.window.alphaValue = 0
+            // The app is usually inactive when the hotkey fires; orderFrontRegardless
+            // is the only call that brings the window up without waiting for activation.
+            overlay.window.orderFrontRegardless()
         }
 
-        self.window = overlays.values.first?.window
+        // Key window on the screen under the cursor so Esc/Enter/⌘Z work right away.
+        let mouseLocation = NSEvent.mouseLocation
+        let keyOverlay =
+            overlays.values.first { $0.window.frame.contains(mouseLocation) }
+            ?? overlays.values.first
+        self.window = keyOverlay?.window
+
         NSApp.activate(ignoringOtherApps: true)
+        if let keyOverlay {
+            keyOverlay.window.makeKeyAndOrderFront(nil)
+            keyOverlay.window.makeFirstResponder(keyOverlay.view)
+        }
+        NSCursor.crosshair.set()
+
+        NSAnimationContext.beginGrouping()
+        NSAnimationContext.current.duration = 0.15
+        NSAnimationContext.current.timingFunction = CAMediaTimingFunction(name: .easeOut)
+        for overlay in overlays.values {
+            overlay.window.animator().alphaValue = 1
+        }
+        NSAnimationContext.endGrouping()
 
         return await withCheckedContinuation { continuation in
             self.continuation = continuation
         }
     }
 
+    /// Cancel an in-flight session programmatically (e.g. the clip hotkey
+    /// fired again while the user was still selecting the region).
+    func cancelSession() {
+        finish(with: nil)
+    }
+
     // MARK: - Private
 
-    private func makeOverlay(for screen: NSScreen, displayID: CGDirectDisplayID) -> Overlay {
+    private func makeOverlay(
+        for screen: NSScreen, displayID: CGDirectDisplayID, mode: LiveAnnotationOverlayView.OverlayMode
+    ) -> Overlay {
         let window = LiveAnnotationOverlayWindow(
             contentRect: screen.frame,
             styleMask: [.borderless],
@@ -61,7 +92,7 @@ final class LiveAnnotationOverlayWindowController: NSWindowController {
         window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .ignoresCycle, .stationary]
         window.ignoresMouseEvents = false
 
-        let view = LiveAnnotationOverlayView(screen: screen)
+        let view = LiveAnnotationOverlayView(screen: screen, mode: mode)
         view.resetState()
         view.onCancel = { [weak self] in
             self?.finish(with: nil)

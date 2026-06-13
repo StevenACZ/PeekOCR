@@ -6,6 +6,7 @@ enum LiveAnnotationTool: String, CaseIterable {
     case arrow
     case text
     case highlight
+    case pen
 
     var displayName: String {
         switch self {
@@ -13,6 +14,7 @@ enum LiveAnnotationTool: String, CaseIterable {
         case .arrow: return "Flecha"
         case .text: return "Texto"
         case .highlight: return "Highlight"
+        case .pen: return "Lápiz"
         }
     }
 
@@ -22,20 +24,23 @@ enum LiveAnnotationTool: String, CaseIterable {
         case .arrow: return "arrow.up.right"
         case .text: return "textformat"
         case .highlight: return "highlighter"
+        case .pen: return "pencil.line"
         }
     }
 
+    /// Home-row keys in toolbar order so every tool is reachable without looking.
     var shortcutKey: String {
         switch self {
-        case .select: return "S"
-        case .arrow: return "A"
-        case .text: return "T"
-        case .highlight: return "H"
+        case .select: return "A"
+        case .arrow: return "S"
+        case .text: return "D"
+        case .highlight: return "F"
+        case .pen: return "G"
         }
     }
 }
 
-struct LiveAnnotation: Identifiable {
+struct LiveAnnotation: Identifiable, Equatable {
     let id = UUID()
     let tool: LiveAnnotationTool
     var color: NSColor
@@ -44,20 +49,36 @@ struct LiveAnnotation: Identifiable {
     var text: String = ""
     var fontSize: CGFloat = 18
     var strokeWidth: CGFloat = 3
+    /// Freehand path in screen coordinates; only used by the pen tool.
+    var points: [CGPoint] = []
 
+    /// Text annotations anchor at their TOP-left corner (`startPoint`);
+    /// multi-line text grows downward from there.
     var bounds: CGRect {
         switch tool {
         case .text:
-            let attributes: [NSAttributedString.Key: Any] = [
-                .font: NSFont.systemFont(ofSize: fontSize, weight: .bold)
-            ]
-            let textSize = max(text.isEmpty ? "Texto" : text, " ").size(withAttributes: attributes)
+            let textSize = LiveAnnotation.textSize(for: text.isEmpty ? "Texto" : text, fontSize: fontSize)
             return CGRect(
                 x: startPoint.x,
-                y: startPoint.y,
-                width: max(44, textSize.width),
-                height: max(fontSize * 1.3, textSize.height)
+                y: startPoint.y - textSize.height,
+                width: textSize.width,
+                height: textSize.height
             )
+        case .pen:
+            guard let first = points.first else {
+                return CGRect(origin: startPoint, size: .zero)
+            }
+            var minX = first.x
+            var maxX = first.x
+            var minY = first.y
+            var maxY = first.y
+            for point in points.dropFirst() {
+                minX = min(minX, point.x)
+                maxX = max(maxX, point.x)
+                minY = min(minY, point.y)
+                maxY = max(maxY, point.y)
+            }
+            return CGRect(x: minX, y: minY, width: maxX - minX, height: maxY - minY)
         case .arrow, .highlight, .select:
             return CGRect(
                 x: min(startPoint.x, endPoint.x),
@@ -66,5 +87,70 @@ struct LiveAnnotation: Identifiable {
                 height: abs(endPoint.y - startPoint.y)
             )
         }
+    }
+
+    // MARK: - Shared text typography
+
+    /// Single source of truth for annotation text rendering: the live overlay,
+    /// the final image render, and the floating editor must all match.
+    static func textFont(ofSize fontSize: CGFloat) -> NSFont {
+        let base = NSFont.systemFont(ofSize: fontSize, weight: .heavy)
+        let descriptor = base.fontDescriptor.withDesign(.rounded)
+        guard let descriptor, let rounded = NSFont(descriptor: descriptor, size: fontSize) else {
+            return base
+        }
+        return rounded
+    }
+
+    /// Outline thickness as a fraction of the font size. The stroke is centered
+    /// on the glyph edge, so half of it lands outside the letterform.
+    static let textOutlineFraction: CGFloat = 0.24
+
+    /// Outline pass: a positive stroke width draws ONLY the contour, centered on
+    /// the glyph edge. The fill pass painted on top covers the inner half, which
+    /// leaves a thick, even border outside the letterforms (thumbnail style).
+    /// NSAttributedString expresses the stroke as a percentage of the font size.
+    static func textOutlineAttributes(fontSize: CGFloat) -> [NSAttributedString.Key: Any] {
+        [
+            .font: textFont(ofSize: fontSize),
+            .strokeColor: NSColor.black,
+            .strokeWidth: textOutlineFraction * 100,
+        ]
+    }
+
+    static func textFillAttributes(fontSize: CGFloat, color: NSColor) -> [NSAttributedString.Key: Any] {
+        [
+            .font: textFont(ofSize: fontSize),
+            .foregroundColor: color,
+        ]
+    }
+
+    /// Editor preview: full-weight fill plus a strong dark halo. NSTextView
+    /// cannot reproduce the two-pass outline, but a native shadow keeps the
+    /// lettering crisp and clearly visible against the editor's dark box.
+    static func editorTextAttributes(fontSize: CGFloat, color: NSColor) -> [NSAttributedString.Key: Any] {
+        let shadow = NSShadow()
+        shadow.shadowColor = NSColor.black.withAlphaComponent(0.95)
+        shadow.shadowBlurRadius = max(3, fontSize * 0.15)
+        shadow.shadowOffset = .zero
+        return [
+            .font: textFont(ofSize: fontSize),
+            .foregroundColor: color,
+            .shadow: shadow,
+        ]
+    }
+
+    /// Multi-line measurement; a trailing newline still reserves a visible line.
+    static func textSize(for text: String, fontSize: CGFloat) -> CGSize {
+        var measured = text.isEmpty ? " " : text
+        if measured.hasSuffix("\n") {
+            measured += " "
+        }
+        let bounding = (measured as NSString).boundingRect(
+            with: CGSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude),
+            options: [.usesLineFragmentOrigin],
+            attributes: [.font: textFont(ofSize: fontSize)]
+        )
+        return CGSize(width: max(44, ceil(bounding.width)), height: ceil(bounding.height))
     }
 }

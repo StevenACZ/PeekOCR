@@ -23,6 +23,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         setupMenuBar()
         setupHotKeys()
+        CaptureSoundService.shared.prewarm()
 
         // Hide dock icon
         NSApp.setActivationPolicy(.accessory)

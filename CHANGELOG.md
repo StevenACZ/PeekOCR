@@ -3,7 +3,61 @@
 All notable changes are grouped from the real project history. Public notes stay
 compact and avoid local machine, signing, or private environment details.
 
-## Unreleased
+## 1.9.0 - Quick-Select Capture & ScreenCaptureKit Recording - 2026-06-12
+
+- Screen recording rebuilt on ScreenCaptureKit: recordings start the instant
+  the region is picked, stop cleanly, capture at full Retina resolution, and
+  no longer rely on the screencapture helper process.
+- Clip region selection uses the same dimmed quick-select overlay as
+  screenshots; pressing Space records the full screen under the cursor.
+- Pause and resume while recording: segments are joined seamlessly on stop
+  without re-encoding. The HUD gains pause/stop controls, a quality readout
+  (resolution, FPS, format, audio), and sits bottom-center when recording the
+  full screen.
+- The duration limit is now optional: cap clips between 3-60 seconds or
+  record without a limit until stopped, with a count-up timer.
+- New recording options: capture FPS (15/30/60), cursor visibility, and
+  optional system audio that is kept in the exported MP4.
+- Video export FPS is selectable (24/30/60) and GIF export now reaches 30 FPS.
+- The app's own windows (recording frame, HUD) never appear in recordings.
+- OCR and screenshot hotkeys now use the app's own dimmed overlay instead of
+  the native picker: the screen dims the instant the hotkey fires, a live
+  W x H badge tracks the drag, and releasing the mouse captures immediately
+  with the same flash and sound feedback as annotated captures.
+- Thumbnail-style annotation text: white system-rounded heavy lettering with
+  a thick black outline, readable on any background and identical in the
+  editor, the live overlay, and the final image.
+- Multi-line text editing: Enter inserts a new line, Cmd+Enter commits, Esc
+  cancels; standard editing keys (undo, copy, paste, select all) work inside
+  the editor without touching annotation history.
+- Every selected annotation is now resizable by its handles: text corners
+  scale the font tracking the cursor, arrows expose endpoint grips, pen
+  strokes and highlights scale their whole shape.
+- New freehand pen tool with its own configurable default stroke width.
+- Tool shortcuts moved to the home row in toolbar order: A select, S arrow,
+  D text, F highlight, G pen.
+- Esc now cancels the capture directly (or just the text editor when one is
+  open).
+- Annotated capture overlay now appears instantly when the hotkey fires (no
+  first-click needed), with a quick fade-in, a clearer initial dim, and an
+  immediate crosshair cursor.
+- Reliable annotation editing: transactional undo (no-op clicks no longer eat
+  ⌘Z), new redo (⇧⌘Z), and Delete/forward-delete removes the selected
+  annotation; Esc deselects before cancelling.
+- Region capture moved to ScreenCaptureKit: no helper process or temp file,
+  the app's own windows are excluded from the capture, and the old 120ms
+  settle delay is gone. A brief flash confirms the capture.
+- OCR migrated to the modern Swift Vision API with QR and text detection
+  running in parallel and automatic language detection.
+- Selectable capture sounds (bundled shutter or system sounds), optional OCR
+  copy confirmation sound, and zero-latency audio preloading.
+- Modern menu bar popover: rounded hover states, icon bounce effects, spring
+  history transitions, and a translucent material background.
+- Annotation toolbar buttons now draw SF Symbol icons with their shortcut.
+- Layered xcconfig signing: public builds sign ad-hoc out of the box; a
+  git-ignored local override keeps a stable identity. The team ID no longer
+  lives in the project file.
+- Raised the minimum system requirement to macOS 15.
 
 ## 1.8.3 - Developer ID DMG - 2026-05-29
 

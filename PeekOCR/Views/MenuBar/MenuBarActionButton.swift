@@ -23,6 +23,7 @@ struct MenuBarActionButton: View {
                     .font(.body)
                     .frame(width: 24)
                     .foregroundStyle(.blue)
+                    .symbolEffect(.bounce, options: .speed(1.4), value: isHovered)
 
                 Text(title)
                     .font(.body)
@@ -37,14 +38,19 @@ struct MenuBarActionButton: View {
                     .background(Color.secondary.opacity(0.15))
                     .clipShape(RoundedRectangle(cornerRadius: 4))
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, 10)
             .padding(.vertical, 8)
-            .background(isHovered ? Color.blue.opacity(0.1) : Color.clear)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(isHovered ? Color.blue.opacity(0.12) : Color.clear)
+            )
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .animation(.easeOut(duration: 0.12), value: isHovered)
         .onHover { hovering in
             isHovered = hovering
         }
+        .padding(.horizontal, 6)
     }
 }

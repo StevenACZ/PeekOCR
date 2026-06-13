@@ -80,11 +80,7 @@ extension ImageFormat {
         case .tiff:
             return .tiff
         case .heic:
-            if #available(macOS 11.0, *) {
-                return .heic
-            } else {
-                return .png
-            }
+            return .heic
         }
     }
 }

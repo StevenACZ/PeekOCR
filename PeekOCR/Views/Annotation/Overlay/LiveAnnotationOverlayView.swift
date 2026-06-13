@@ -3,13 +3,21 @@
 import AppKit
 
 final class LiveAnnotationOverlayView: NSView {
+    /// How the overlay behaves once a region is selected.
+    enum OverlayMode {
+        /// Full annotation session: adjust the selection, draw, capture on Enter.
+        case annotate
+        /// One-shot region pick: capture immediately on mouse-up (⌘⇧4-style).
+        case quickSelect
+    }
+
     enum Interaction {
         case none
         case creatingSelection(origin: CGPoint)
         case movingSelection(origin: CGPoint, initialRect: CGRect, initialAnnotations: [LiveAnnotation])
         case resizingSelection(handle: SelectionHandle, initialRect: CGRect, initialAnnotations: [LiveAnnotation])
         case movingAnnotation(id: UUID, origin: CGPoint, initialAnnotation: LiveAnnotation)
-        case resizingAnnotation(id: UUID, handle: SelectionHandle, initialAnnotation: LiveAnnotation)
+        case resizingAnnotation(id: UUID, handle: AnnotationHandle, initialAnnotation: LiveAnnotation)
         case drawingAnnotation(annotation: LiveAnnotation)
     }
 
@@ -27,6 +35,23 @@ final class LiveAnnotationOverlayView: NSView {
             case .bottomRight: return CGPoint(x: rect.maxX, y: rect.minY)
             }
         }
+
+        var opposite: SelectionHandle {
+            switch self {
+            case .topLeft: return .bottomRight
+            case .topRight: return .bottomLeft
+            case .bottomLeft: return .topRight
+            case .bottomRight: return .topLeft
+            }
+        }
+    }
+
+    /// Grab points on a selected annotation: rect corners for box-like
+    /// annotations, the two endpoints for arrows.
+    enum AnnotationHandle: Equatable {
+        case corner(SelectionHandle)
+        case arrowStart
+        case arrowEnd
     }
 
     var selectionRectInScreen: CGRect? {
@@ -39,8 +64,8 @@ final class LiveAnnotationOverlayView: NSView {
     var selectedTool: LiveAnnotationTool = .select {
         didSet {
             if oldValue != selectedTool {
-                if textField != nil {
-                    removeTextField(commit: true)
+                if isEditingText {
+                    dismissTextEditor(commit: true)
                 }
                 selectedAnnotationID = nil
                 if case .drawingAnnotation = interaction {
@@ -65,13 +90,17 @@ final class LiveAnnotationOverlayView: NSView {
     /// The screen this overlay is rendering on. Set at construction.
     let overlayScreen: NSScreen
 
+    /// Behavior of this overlay session. Set at construction.
+    let mode: OverlayMode
+
     /// Fires the first time the user mousedowns on this overlay, so the window controller can dismiss sibling overlays.
     var onActivate: (() -> Void)?
 
     var didActivate = false
 
-    init(screen: NSScreen) {
+    init(screen: NSScreen, mode: OverlayMode = .annotate) {
         self.overlayScreen = screen
+        self.mode = mode
         super.init(frame: .zero)
     }
 
@@ -88,13 +117,17 @@ final class LiveAnnotationOverlayView: NSView {
     }
     var pendingTextPoint: CGPoint?
     var editingAnnotationID: UUID?
-    var textField: NSTextField?
+    var textEditor: OverlayTextEditorView?
     var selectedAnnotationID: UUID?
     var annotationHistory: [[LiveAnnotation]] = []
+    var annotationRedoStack: [[LiveAnnotation]] = []
+    var pendingUndoSnapshot: [LiveAnnotation]?
     let maxAnnotationHistory = 50
     let appSettings = AppSettings.shared
     let accentColor = NSColor.systemBlue
     let annotationColor = NSColor.systemYellow
+    /// Thumbnail-style lettering reads best as white fill over the black outline.
+    let textColor = NSColor.white
     let minimumSelectionSize = CGSize(width: 40, height: 40)
     let minimumHighlightSize = CGSize(width: 12, height: 12)
     let annotationHandleSize: CGFloat = 10
@@ -102,17 +135,23 @@ final class LiveAnnotationOverlayView: NSView {
 
     override var acceptsFirstResponder: Bool { true }
 
+    // If activation was deferred by the system, the first click must already
+    // start the selection instead of being swallowed by app activation.
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+
     func resetState() {
         selectionRectInScreen = nil
         selectedTool = .select
         annotations = []
         annotationHistory = []
+        annotationRedoStack = []
+        pendingUndoSnapshot = nil
         interaction = .none
         pendingTextPoint = nil
         editingAnnotationID = nil
         selectedAnnotationID = nil
         didActivate = false
-        removeTextField(commit: false)
+        dismissTextEditor(commit: false)
         needsDisplay = true
     }
 
@@ -157,26 +196,36 @@ final class LiveAnnotationOverlayView: NSView {
     }
 
     override func keyDown(with event: NSEvent) {
-        if event.modifierFlags.intersection(.deviceIndependentFlagsMask).contains(.command),
-            event.charactersIgnoringModifiers?.lowercased() == "z"
-        {
-            undoLastAnnotationChange()
+        let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+
+        if modifiers.contains(.command), event.charactersIgnoringModifiers?.lowercased() == "z" {
+            if modifiers.contains(.shift) {
+                redoLastAnnotationChange()
+            } else {
+                undoLastAnnotationChange()
+            }
             return
         }
 
-        if let characters = event.charactersIgnoringModifiers?.lowercased() {
+        if mode == .annotate, !modifiers.contains(.command),
+            let characters = event.charactersIgnoringModifiers?.lowercased()
+        {
+            // Home-row tool shortcuts, matching toolbar order (A S D F G).
             switch characters {
-            case "s":
+            case "a":
                 selectedTool = .select
                 return
-            case "a":
+            case "s":
                 selectedTool = .arrow
                 return
-            case "t":
+            case "d":
                 selectedTool = .text
                 return
-            case "h":
+            case "f":
                 selectedTool = .highlight
+                return
+            case "g":
+                selectedTool = .pen
                 return
             default:
                 break
@@ -184,19 +233,28 @@ final class LiveAnnotationOverlayView: NSView {
         }
 
         switch event.keyCode {
+        case 51, 117:  // delete / forward delete
+            deleteSelectedAnnotation()
         case 53:  // esc
-            if textField != nil {
-                removeTextField(commit: false)
+            if isEditingText {
+                dismissTextEditor(commit: false)
             } else {
                 onCancel?()
             }
         case 36, 76:  // return / enter
-            if textField != nil {
-                removeTextField(commit: true)
+            if isEditingText {
+                dismissTextEditor(commit: true)
                 return
             }
             guard let selectionRectInScreen else { return }
             onComplete?(selectionRectInScreen, overlayScreen, annotations)
+        case 49:  // space: full-screen pick (quick select only)
+            guard mode == .quickSelect, case .none = interaction else {
+                super.keyDown(with: event)
+                return
+            }
+            notifyActivationIfNeeded()
+            onComplete?(overlayScreen.frame, overlayScreen, [])
         default:
             super.keyDown(with: event)
         }

@@ -1,5 +1,5 @@
 //
-//  GifRecordingHudView.swift
+//  RecordingHudView.swift
 //  PeekOCR
 //
 //  Small HUD view that shows recording status, timer, and controls.
@@ -8,11 +8,15 @@
 import AppKit
 
 /// Heads-up display shown while recording a clip (outside the captured region).
-final class GifRecordingHudView: NSView {
+final class RecordingHudView: NSView {
     var elapsedSeconds: Int = 0 { didSet { updateUI() } }
     var maxDurationSeconds: Int = 0 { didSet { updateUI() } }
+    /// "1080p · 30 FPS · GIF" readout shown under the timer.
+    var qualityText: String = "" { didSet { updateUI() } }
+    var isPaused: Bool = false { didSet { updateUI() } }
 
     var onStop: (() -> Void)?
+    var onTogglePause: (() -> Void)?
 
     private let backgroundView = NSVisualEffectView()
     private let dotView = NSView()
@@ -20,6 +24,7 @@ final class GifRecordingHudView: NSView {
     private let timerLabel = NSTextField(labelWithString: "00:00")
     private let subtitleLabel = NSTextField(labelWithString: "")
     private let progressView = HudProgressBarView(frame: .zero)
+    private let pauseButton = NSButton()
     private let stopButton = NSButton()
 
     override init(frame frameRect: NSRect) {
@@ -78,6 +83,14 @@ final class GifRecordingHudView: NSView {
         progressView.progressTintColor = .systemBlue
         progressView.trackTintColor = NSColor.white.withAlphaComponent(0.18)
 
+        pauseButton.target = self
+        pauseButton.action = #selector(pausePressed)
+        pauseButton.bezelStyle = .texturedRounded
+        pauseButton.isBordered = true
+        pauseButton.contentTintColor = .white
+        pauseButton.image = NSImage(systemSymbolName: "pause.fill", accessibilityDescription: "Pausa")
+        pauseButton.toolTip = "Pausar"
+
         stopButton.target = self
         stopButton.action = #selector(stopPressed)
         stopButton.bezelStyle = .texturedRounded
@@ -96,15 +109,16 @@ final class GifRecordingHudView: NSView {
         centerStack.alignment = .leading
         centerStack.spacing = 4
 
-        let root = NSStackView(views: [leftStack, centerStack, stopButton])
+        let root = NSStackView(views: [leftStack, centerStack, pauseButton, stopButton])
         root.orientation = .horizontal
         root.alignment = .centerY
-        root.spacing = 16
+        root.spacing = 12
         root.edgeInsets = NSEdgeInsets(top: 14, left: 16, bottom: 14, right: 16)
 
         addSubview(root)
         root.translatesAutoresizingMaskIntoConstraints = false
         dotView.translatesAutoresizingMaskIntoConstraints = false
+        pauseButton.translatesAutoresizingMaskIntoConstraints = false
         stopButton.translatesAutoresizingMaskIntoConstraints = false
         progressView.translatesAutoresizingMaskIntoConstraints = false
 
@@ -117,6 +131,9 @@ final class GifRecordingHudView: NSView {
             dotView.widthAnchor.constraint(equalToConstant: 9),
             dotView.heightAnchor.constraint(equalToConstant: 9),
 
+            pauseButton.widthAnchor.constraint(equalToConstant: 30),
+            pauseButton.heightAnchor.constraint(equalToConstant: 30),
+
             stopButton.widthAnchor.constraint(equalToConstant: 30),
             stopButton.heightAnchor.constraint(equalToConstant: 30),
 
@@ -128,13 +145,27 @@ final class GifRecordingHudView: NSView {
     private func updateUI() {
         let elapsed = max(0, elapsedSeconds)
         let maxDuration = max(0, maxDurationSeconds)
-        let remaining = max(0, maxDuration - elapsed)
 
-        timerLabel.stringValue = formatTime(seconds: remaining)
-        subtitleLabel.stringValue = "Restante"
+        if maxDuration > 0 {
+            // Limited clip: count down with a progress bar.
+            timerLabel.stringValue = formatTime(seconds: maxDuration - elapsed)
+            progressView.isHidden = false
+            progressView.progress = Double(elapsed) / Double(maxDuration)
+        } else {
+            // Unlimited: count up until the user stops.
+            timerLabel.stringValue = formatTime(seconds: elapsed)
+            progressView.isHidden = true
+        }
 
-        let progress = (maxDuration > 0) ? (Double(elapsed) / Double(maxDuration)) : 0
-        progressView.progress = progress
+        subtitleLabel.stringValue = qualityText.isEmpty ? (maxDuration > 0 ? "Restante" : "Grabando") : qualityText
+
+        recLabel.stringValue = isPaused ? "PAUSA" : "REC"
+        dotView.layer?.backgroundColor = (isPaused ? NSColor.systemOrange : NSColor.systemRed).cgColor
+        pauseButton.image = NSImage(
+            systemSymbolName: isPaused ? "play.fill" : "pause.fill",
+            accessibilityDescription: isPaused ? "Reanudar" : "Pausa"
+        )
+        pauseButton.toolTip = isPaused ? "Reanudar" : "Pausar"
 
         invalidateIntrinsicContentSize()
     }
@@ -149,6 +180,11 @@ final class GifRecordingHudView: NSView {
     @objc
     private func stopPressed() {
         onStop?()
+    }
+
+    @objc
+    private func pausePressed() {
+        onTogglePause?()
     }
 }
 

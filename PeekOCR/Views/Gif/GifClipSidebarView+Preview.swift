@@ -24,7 +24,6 @@ private struct GifClipSidebarPreviewWrapper: View {
             videoOptions: $videoOptions,
             outputDirectory: FileManager.default.temporaryDirectory,
             selectionDurationSeconds: 4.2,
-            sourceNominalFps: 60,
             exportDisabledMessage: nil
         )
         .padding()

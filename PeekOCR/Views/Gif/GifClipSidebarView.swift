@@ -16,7 +16,6 @@ struct GifClipSidebarView: View {
 
     let outputDirectory: URL
     let selectionDurationSeconds: Double
-    let sourceNominalFps: Double
     let exportDisabledMessage: String?
 
     var body: some View {
@@ -90,7 +89,7 @@ struct GifClipSidebarView: View {
 
                 fieldLabel("FPS")
                 Picker("", selection: $gifOptions.fps) {
-                    ForEach([1, 15, 20], id: \.self) { fps in
+                    ForEach(Constants.Gif.gifFpsOptions, id: \.self) { fps in
                         Text("\(fps)").tag(fps)
                     }
                 }
@@ -125,26 +124,16 @@ struct GifClipSidebarView: View {
                 .labelsHidden()
                 .frame(maxWidth: .infinity)
 
-                HStack(spacing: 8) {
-                    Text("FPS")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(.secondary)
-                    Spacer()
-                    Text("30 máximo")
-                        .font(.system(size: 12, weight: .semibold))
-                        .monospacedDigit()
-                        .foregroundStyle(.primary)
+                fieldLabel("FPS")
+                Picker("", selection: $videoOptions.fps) {
+                    ForEach(Constants.Gif.videoFpsOptions, id: \.self) { fps in
+                        Text("\(fps)").tag(fps)
+                    }
                 }
-                .padding(.top, 2)
-                .help("Se exporta a 30 FPS (o menos si la fuente es menor).")
-
-                if sourceNominalFps > 1, sourceNominalFps < 29 {
-                    InlineNoticeView(
-                        style: .info,
-                        text:
-                            "Este clip se grabó a ~\(Int(sourceNominalFps.rounded())) FPS. Se exportará a ~\(Int(min(30.0, sourceNominalFps).rounded())) FPS."
-                    )
-                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .frame(maxWidth: .infinity)
+                .help("Si la fuente tiene menos FPS, se exporta al ritmo de la fuente.")
             }
         }
     }

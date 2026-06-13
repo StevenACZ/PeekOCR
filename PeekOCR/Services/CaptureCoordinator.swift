@@ -41,8 +41,7 @@ final class CaptureCoordinator: ObservableObject {
     // MARK: - Services
 
     private let nativeScreenCapture = NativeScreenCaptureService.shared
-    private let nativeScreenRecording = NativeScreenRecordingService.shared
-    private let gifRecordingController = GifRecordingController.shared
+    private let clipRecordingController = ClipRecordingController.shared
     private let ocrService = OCRService.shared
     private let pasteboardService = PasteboardService.shared
     private let screenshotService = ScreenshotService.shared
@@ -69,8 +68,10 @@ final class CaptureCoordinator: ObservableObject {
 
         if isCapturing {
             if currentMode == .gifClip, mode == .gifClip {
-                AppLogger.capture.info("Stopping GIF recording via hotkey")
-                gifRecordingController.stop()
+                AppLogger.capture.info("Stopping clip recording via hotkey")
+                Task { @MainActor in
+                    self.clipRecordingController.stop()
+                }
                 return
             }
             AppLogger.capture.warning("Capture already in progress, ignoring request for mode: \(mode.description)")
@@ -83,11 +84,12 @@ final class CaptureCoordinator: ObservableObject {
 
         AppLogger.capture.info("Starting capture - mode: \(mode.description)")
 
-        // Use native macOS screencapture for the fast modes and a custom live overlay for annotated capture.
+        // ScreenCaptureKit grabs the pixels for every mode; the app's own quick-select
+        // or annotation overlay handles the region pick.
         Task { @MainActor in
             switch mode {
             case .gifClip:
-                await captureGifClipWithNativeRecorder()
+                await captureClipWithScreenRecorder()
             case .annotatedScreenshot:
                 await captureAnnotatedScreenshotWithLiveOverlay()
             case .ocr, .screenshot:
@@ -106,7 +108,9 @@ final class CaptureCoordinator: ObservableObject {
             AppLogger.capture.info(
                 "Capture cancelled - mode: \(self.currentMode.description), elapsed: \(String(format: "%.2f", elapsed))s")
             if currentMode == .gifClip {
-                gifRecordingController.stop()
+                Task { @MainActor in
+                    self.clipRecordingController.stop()
+                }
             }
         } else {
             AppLogger.capture.debug("Cancel called but no capture was in progress")
@@ -115,18 +119,30 @@ final class CaptureCoordinator: ObservableObject {
 
     // MARK: - Private Methods
 
-    /// Use native macOS screencapture for OCR/plain screenshots.
+    /// Region pick with the app's own dimmed overlay for OCR/plain screenshots,
+    /// then a ScreenCaptureKit grab of the selected rect.
+    @MainActor
     private func captureWithNativeScreenshot() async {
-        AppLogger.capture.debug("Invoking native screen capture")
+        AppLogger.capture.debug("Opening quick-select capture overlay")
 
-        guard let image = await nativeScreenCapture.captureInteractive() else {
+        let overlayController = LiveAnnotationOverlayWindowController()
+        guard let session = await overlayController.runSession(mode: .quickSelect) else {
             let elapsed = CFAbsoluteTimeGetCurrent() - captureStartTime
-            AppLogger.capture.info("Native capture returned nil (user cancelled or failed) - elapsed: \(String(format: "%.2f", elapsed))s")
+            AppLogger.capture.info(
+                "Quick-select capture cancelled - elapsed: \(String(format: "%.2f", elapsed))s")
             isCapturing = false
             return
         }
 
-        AppLogger.capture.debug("Native capture successful - dimensions: \(image.width)x\(image.height)")
+        guard let image = await nativeScreenCapture.captureRegion(session.selectionRect, on: session.screen) else {
+            AppLogger.capture.error("Failed to capture selected region from quick-select overlay")
+            isCapturing = false
+            return
+        }
+
+        CaptureFlashEffect.flash(rectInScreen: session.selectionRect)
+
+        AppLogger.capture.debug("Region capture successful - dimensions: \(image.width)x\(image.height)")
 
         // Process based on mode
         switch currentMode {
@@ -195,7 +211,7 @@ final class CaptureCoordinator: ObservableObject {
         )
         historyManager.addItem(item)
         AppLogger.capture.debug("Screenshot added to history")
-        CaptureSoundService.shared.play()
+        CaptureSoundService.shared.playCapture()
     }
 
     // MARK: - Annotated Screenshot Processing
@@ -227,9 +243,7 @@ final class CaptureCoordinator: ObservableObject {
             return
         }
 
-        // Give the overlay window a beat to disappear before the pixel capture happens.
-        try? await Task.sleep(nanoseconds: 120_000_000)
-
+        // No settle delay needed: the capture filter excludes this app's windows.
         AppLogger.capture.debug("Capturing selected region from live overlay")
         guard let capturedImage = await nativeScreenCapture.captureRegion(session.selectionRect, on: session.screen) else {
             AppLogger.capture.error("Failed to capture selected region after live overlay")
@@ -237,11 +251,13 @@ final class CaptureCoordinator: ObservableObject {
             return
         }
 
+        CaptureFlashEffect.flash(rectInScreen: session.selectionRect)
+
         let visibleAnnotations = session.annotations.filter { annotation in
             switch annotation.tool {
             case .text:
                 return session.selectionRect.contains(annotation.startPoint)
-            case .arrow, .highlight:
+            case .arrow, .highlight, .pen:
                 return session.selectionRect.intersects(annotation.bounds)
             case .select:
                 return false
@@ -267,9 +283,10 @@ final class CaptureCoordinator: ObservableObject {
 
     // MARK: - GIF Clip Processing
 
-    private func captureGifClipWithNativeRecorder() async {
+    @MainActor
+    private func captureClipWithScreenRecorder() async {
         let startTime = CFAbsoluteTimeGetCurrent()
-        AppLogger.capture.debug("Invoking native screen recording")
+        AppLogger.capture.debug("Starting ScreenCaptureKit clip recording")
 
         defer {
             let elapsed = CFAbsoluteTimeGetCurrent() - startTime
@@ -277,14 +294,9 @@ final class CaptureCoordinator: ObservableObject {
             isCapturing = false
         }
 
-        let supported = await nativeScreenRecording.supportsInteractiveVideoCapture()
-        guard supported else {
-            AppLogger.capture.error("screencapture video recording flags are not supported on this OS")
-            return
-        }
-
         let clipSettings = GifClipSettings.shared
-        guard let videoURL = await gifRecordingController.record(maxDurationSeconds: clipSettings.maxDurationSeconds) else {
+        guard let videoURL = await clipRecordingController.record(maxDurationSeconds: clipSettings.effectiveMaxDurationSeconds)
+        else {
             AppLogger.capture.info("GIF clip recording cancelled")
             return
         }
@@ -319,6 +331,7 @@ final class CaptureCoordinator: ObservableObject {
         )
         historyManager.addItem(item)
         AppLogger.capture.debug("Text result added to history")
+        CaptureSoundService.shared.playOCRFeedback()
     }
 
     private func handleQRResult(_ content: String) async {
@@ -331,5 +344,6 @@ final class CaptureCoordinator: ObservableObject {
         )
         historyManager.addItem(item)
         AppLogger.capture.debug("QR result added to history")
+        CaptureSoundService.shared.playOCRFeedback()
     }
 }

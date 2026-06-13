@@ -2,7 +2,8 @@
 //  VideoExportService.swift
 //  PeekOCR
 //
-//  Exports a trimmed segment of a video to an MP4 file (no audio).
+//  Exports a trimmed segment of a video to an MP4 file, keeping any
+//  recorded system-audio track.
 //
 
 import AVFoundation
@@ -39,7 +40,7 @@ enum VideoExportError: LocalizedError {
     }
 }
 
-/// Service for exporting a trimmed video segment as an MP4 (no audio).
+/// Service for exporting a trimmed video segment as an MP4 (audio preserved when present).
 final class VideoExportService {
     static let shared = VideoExportService()
 
@@ -48,6 +49,96 @@ final class VideoExportService {
     /// Wraps non-Sendable values for use in @Sendable closures that stay on a controlled queue.
     private struct UncheckedSendableBox<Value>: @unchecked Sendable {
         let value: Value
+    }
+
+    /// Serializes the writer-input pumps (video + optional audio) and the
+    /// writer finalization. All mutable state is only touched on `queue`.
+    private final class ExportPumpCoordinator: @unchecked Sendable {
+        let queue = DispatchQueue(label: "PeekOCR.videoExport.writer")
+
+        private let reader: AVAssetReader
+        private let writer: AVAssetWriter
+        private let continuation: CheckedContinuation<Void, Error>
+        private let effectiveFps: Int
+        private let renderSize: CGSize
+        private let exportStartedAt: Date
+        private let outputURL: URL
+
+        private var pendingInputs: Int
+        private var didResume = false
+        private var appendedFrames: Int64 = 0
+        private var skippedFrames: Int64 = 0
+
+        init(
+            reader: AVAssetReader,
+            writer: AVAssetWriter,
+            pendingInputs: Int,
+            effectiveFps: Int,
+            renderSize: CGSize,
+            exportStartedAt: Date,
+            outputURL: URL,
+            continuation: CheckedContinuation<Void, Error>
+        ) {
+            self.reader = reader
+            self.writer = writer
+            self.pendingInputs = pendingInputs
+            self.effectiveFps = effectiveFps
+            self.renderSize = renderSize
+            self.exportStartedAt = exportStartedAt
+            self.outputURL = outputURL
+            self.continuation = continuation
+        }
+
+        /// On `queue`.
+        var isFinished: Bool { didResume }
+
+        /// On `queue`.
+        func abort(_ error: Error) {
+            reader.cancelReading()
+            writer.cancelWriting()
+            resumeOnce(throwing: error)
+        }
+
+        /// On `queue`.
+        func finishVideoInput(appendedFrames: Int64, skippedFrames: Int64) {
+            self.appendedFrames = appendedFrames
+            self.skippedFrames = skippedFrames
+            inputFinished()
+        }
+
+        /// On `queue`.
+        func inputFinished() {
+            pendingInputs -= 1
+            guard pendingInputs == 0, !didResume else { return }
+            writer.finishWriting {
+                self.queue.async {
+                    self.handleWriterFinished()
+                }
+            }
+        }
+
+        private func handleWriterFinished() {
+            if writer.status == .completed {
+                let elapsed = Date().timeIntervalSince(exportStartedAt)
+                let outputBytes = VideoExportService.fileSize(at: outputURL)
+                AppLogger.capture.info(
+                    "Video export completed - frames: \(self.appendedFrames), skipped: \(self.skippedFrames), fps: \(self.effectiveFps), renderSize: \(Int(self.renderSize.width))x\(Int(self.renderSize.height)), output: \(outputBytes) bytes, elapsed: \(String(format: "%.2f", elapsed))s"
+                )
+                resumeOnce(throwing: nil)
+            } else {
+                resumeOnce(throwing: VideoExportError.exportFailed(underlying: writer.error))
+            }
+        }
+
+        private func resumeOnce(throwing error: Error?) {
+            guard !didResume else { return }
+            didResume = true
+            if let error {
+                continuation.resume(throwing: error)
+            } else {
+                continuation.resume()
+            }
+        }
     }
 
     func exportVideo(
@@ -109,11 +200,16 @@ final class VideoExportService {
             throw VideoExportError.missingVideoTrack
         }
 
-        let nominalFrameRate: Float = (try? await sourceVideoTrack.load(.nominalFrameRate)) ?? 0
-        let nominalFps = nominalFrameRate.isFinite && nominalFrameRate > 0 ? Double(nominalFrameRate) : 30
-        let sourceFps = await estimateSourceFrameRate(asset: asset, track: sourceVideoTrack, timeRange: clampedRange) ?? nominalFps
+        // ScreenCaptureKit recordings are variable-frame-rate (frames only when
+        // the screen changes), so a failed estimate means "trust the requested
+        // fps" — the video composition fills the gaps at a constant rate.
         let requestedFps = max(1, options.fps)
-        let effectiveFps = Int(min(Double(requestedFps), sourceFps.rounded(.down)))
+        let effectiveFps: Int
+        if let sourceFps = await estimateSourceFrameRate(asset: asset, track: sourceVideoTrack, timeRange: clampedRange) {
+            effectiveFps = Int(min(Double(requestedFps), sourceFps.rounded(.down)))
+        } else {
+            effectiveFps = requestedFps
+        }
 
         let (renderSize, transform) = try await computeRenderSizeAndTransform(
             track: sourceVideoTrack,
@@ -131,6 +227,24 @@ final class VideoExportService {
         }
 
         try compositionVideoTrack.insertTimeRange(clampedRange, of: sourceVideoTrack, at: .zero)
+
+        // Clips recorded with system audio carry an audio track; trim it with
+        // the same range so it stays in sync with the exported video.
+        var compositionAudioTrack: AVMutableCompositionTrack?
+        let audioTracks = (try? await asset.loadTracks(withMediaType: .audio)) ?? []
+        if let sourceAudioTrack = audioTracks.first,
+            let audioTrack = composition.addMutableTrack(
+                withMediaType: .audio,
+                preferredTrackID: kCMPersistentTrackID_Invalid
+            )
+        {
+            do {
+                try audioTrack.insertTimeRange(clampedRange, of: sourceAudioTrack, at: .zero)
+                compositionAudioTrack = audioTrack
+            } catch {
+                AppLogger.capture.warning("Audio track could not be trimmed, exporting without audio: \(error.localizedDescription)")
+            }
+        }
 
         let instruction = AVMutableVideoCompositionInstruction()
         instruction.timeRange = CMTimeRange(start: .zero, duration: clampedRange.duration)
@@ -195,6 +309,39 @@ final class VideoExportService {
         }
         writer.add(writerInput)
 
+        // Audio: decode to a normalized PCM layout and re-encode as AAC so the
+        // writer settings always match, whatever SCK recorded. Both ends are
+        // added together or not at all (an unread reader output can stall).
+        var audioReaderOutput: AVAssetReaderAudioMixOutput?
+        var audioWriterInput: AVAssetWriterInput?
+        if let compositionAudioTrack {
+            let readerAudioSettings: [String: Any] = [
+                AVFormatIDKey: kAudioFormatLinearPCM,
+                AVSampleRateKey: 48_000,
+                AVNumberOfChannelsKey: 2,
+            ]
+            let output = AVAssetReaderAudioMixOutput(audioTracks: [compositionAudioTrack], audioSettings: readerAudioSettings)
+            output.alwaysCopiesSampleData = false
+
+            let writerAudioSettings: [String: Any] = [
+                AVFormatIDKey: kAudioFormatMPEG4AAC,
+                AVSampleRateKey: 48_000,
+                AVNumberOfChannelsKey: 2,
+                AVEncoderBitRateKey: 192_000,
+            ]
+            let input = AVAssetWriterInput(mediaType: .audio, outputSettings: writerAudioSettings)
+            input.expectsMediaDataInRealTime = false
+
+            if reader.canAdd(output), writer.canAdd(input) {
+                reader.add(output)
+                writer.add(input)
+                audioReaderOutput = output
+                audioWriterInput = input
+            } else {
+                AppLogger.capture.warning("Audio pipeline rejected by reader/writer, exporting without audio")
+            }
+        }
+
         guard reader.startReading() else {
             throw VideoExportError.exportFailed(underlying: reader.error)
         }
@@ -208,20 +355,35 @@ final class VideoExportService {
         let readerOutputBox = UncheckedSendableBox(value: readerOutput)
         let readerBox = UncheckedSendableBox(value: reader)
         let writerBox = UncheckedSendableBox(value: writer)
+        let audioWriterInputBox = UncheckedSendableBox(value: audioWriterInput)
+        let audioReaderOutputBox = UncheckedSendableBox(value: audioReaderOutput)
 
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            let queue = DispatchQueue(label: "PeekOCR.videoExport.writer")
+            let hasAudio = audioWriterInputBox.value != nil && audioReaderOutputBox.value != nil
+            let coordinator = ExportPumpCoordinator(
+                reader: readerBox.value,
+                writer: writerBox.value,
+                pendingInputs: hasAudio ? 2 : 1,
+                effectiveFps: effectiveFps,
+                renderSize: renderSize,
+                exportStartedAt: exportStartedAt,
+                outputURL: outputURL,
+                continuation: continuation
+            )
 
             let targetFrameDuration = CMTime(value: 1, timescale: Int32(max(1, effectiveFps)))
             var nextAllowed = CMTime.zero
             var frameIndex: Int64 = 0
             var skippedFrames: Int64 = 0
 
-            writerInputBox.value.requestMediaDataWhenReady(on: queue) {
+            writerInputBox.value.requestMediaDataWhenReady(on: coordinator.queue) {
                 let writerInput = writerInputBox.value
                 let readerOutput = readerOutputBox.value
-                let reader = readerBox.value
-                let writer = writerBox.value
+
+                if coordinator.isFinished {
+                    writerInput.markAsFinished()
+                    return
+                }
 
                 while writerInput.isReadyForMoreMediaData {
                     if let sampleBuffer = readerOutput.copyNextSampleBuffer() {
@@ -248,39 +410,51 @@ final class VideoExportService {
 
                         guard status == noErr, let outputBuffer = retimed else {
                             writerInput.markAsFinished()
-                            reader.cancelReading()
-                            writer.cancelWriting()
-                            continuation.resume(throwing: VideoExportError.exportFailed(underlying: nil))
+                            coordinator.abort(VideoExportError.exportFailed(underlying: nil))
                             return
                         }
 
                         if !writerInput.append(outputBuffer) {
                             writerInput.markAsFinished()
-                            reader.cancelReading()
-                            writer.cancelWriting()
-                            continuation.resume(throwing: VideoExportError.exportFailed(underlying: writer.error))
+                            coordinator.abort(VideoExportError.exportFailed(underlying: writerBox.value.error))
                             return
                         }
 
                         frameIndex += 1
                         nextAllowed = pts + targetFrameDuration
                     } else {
-                        let appendedFrameCount = frameIndex
-                        let skippedFrameCount = skippedFrames
                         writerInput.markAsFinished()
-                        writer.finishWriting {
-                            if writer.status == .completed {
-                                let elapsed = Date().timeIntervalSince(exportStartedAt)
-                                let outputBytes = fileSize(at: outputURL)
-                                AppLogger.capture.info(
-                                    "Video export completed - frames: \(appendedFrameCount), skipped: \(skippedFrameCount), fps: \(effectiveFps), renderSize: \(Int(renderSize.width))x\(Int(renderSize.height)), output: \(outputBytes) bytes, elapsed: \(String(format: "%.2f", elapsed))s"
-                                )
-                                continuation.resume()
-                            } else {
-                                continuation.resume(throwing: VideoExportError.exportFailed(underlying: writer.error))
-                            }
-                        }
+                        coordinator.finishVideoInput(appendedFrames: frameIndex, skippedFrames: skippedFrames)
                         return
+                    }
+                }
+            }
+
+            if hasAudio {
+                let audioInputBox = UncheckedSendableBox(value: audioWriterInputBox.value!)
+                let audioOutputBox = UncheckedSendableBox(value: audioReaderOutputBox.value!)
+
+                audioInputBox.value.requestMediaDataWhenReady(on: coordinator.queue) {
+                    let audioInput = audioInputBox.value
+                    let audioOutput = audioOutputBox.value
+
+                    if coordinator.isFinished {
+                        audioInput.markAsFinished()
+                        return
+                    }
+
+                    while audioInput.isReadyForMoreMediaData {
+                        if let sampleBuffer = audioOutput.copyNextSampleBuffer() {
+                            if !audioInput.append(sampleBuffer) {
+                                audioInput.markAsFinished()
+                                coordinator.abort(VideoExportError.exportFailed(underlying: writerBox.value.error))
+                                return
+                            }
+                        } else {
+                            audioInput.markAsFinished()
+                            coordinator.inputFinished()
+                            return
+                        }
                     }
                 }
             }

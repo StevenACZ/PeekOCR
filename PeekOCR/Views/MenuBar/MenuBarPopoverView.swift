@@ -25,7 +25,6 @@ struct MenuBarPopoverView: View {
             FooterSection()
         }
         .frame(width: Constants.UI.popoverWidth)
-        .background(Color(NSColor.windowBackgroundColor))
     }
 }
 
@@ -105,7 +104,9 @@ private struct QuickActionsSection: View {
             }
 
             MenuBarActionButton(
-                title: "Grabar Clip (\(clipSettings.maxDurationSeconds)s)",
+                title: clipSettings.durationLimitEnabled
+                    ? "Grabar Clip (\(clipSettings.maxDurationSeconds)s)"
+                    : "Grabar Clip",
                 icon: "film",
                 shortcut: settings.gifHotKeyDisplayString()
             ) {
@@ -145,8 +146,15 @@ private struct HistorySection: View {
                             HistoryItemRow(item: item) {
                                 historyManager.copyItem(item)
                             }
+                            .transition(
+                                .asymmetric(
+                                    insertion: .move(edge: .top).combined(with: .opacity),
+                                    removal: .opacity
+                                )
+                            )
                         }
                     }
+                    .animation(.spring(duration: 0.35, bounce: 0.15), value: historyManager.items.map(\.id))
                 }
                 .frame(maxHeight: Constants.UI.historyMaxHeight)
             }
@@ -183,32 +191,15 @@ private struct FooterSection: View {
         .padding(.vertical, 12)
     }
 
-    @ViewBuilder
     private var settingsButton: some View {
-        if #available(macOS 14.0, *) {
-            SettingsLink {
-                Label("Configuración", systemImage: "gear")
-                    .font(.caption)
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(isHoveringSettings ? .primary : .secondary)
-            .onHover { hovering in
-                isHoveringSettings = hovering
-            }
-        } else {
-            Button {
-                if #available(macOS 13.0, *) {
-                    NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
-                }
-            } label: {
-                Label("Configuración", systemImage: "gear")
-                    .font(.caption)
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(isHoveringSettings ? .primary : .secondary)
-            .onHover { hovering in
-                isHoveringSettings = hovering
-            }
+        SettingsLink {
+            Label("Configuración", systemImage: "gear")
+                .font(.caption)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(isHoveringSettings ? .primary : .secondary)
+        .onHover { hovering in
+            isHoveringSettings = hovering
         }
     }
 }

@@ -38,8 +38,10 @@ enum Constants {
 
     /// App information
     enum App {
-        static let version = "1.6.0"
-        static let minimumOSVersion = "macOS 13.0+"
+        static var version: String {
+            Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—"
+        }
+        static let minimumOSVersion = "macOS 15.0+"
     }
 
     /// GIF capture/export defaults
@@ -48,5 +50,10 @@ enum Constants {
         static let maxDurationRange = 3...60
         static let trimStepSeconds: Double = 0.1
         static let minimumClipDurationSeconds: Double = 3.0
+
+        static let recordingFpsOptions = [15, 30, 60]
+        static let videoFpsOptions = [24, 30, 60]
+        static let gifFpsOptions = [1, 15, 20, 30]
+        static let gifMaxFps = 30
     }
 }

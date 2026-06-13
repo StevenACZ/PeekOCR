@@ -7,13 +7,21 @@ extension LiveAnnotationOverlayView {
         guard let window else { return }
         let pointInScreen = screenPoint(from: event.locationInWindow, window: window)
 
-        if textField != nil {
+        if mode == .quickSelect {
+            notifyActivationIfNeeded()
+            let origin = clamp(pointInScreen, to: overlayScreen.frame)
+            selectionRectInScreen = CGRect(origin: origin, size: .zero)
+            interaction = .creatingSelection(origin: origin)
+            return
+        }
+
+        if isEditingText {
             if handleToolbarClick(at: pointInScreen) {
-                removeTextField(commit: true)
+                dismissTextEditor(commit: true)
                 return
             }
 
-            removeTextField(commit: true)
+            dismissTextEditor(commit: true)
             return
         }
 
@@ -21,15 +29,14 @@ extension LiveAnnotationOverlayView {
             return
         }
 
-        removeTextField(commit: true)
+        dismissTextEditor(commit: true)
 
         if let annotationID = selectedAnnotationID,
             let annotation = annotations.first(where: { $0.id == annotationID }),
-            annotation.tool == .highlight,
             let handle = hitTestAnnotationResizeHandle(for: annotation, at: pointInScreen)
         {
             notifyActivationIfNeeded()
-            recordAnnotationSnapshot()
+            beginAnnotationTransaction()
             interaction = .resizingAnnotation(id: annotationID, handle: handle, initialAnnotation: annotation)
             return
         }
@@ -39,9 +46,7 @@ extension LiveAnnotationOverlayView {
         {
             notifyActivationIfNeeded()
             selectedAnnotationID = nil
-            if !annotations.isEmpty {
-                recordAnnotationSnapshot()
-            }
+            beginAnnotationTransaction()
             interaction = .resizingSelection(handle: handle, initialRect: selectionRectInScreen, initialAnnotations: annotations)
             return
         }
@@ -58,7 +63,7 @@ extension LiveAnnotationOverlayView {
                     return
                 }
 
-                recordAnnotationSnapshot()
+                beginAnnotationTransaction()
                 interaction = .movingAnnotation(id: annotationID, origin: pointInScreen, initialAnnotation: annotation)
                 return
             } else {
@@ -74,24 +79,27 @@ extension LiveAnnotationOverlayView {
             switch selectedTool {
             case .select:
                 notifyActivationIfNeeded()
-                if !annotations.isEmpty {
-                    recordAnnotationSnapshot()
-                }
+                beginAnnotationTransaction()
                 interaction = .movingSelection(origin: pointInScreen, initialRect: selectionRectInScreen, initialAnnotations: annotations)
             case .text:
                 notifyActivationIfNeeded()
                 beginTextInput(at: pointInScreen)
-            case .arrow, .highlight:
+            case .arrow, .highlight, .pen:
                 notifyActivationIfNeeded()
-                let annotation = LiveAnnotation(
+                var annotation = LiveAnnotation(
                     tool: selectedTool,
                     color: selectedTool == .highlight ? annotationColor : accentColor,
                     startPoint: pointInScreen,
                     endPoint: pointInScreen,
                     text: "",
                     fontSize: CGFloat(appSettings.defaultAnnotationFontSize),
-                    strokeWidth: CGFloat(appSettings.defaultAnnotationStrokeWidth)
+                    strokeWidth: selectedTool == .pen
+                        ? CGFloat(appSettings.defaultPenStrokeWidth)
+                        : CGFloat(appSettings.defaultAnnotationStrokeWidth)
                 )
+                if selectedTool == .pen {
+                    annotation.points = [pointInScreen]
+                }
                 interaction = .drawingAnnotation(annotation: annotation)
             }
             return
@@ -103,6 +111,8 @@ extension LiveAnnotationOverlayView {
         selectionRectInScreen = CGRect(origin: clamp(pointInScreen, to: screen.frame), size: .zero)
         annotations = []
         annotationHistory = []
+        annotationRedoStack = []
+        pendingUndoSnapshot = nil
         selectedTool = .select
         interaction = .creatingSelection(origin: clamp(pointInScreen, to: screen.frame))
     }
@@ -139,7 +149,11 @@ extension LiveAnnotationOverlayView {
             updateAnnotation(id: id, with: resizedAnnotation)
         case .drawingAnnotation(var annotation):
             guard let selectionRectInScreen else { return }
-            annotation.endPoint = clamp(pointInScreen, to: selectionRectInScreen)
+            let clampedPoint = clamp(pointInScreen, to: selectionRectInScreen)
+            if annotation.tool == .pen {
+                annotation.points.append(clampedPoint)
+            }
+            annotation.endPoint = clampedPoint
             interaction = .drawingAnnotation(annotation: annotation)
         }
     }
@@ -147,7 +161,15 @@ extension LiveAnnotationOverlayView {
     override func mouseUp(with event: NSEvent) {
         switch interaction {
         case .creatingSelection:
-            if let selectionRectInScreen, selectionRectInScreen.width >= minimumSelectionSize.width,
+            if mode == .quickSelect {
+                // One-shot pick: releasing the mouse captures right away.
+                if let selectionRectInScreen, selectionRectInScreen.width >= 8, selectionRectInScreen.height >= 8 {
+                    interaction = .none
+                    onComplete?(selectionRectInScreen, overlayScreen, [])
+                    return
+                }
+                self.selectionRectInScreen = nil
+            } else if let selectionRectInScreen, selectionRectInScreen.width >= minimumSelectionSize.width,
                 selectionRectInScreen.height >= minimumSelectionSize.height
             {
                 self.selectionRectInScreen = selectionRectInScreen
@@ -157,18 +179,26 @@ extension LiveAnnotationOverlayView {
         case .drawingAnnotation(let annotation):
             if annotation.tool == .arrow {
                 if annotation.bounds.width >= 8 || annotation.bounds.height >= 8 {
-                    recordAnnotationSnapshot()
+                    pushUndoSnapshot(annotations)
                     annotations.append(annotation)
                     selectedAnnotationID = annotation.id
                 }
             } else if annotation.tool == .highlight {
                 if annotation.bounds.width >= 12 && annotation.bounds.height >= 12 {
-                    recordAnnotationSnapshot()
+                    pushUndoSnapshot(annotations)
+                    annotations.append(annotation)
+                    selectedAnnotationID = annotation.id
+                }
+            } else if annotation.tool == .pen {
+                if annotation.points.count >= 2 {
+                    pushUndoSnapshot(annotations)
                     annotations.append(annotation)
                     selectedAnnotationID = annotation.id
                 }
             }
-        case .movingSelection, .resizingSelection, .movingAnnotation, .resizingAnnotation, .none:
+        case .movingSelection, .resizingSelection, .movingAnnotation, .resizingAnnotation:
+            commitAnnotationTransaction()
+        case .none:
             break
         }
 

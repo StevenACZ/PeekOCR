@@ -8,6 +8,8 @@
 import AppKit
 import Foundation
 import ImageIO
+import ScreenCaptureKit
+import os
 
 /// Service that uses macOS native screencapture command for high-quality, reliable captures
 final class NativeScreenCaptureService {
@@ -16,35 +18,6 @@ final class NativeScreenCaptureService {
     private init() {}
 
     // MARK: - Public Methods
-
-    /// Capture a screen region using macOS native screencapture tool
-    /// This uses the interactive mode (-i) which provides a smooth, native experience
-    /// - Returns: The captured image, or nil if cancelled or failed
-    func captureInteractive() async -> CGImage? {
-        // Create a temporary file path
-        let tempURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent(UUID().uuidString)
-            .appendingPathExtension("png")
-
-        // Run screencapture command
-        let success = await runScreenCapture(outputPath: tempURL.path)
-
-        guard success else {
-            // Clean up in case of failure
-            try? FileManager.default.removeItem(at: tempURL)
-            return nil
-        }
-
-        guard let imageData = try? Data(contentsOf: tempURL, options: .mappedIfSafe),
-            let image = Self.loadImage(from: imageData)
-        else {
-            try? FileManager.default.removeItem(at: tempURL)
-            return nil
-        }
-
-        try? FileManager.default.removeItem(at: tempURL)
-        return image
-    }
 
     /// Capture a screen region and return the image data directly
     /// - Returns: PNG data of the captured image, or nil if cancelled
@@ -86,19 +59,65 @@ final class NativeScreenCaptureService {
             do {
                 try process.run()
             } catch {
-                print("Failed to run screencapture: \(error)")
+                AppLogger.capture.error("Failed to run screencapture: \(error.localizedDescription)")
                 continuation.resume(returning: false)
             }
         }
     }
 
     /// Capture a specific screen rect without showing the native picker.
+    /// Uses ScreenCaptureKit (no helper process, no temp file) and excludes this
+    /// app's own windows, so callers don't need to wait for overlays to vanish.
     /// - Parameters:
     ///   - rectInScreen: Rect in AppKit global screen coordinates.
     ///   - screen: The source screen containing the selection.
     /// - Returns: The captured image or nil on failure.
     func captureRegion(_ rectInScreen: CGRect, on screen: NSScreen) async -> CGImage? {
-        let rect = convertToCaptureRect(selectionRectInScreen: rectInScreen.integral, screen: screen)
+        let rect = rectInScreen.integral
+        guard rect.width > 0, rect.height > 0 else { return nil }
+
+        if let image = await captureRegionWithScreenCaptureKit(rect, on: screen) {
+            return image
+        }
+
+        AppLogger.capture.warning("ScreenCaptureKit region capture failed, falling back to screencapture CLI")
+        return await captureRegionWithCLI(rect, on: screen)
+    }
+
+    private func captureRegionWithScreenCaptureKit(_ rectInScreen: CGRect, on screen: NSScreen) async -> CGImage? {
+        guard let displayID = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID else {
+            return nil
+        }
+
+        do {
+            let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
+            guard let display = content.displays.first(where: { $0.displayID == displayID }) else { return nil }
+
+            let ownPID = ProcessInfo.processInfo.processIdentifier
+            let ownWindows = content.windows.filter { $0.owningApplication?.processID == ownPID }
+            let filter = SCContentFilter(display: display, excludingWindows: ownWindows)
+
+            // sourceRect is display-local with a top-left origin, in points.
+            let localX = rectInScreen.origin.x - screen.frame.origin.x
+            let localYFromTop = screen.frame.height - (rectInScreen.origin.y - screen.frame.origin.y) - rectInScreen.height
+
+            let configuration = SCStreamConfiguration()
+            configuration.sourceRect = CGRect(
+                x: localX, y: localYFromTop, width: rectInScreen.width, height: rectInScreen.height)
+            configuration.width = Int(rectInScreen.width * screen.backingScaleFactor)
+            configuration.height = Int(rectInScreen.height * screen.backingScaleFactor)
+            configuration.showsCursor = false
+            configuration.captureResolution = .best
+
+            return try await SCScreenshotManager.captureImage(contentFilter: filter, configuration: configuration)
+        } catch {
+            AppLogger.capture.error("SCScreenshotManager capture failed: \(error.localizedDescription)")
+            return nil
+        }
+    }
+
+    private func captureRegionWithCLI(_ rectInScreen: CGRect, on screen: NSScreen) async -> CGImage? {
+        let rect = convertToCaptureRect(selectionRectInScreen: rectInScreen, screen: screen)
         guard rect.width > 0, rect.height > 0 else { return nil }
 
         let tempURL = FileManager.default.temporaryDirectory
@@ -145,7 +164,7 @@ final class NativeScreenCaptureService {
             do {
                 try process.run()
             } catch {
-                print("Failed to run screencapture: \(error)")
+                AppLogger.capture.error("Failed to run screencapture: \(error.localizedDescription)")
                 continuation.resume(returning: false)
             }
         }
@@ -172,7 +191,7 @@ final class NativeScreenCaptureService {
             do {
                 try process.run()
             } catch {
-                print("Failed to run screencapture: \(error)")
+                AppLogger.capture.error("Failed to run screencapture: \(error.localizedDescription)")
                 continuation.resume(returning: false)
             }
         }
