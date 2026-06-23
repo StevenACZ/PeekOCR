@@ -1,7 +1,6 @@
 # PeekOCR - public repo hygiene
 
 # Local/private documentation
-/AGENTS.md
 CLAUDE.md
 PEEKOCR_SPEC.md
 /docs/
