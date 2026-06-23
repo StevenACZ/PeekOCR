@@ -216,8 +216,7 @@ final class LiveAnnotationOverlayView: NSView {
             removeTrackingArea(trackingArea)
         }
 
-        let activeOption: NSTrackingArea.Options = mode == .quickSelect ? .activeAlways : .activeInKeyWindow
-        let options: NSTrackingArea.Options = [activeOption, .inVisibleRect, .mouseMoved, .cursorUpdate]
+        let options: NSTrackingArea.Options = [.activeAlways, .inVisibleRect, .mouseMoved, .cursorUpdate]
         let trackingArea = NSTrackingArea(rect: bounds, options: options, owner: self, userInfo: nil)
         addTrackingArea(trackingArea)
         self.trackingArea = trackingArea

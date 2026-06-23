@@ -55,8 +55,9 @@ final class LiveAnnotationOverlayWindowController: NSWindowController {
             overlay.window.orderFrontRegardless()
         }
 
-        // Pick the overlay under the cursor. Annotate makes this key for keyboard
-        // shortcuts; quick select stays non-activating and mouse-driven.
+        // Pick the overlay under the cursor. Annotate still becomes key for
+        // Enter/Esc/tool shortcuts, but the panel itself stays non-activating
+        // so the app does not steal focus from the app under capture.
         let mouseLocation = NSEvent.mouseLocation
         let primaryOverlay =
             overlays.values.first { $0.window.frame.contains(mouseLocation) }
@@ -64,8 +65,7 @@ final class LiveAnnotationOverlayWindowController: NSWindowController {
         self.window = primaryOverlay?.window
 
         if mode == .annotate, let primaryOverlay {
-            NSApp.activate(ignoringOtherApps: true)
-            primaryOverlay.window.makeKeyAndOrderFront(nil)
+            primaryOverlay.window.makeKey()
             primaryOverlay.window.makeFirstResponder(primaryOverlay.view)
         }
         NSCursor.crosshair.set()
@@ -131,12 +131,14 @@ final class LiveAnnotationOverlayWindowController: NSWindowController {
     private func makeWindow(for mode: LiveAnnotationOverlayView.OverlayMode, frame: CGRect) -> NSWindow {
         switch mode {
         case .annotate:
-            return LiveAnnotationOverlayWindow(
+            let panel = LiveAnnotationOverlayPanel(
                 contentRect: frame,
-                styleMask: [.borderless],
+                styleMask: [.borderless, .nonactivatingPanel],
                 backing: .buffered,
                 defer: false
             )
+            panel.hidesOnDeactivate = false
+            return panel
         case .quickSelect:
             let panel = LiveAnnotationQuickSelectOverlayPanel(
                 contentRect: frame,
@@ -287,9 +289,9 @@ final class LiveAnnotationOverlayWindowController: NSWindowController {
     }
 }
 
-private final class LiveAnnotationOverlayWindow: NSWindow {
+private final class LiveAnnotationOverlayPanel: NSPanel {
     override var canBecomeKey: Bool { true }
-    override var canBecomeMain: Bool { true }
+    override var canBecomeMain: Bool { false }
 }
 
 private final class LiveAnnotationQuickSelectOverlayPanel: NSPanel {

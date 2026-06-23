@@ -3,6 +3,12 @@
 All notable changes are grouped from the real project history. Public notes stay
 compact and avoid local machine, signing, or private environment details.
 
+## Unreleased
+
+- Fixed capture overlays so OCR, screenshots, annotations, and clip region
+  selection preserve transient UI such as menus, popovers, and hover states
+  without activating PeekOCR.
+
 ## 1.9.0 - Quick-Select Capture & ScreenCaptureKit Recording - 2026-06-12
 
 - Screen recording rebuilt on ScreenCaptureKit: recordings start the instant

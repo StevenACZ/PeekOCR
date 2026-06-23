@@ -18,7 +18,8 @@ screenshots, live annotation capture, GIF clip recording, and MP4/GIF export.
 - Screenshot capture with configurable format, quality, scale, and save
   location.
 - Instant dimmed selection overlay for every capture mode, with live
-  dimensions readout and flash feedback.
+  dimensions readout, flash feedback, and focus-safe picks that preserve
+  transient UI such as menus, popovers, and hover states.
 - Live annotated screenshot flow with region adjustment, arrows,
   thumbnail-style outlined text (multi-line), highlights, freehand pen,
   move/resize handles, and undo/redo before export.
