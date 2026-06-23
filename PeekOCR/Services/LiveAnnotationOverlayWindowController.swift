@@ -38,17 +38,18 @@ final class LiveAnnotationOverlayWindowController: NSWindowController {
             overlay.window.orderFrontRegardless()
         }
 
-        // Key window on the screen under the cursor so Esc/Enter/⌘Z work right away.
+        // Pick the overlay under the cursor. Annotate makes this key for keyboard
+        // shortcuts; quick select stays non-activating and mouse-driven.
         let mouseLocation = NSEvent.mouseLocation
-        let keyOverlay =
+        let primaryOverlay =
             overlays.values.first { $0.window.frame.contains(mouseLocation) }
             ?? overlays.values.first
-        self.window = keyOverlay?.window
+        self.window = primaryOverlay?.window
 
-        NSApp.activate(ignoringOtherApps: true)
-        if let keyOverlay {
-            keyOverlay.window.makeKeyAndOrderFront(nil)
-            keyOverlay.window.makeFirstResponder(keyOverlay.view)
+        if mode == .annotate, let primaryOverlay {
+            NSApp.activate(ignoringOtherApps: true)
+            primaryOverlay.window.makeKeyAndOrderFront(nil)
+            primaryOverlay.window.makeFirstResponder(primaryOverlay.view)
         }
         NSCursor.crosshair.set()
 
@@ -76,12 +77,7 @@ final class LiveAnnotationOverlayWindowController: NSWindowController {
     private func makeOverlay(
         for screen: NSScreen, displayID: CGDirectDisplayID, mode: LiveAnnotationOverlayView.OverlayMode
     ) -> Overlay {
-        let window = LiveAnnotationOverlayWindow(
-            contentRect: screen.frame,
-            styleMask: [.borderless],
-            backing: .buffered,
-            defer: false
-        )
+        let window = makeWindow(for: mode, frame: screen.frame)
         // Force global-coordinate frame: passing `screen:` to the initializer
         // makes AppKit treat contentRect.origin as screen-relative and double it.
         window.setFrame(screen.frame, display: false)
@@ -111,6 +107,27 @@ final class LiveAnnotationOverlayWindowController: NSWindowController {
         return Overlay(window: window, view: view)
     }
 
+    private func makeWindow(for mode: LiveAnnotationOverlayView.OverlayMode, frame: CGRect) -> NSWindow {
+        switch mode {
+        case .annotate:
+            return LiveAnnotationOverlayWindow(
+                contentRect: frame,
+                styleMask: [.borderless],
+                backing: .buffered,
+                defer: false
+            )
+        case .quickSelect:
+            let panel = LiveAnnotationQuickSelectOverlayPanel(
+                contentRect: frame,
+                styleMask: [.borderless, .nonactivatingPanel],
+                backing: .buffered,
+                defer: false
+            )
+            panel.hidesOnDeactivate = false
+            return panel
+        }
+    }
+
     private func handleActivation(displayID: CGDirectDisplayID) {
         guard activeDisplayID == nil else { return }
         activeDisplayID = displayID
@@ -134,4 +151,9 @@ final class LiveAnnotationOverlayWindowController: NSWindowController {
 private final class LiveAnnotationOverlayWindow: NSWindow {
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { true }
+}
+
+private final class LiveAnnotationQuickSelectOverlayPanel: NSPanel {
+    override var canBecomeKey: Bool { false }
+    override var canBecomeMain: Bool { false }
 }

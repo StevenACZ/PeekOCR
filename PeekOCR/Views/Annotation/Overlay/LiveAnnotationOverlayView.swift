@@ -163,7 +163,9 @@ final class LiveAnnotationOverlayView: NSView {
 
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
-        window?.makeFirstResponder(self)
+        if mode == .annotate {
+            window?.makeFirstResponder(self)
+        }
         window?.acceptsMouseMovedEvents = true
         updateTrackingAreas()
         refreshCursorAppearance()
@@ -176,7 +178,8 @@ final class LiveAnnotationOverlayView: NSView {
             removeTrackingArea(trackingArea)
         }
 
-        let options: NSTrackingArea.Options = [.activeInKeyWindow, .inVisibleRect, .mouseMoved, .cursorUpdate]
+        let activeOption: NSTrackingArea.Options = mode == .quickSelect ? .activeAlways : .activeInKeyWindow
+        let options: NSTrackingArea.Options = [activeOption, .inVisibleRect, .mouseMoved, .cursorUpdate]
         let trackingArea = NSTrackingArea(rect: bounds, options: options, owner: self, userInfo: nil)
         addTrackingArea(trackingArea)
         self.trackingArea = trackingArea
