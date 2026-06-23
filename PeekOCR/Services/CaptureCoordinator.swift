@@ -260,16 +260,27 @@ final class CaptureCoordinator: ObservableObject {
     private func captureAnnotatedScreenshotWithLiveOverlay() async {
         AppLogger.capture.debug("Opening live annotation overlay")
 
+        let activeScreens = DisplayEnumerator.activeScreens()
+        let screenSnapshots = await nativeScreenCapture.captureScreenSnapshots(for: activeScreens)
+        let frozenImages = screenSnapshots.mapValues { $0.image }
+
         let overlayController = LiveAnnotationOverlayWindowController()
-        guard let session = await overlayController.runSession() else {
+        guard let session = await overlayController.runSession(mode: .annotate, frozenImages: frozenImages) else {
             AppLogger.capture.info("Live annotation overlay cancelled by user")
             isCapturing = false
             return
         }
 
-        // No settle delay needed: the capture filter excludes this app's windows.
-        AppLogger.capture.debug("Capturing selected region from live overlay")
-        guard let capturedImage = await nativeScreenCapture.captureRegion(session.selectionRect, on: session.screen) else {
+        let frozenImage = frozenCaptureImage(for: session, snapshots: screenSnapshots)
+        let capturedImage: CGImage?
+        if let frozenImage {
+            capturedImage = frozenImage
+        } else {
+            AppLogger.capture.warning("Frozen annotated screenshot crop unavailable, falling back to live capture")
+            capturedImage = await nativeScreenCapture.captureRegion(session.selectionRect, on: session.screen)
+        }
+
+        guard let capturedImage else {
             AppLogger.capture.error("Failed to capture selected region after live overlay")
             isCapturing = false
             return
