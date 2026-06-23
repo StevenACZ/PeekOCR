@@ -11,8 +11,6 @@ final class LiveAnnotationOverlayWindowController: NSWindowController {
 
     private var overlays: [CGDirectDisplayID: Overlay] = [:]
     private var activeDisplayID: CGDirectDisplayID?
-    private var quickSelectEventTap: CFMachPort?
-    private var quickSelectRunLoopSource: CFRunLoopSource?
     private var quickSelectHotKeyRefs: [EventHotKeyRef] = []
     private var quickSelectHotKeyEventHandler: EventHandlerRef?
     private var continuation: CheckedContinuation<(selectionRect: CGRect, screen: NSScreen, annotations: [LiveAnnotation])?, Never>?
@@ -47,12 +45,7 @@ final class LiveAnnotationOverlayWindowController: NSWindowController {
             overlay.window.alphaValue = 0
         }
 
-        let usesGlobalQuickSelectEvents = mode == .quickSelect && installQuickSelectEventTap()
-        if usesGlobalQuickSelectEvents {
-            for overlay in overlays.values {
-                overlay.window.ignoresMouseEvents = true
-            }
-        } else if mode == .quickSelect {
+        if mode == .quickSelect {
             installQuickSelectKeyboardHotKeys()
         }
 
@@ -165,7 +158,6 @@ final class LiveAnnotationOverlayWindowController: NSWindowController {
     }
 
     private func finish(with result: (CGRect, NSScreen, [LiveAnnotation])?) {
-        uninstallQuickSelectEventTap()
         uninstallQuickSelectKeyboardHotKeys()
         for overlay in overlays.values {
             overlay.window.orderOut(nil)
@@ -175,128 +167,6 @@ final class LiveAnnotationOverlayWindowController: NSWindowController {
         window = nil
         continuation?.resume(returning: result)
         continuation = nil
-    }
-
-    private enum QuickSelectMousePhase {
-        case down
-        case dragged
-        case up
-    }
-
-    private func installQuickSelectEventTap() -> Bool {
-        uninstallQuickSelectEventTap()
-
-        let eventMask =
-            (1 << CGEventType.leftMouseDown.rawValue)
-            | (1 << CGEventType.leftMouseDragged.rawValue)
-            | (1 << CGEventType.leftMouseUp.rawValue)
-            | (1 << CGEventType.keyDown.rawValue)
-
-        guard
-            let tap = CGEvent.tapCreate(
-                tap: .cgSessionEventTap,
-                place: .headInsertEventTap,
-                options: .defaultTap,
-                eventsOfInterest: CGEventMask(eventMask),
-                callback: { _, type, event, userInfo in
-                    guard let userInfo else {
-                        return Unmanaged.passUnretained(event)
-                    }
-
-                    let controller = Unmanaged<LiveAnnotationOverlayWindowController>
-                        .fromOpaque(userInfo)
-                        .takeUnretainedValue()
-
-                    switch type {
-                    case .tapDisabledByTimeout, .tapDisabledByUserInput:
-                        Task { @MainActor in
-                            controller.reenableQuickSelectEventTap()
-                        }
-                        return Unmanaged.passUnretained(event)
-                    case .leftMouseDown:
-                        Task { @MainActor in
-                            controller.handleQuickSelectMouseEvent(.down)
-                        }
-                        return nil
-                    case .leftMouseDragged:
-                        Task { @MainActor in
-                            controller.handleQuickSelectMouseEvent(.dragged)
-                        }
-                        return nil
-                    case .leftMouseUp:
-                        Task { @MainActor in
-                            controller.handleQuickSelectMouseEvent(.up)
-                        }
-                        return nil
-                    case .keyDown:
-                        let keyCode = UInt16(event.getIntegerValueField(.keyboardEventKeycode))
-                        switch keyCode {
-                        case 49:
-                            Task { @MainActor in
-                                controller.completeQuickSelectFullScreen()
-                            }
-                            return nil
-                        case 53:
-                            Task { @MainActor in
-                                controller.finish(with: nil)
-                            }
-                            return nil
-                        default:
-                            return Unmanaged.passUnretained(event)
-                        }
-                    default:
-                        return Unmanaged.passUnretained(event)
-                    }
-                },
-                userInfo: Unmanaged.passUnretained(self).toOpaque()
-            )
-        else {
-            AppLogger.capture.warning("Quick-select event tap unavailable; falling back to panel mouse events")
-            return false
-        }
-
-        guard let runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0) else {
-            CFMachPortInvalidate(tap)
-            AppLogger.capture.warning("Quick-select event tap source unavailable; falling back to panel mouse events")
-            return false
-        }
-
-        quickSelectEventTap = tap
-        quickSelectRunLoopSource = runLoopSource
-        CFRunLoopAddSource(CFRunLoopGetMain(), runLoopSource, .commonModes)
-        CGEvent.tapEnable(tap: tap, enable: true)
-        return true
-    }
-
-    private func uninstallQuickSelectEventTap() {
-        if let runLoopSource = quickSelectRunLoopSource {
-            CFRunLoopRemoveSource(CFRunLoopGetMain(), runLoopSource, .commonModes)
-            quickSelectRunLoopSource = nil
-        }
-
-        if let tap = quickSelectEventTap {
-            CGEvent.tapEnable(tap: tap, enable: false)
-            CFMachPortInvalidate(tap)
-            quickSelectEventTap = nil
-        }
-    }
-
-    private func reenableQuickSelectEventTap() {
-        guard let quickSelectEventTap else { return }
-        CGEvent.tapEnable(tap: quickSelectEventTap, enable: true)
-    }
-
-    private func handleQuickSelectMouseEvent(_ phase: QuickSelectMousePhase) {
-        let point = NSEvent.mouseLocation
-
-        switch phase {
-        case .down:
-            quickSelectOverlay(at: point)?.view.beginQuickSelection(at: point)
-        case .dragged:
-            activeQuickSelectOverlay(at: point)?.view.updateQuickSelection(at: point)
-        case .up:
-            activeQuickSelectOverlay(at: point)?.view.finishQuickSelection()
-        }
     }
 
     private func completeQuickSelectFullScreen() {
