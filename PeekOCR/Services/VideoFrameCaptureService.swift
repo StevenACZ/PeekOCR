@@ -6,6 +6,7 @@
 //
 
 import AVFoundation
+import CoreGraphics
 import Foundation
 
 /// Errors that can occur while capturing a still image from a video clip.
@@ -48,7 +49,6 @@ final class VideoFrameCaptureService {
         guard seconds.isFinite else {
             throw VideoFrameCaptureError.invalidTime
         }
-        let safeSeconds = max(0, seconds)
 
         do {
             try FileManager.default.createDirectory(at: outputDirectory, withIntermediateDirectories: true)
@@ -58,7 +58,26 @@ final class VideoFrameCaptureService {
 
         let outputURL = generateUniqueOutputURL(in: outputDirectory, format: format)
 
-        let data: Data
+        let image = try await extractFrameImage(videoURL: videoURL, at: seconds)
+        guard let data = ImageEncodingService.encode(image, format: format, quality: quality) else {
+            throw VideoFrameCaptureError.encodingFailed(format: format)
+        }
+
+        do {
+            try data.write(to: outputURL, options: .atomic)
+        } catch {
+            throw VideoFrameCaptureError.saveFailed(path: outputURL.path, underlying: error)
+        }
+
+        return outputURL
+    }
+
+    func extractFrameImage(videoURL: URL, at seconds: Double) async throws -> CGImage {
+        guard seconds.isFinite else {
+            throw VideoFrameCaptureError.invalidTime
+        }
+        let safeSeconds = max(0, seconds)
+
         do {
             let asset = AVURLAsset(
                 url: videoURL,
@@ -83,24 +102,12 @@ final class VideoFrameCaptureService {
 
             let requestedTime = CMTime(seconds: captureSeconds, preferredTimescale: preferredTimeScale)
             let image = try await generator.image(at: requestedTime).image
-
-            guard let encoded = ImageEncodingService.encode(image, format: format, quality: quality) else {
-                throw VideoFrameCaptureError.encodingFailed(format: format)
-            }
-            data = encoded
+            return image
         } catch let error as VideoFrameCaptureError {
             throw error
         } catch {
             throw VideoFrameCaptureError.frameExtractionFailed(underlying: error)
         }
-
-        do {
-            try data.write(to: outputURL, options: .atomic)
-        } catch {
-            throw VideoFrameCaptureError.saveFailed(path: outputURL.path, underlying: error)
-        }
-
-        return outputURL
     }
 
     private func generateFilename() -> String {

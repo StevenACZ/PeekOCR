@@ -23,7 +23,8 @@ screenshots, live annotation capture, GIF clip recording, and MP4/GIF export.
 - Live annotated screenshot flow with region adjustment, arrows,
   thumbnail-style outlined text (multi-line), highlights, freehand pen,
   move/resize handles, and undo/redo before export.
-- GIF clip recording up to 10 seconds, with trim preview and GIF/MP4 export.
+- GIF clip recording up to 10 seconds, with trim preview, frame snapshots,
+  and GIF/MP4 export.
 - Guided permission setup through the menu bar reminder, settings rows, and
   missing-permissions window.
 - Selectable capture sounds plus an optional OCR copy confirmation.

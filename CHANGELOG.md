@@ -8,6 +8,8 @@ compact and avoid local machine, signing, or private environment details.
 - Fixed capture overlays so OCR, screenshots, annotations, and clip region
   selection preserve transient UI such as menus, popovers, and hover states
   without activating PeekOCR.
+- Video editor frame snapshots now reuse screenshot settings, including
+  clipboard copy, file saving, format, quality, scale, and save location.
 
 ## 1.9.0 - Quick-Select Capture & ScreenCaptureKit Recording - 2026-06-12
 

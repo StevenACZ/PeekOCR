@@ -90,27 +90,30 @@ extension GifClipEditorView {
 
         let settings = ScreenshotSettings.shared
         let captureTime = max(0, min(state.currentSeconds, state.durationSeconds))
-        frameCaptureFeedback = makeFrameCaptureProgressFeedback(format: settings.imageFormat)
+        frameCaptureFeedback = makeFrameCaptureProgressFeedback(settings: settings)
 
         do {
-            let outputURL = try await VideoFrameCaptureService.shared.captureFrame(
+            let image = try await VideoFrameCaptureService.shared.extractFrameImage(
                 videoURL: state.videoURL,
-                at: captureTime,
-                outputDirectory: saveDirectory,
-                format: settings.imageFormat,
-                quality: settings.imageQuality
+                at: captureTime
             )
+            let savedURL = await ScreenshotService.shared.processScreenshot(image)
 
+            let displayText = savedURL?.lastPathComponent ?? frameCaptureFallbackHistoryText(settings: settings)
             HistoryManager.shared.addItem(
                 CaptureItem(
-                    text: outputURL.lastPathComponent,
+                    text: displayText,
                     captureType: .screenshot
                 ))
 
             CaptureSoundService.shared.playCapture()
 
-            AppLogger.capture.info("Video frame captured: \(outputURL.lastPathComponent)")
-            showFrameCaptureFeedback(makeFrameCaptureSuccessFeedback(outputURL: outputURL, format: settings.imageFormat))
+            if let savedURL {
+                AppLogger.capture.info("Video frame captured: \(savedURL.lastPathComponent)")
+            } else {
+                AppLogger.capture.info("Video frame captured without file output")
+            }
+            showFrameCaptureFeedback(makeFrameCaptureSuccessFeedback(savedURL: savedURL, settings: settings))
         } catch {
             AppLogger.capture.error("Video frame capture failed: \(error.localizedDescription)")
             frameCaptureFeedback = nil
@@ -199,22 +202,56 @@ extension GifClipEditorView {
         return String(format: "%.1fs", max(0, seconds))
     }
 
-    private func makeFrameCaptureProgressFeedback(format: ImageFormat) -> GifClipActionFeedback {
+    private func makeFrameCaptureProgressFeedback(settings: ScreenshotSettings) -> GifClipActionFeedback {
         GifClipActionFeedback(
             tone: .progress,
-            title: "Guardando frame…",
-            message: "Se guardará como \(format.displayName) en \(friendlySaveDirectoryName()).",
-            badgeText: format.displayName
+            title: frameCaptureProgressTitle(settings: settings),
+            message: frameCaptureProgressMessage(settings: settings),
+            badgeText: settings.imageFormat.displayName
         )
     }
 
-    private func makeFrameCaptureSuccessFeedback(outputURL: URL, format: ImageFormat) -> GifClipActionFeedback {
+    private func makeFrameCaptureSuccessFeedback(savedURL: URL?, settings: ScreenshotSettings) -> GifClipActionFeedback {
         GifClipActionFeedback(
             tone: .success,
-            title: "Frame guardado",
-            message: outputURL.lastPathComponent,
-            badgeText: format.displayName
+            title: frameCaptureSuccessTitle(savedURL: savedURL, settings: settings),
+            message: savedURL?.lastPathComponent ?? frameCaptureFallbackHistoryText(settings: settings),
+            badgeText: settings.imageFormat.displayName
         )
+    }
+
+    private func frameCaptureProgressTitle(settings: ScreenshotSettings) -> String {
+        settings.saveToFile ? "Guardando frame…" : "Copiando frame…"
+    }
+
+    private func frameCaptureProgressMessage(settings: ScreenshotSettings) -> String {
+        switch (settings.saveToFile, settings.copyToClipboard) {
+        case (true, true):
+            return "Se guardará en \(friendlyDirectoryName(for: settings.saveDirectoryURL)) y se copiará al portapapeles."
+        case (true, false):
+            return "Se guardará como \(settings.imageFormat.displayName) en \(friendlyDirectoryName(for: settings.saveDirectoryURL))."
+        case (false, true):
+            return "Se copiará al portapapeles."
+        case (false, false):
+            return "Se procesará con la configuración actual."
+        }
+    }
+
+    private func frameCaptureSuccessTitle(savedURL: URL?, settings: ScreenshotSettings) -> String {
+        switch (savedURL != nil, settings.copyToClipboard) {
+        case (true, true):
+            return "Frame guardado y copiado"
+        case (true, false):
+            return "Frame guardado"
+        case (false, true):
+            return "Frame copiado"
+        case (false, false):
+            return "Frame procesado"
+        }
+    }
+
+    private func frameCaptureFallbackHistoryText(settings: ScreenshotSettings) -> String {
+        settings.copyToClipboard ? "Captura copiada al portapapeles" : "Frame procesado"
     }
 
     private func showFrameCaptureFeedback(_ feedback: GifClipActionFeedback) {
@@ -229,13 +266,17 @@ extension GifClipEditorView {
     }
 
     private func friendlySaveDirectoryName() -> String {
-        let path = saveDirectory.path
+        friendlyDirectoryName(for: saveDirectory)
+    }
+
+    private func friendlyDirectoryName(for directory: URL) -> String {
+        let path = directory.path
         if path.contains("/Downloads") || path.contains("/Descargas") {
             return "Descargas"
         }
         if path.contains("/Desktop") || path.contains("/Escritorio") {
             return "Escritorio"
         }
-        return saveDirectory.lastPathComponent
+        return directory.lastPathComponent
     }
 }
