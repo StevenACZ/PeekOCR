@@ -9,6 +9,7 @@ extension LiveAnnotationOverlayView {
 
         NSColor.clear.setFill()
         dirtyRect.fill()
+        drawFrozenBackgroundIfNeeded()
 
         if let selectionRectInScreen {
             let selectionRect = convert(window.convertFromScreen(selectionRectInScreen), from: nil)
@@ -42,6 +43,20 @@ extension LiveAnnotationOverlayView {
                 drawCenteredHint(text: "Arrastra para seleccionar la zona a capturar • Esc cancela")
             }
         }
+    }
+
+    func drawFrozenBackgroundIfNeeded() {
+        guard let frozenBackgroundImage else { return }
+
+        let image = NSImage(cgImage: frozenBackgroundImage, size: bounds.size)
+        image.draw(
+            in: bounds,
+            from: CGRect(origin: .zero, size: image.size),
+            operation: .copy,
+            fraction: 1,
+            respectFlipped: true,
+            hints: [.interpolation: NSImageInterpolation.none]
+        )
     }
 
     /// Live "W × H" readout under the selection while picking a region.

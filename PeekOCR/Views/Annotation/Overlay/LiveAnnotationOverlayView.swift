@@ -84,6 +84,12 @@ final class LiveAnnotationOverlayView: NSView {
         }
     }
 
+    var frozenBackgroundImage: CGImage? {
+        didSet {
+            needsDisplay = true
+        }
+    }
+
     var onCancel: (() -> Void)?
     var onComplete: ((CGRect, NSScreen, [LiveAnnotation]) -> Void)?
 
@@ -159,6 +165,38 @@ final class LiveAnnotationOverlayView: NSView {
         guard !didActivate else { return }
         didActivate = true
         onActivate?()
+    }
+
+    func beginQuickSelection(at pointInScreen: CGPoint) {
+        guard mode == .quickSelect else { return }
+        notifyActivationIfNeeded()
+        let origin = clamp(pointInScreen, to: overlayScreen.frame)
+        selectionRectInScreen = CGRect(origin: origin, size: .zero)
+        interaction = .creatingSelection(origin: origin)
+    }
+
+    func updateQuickSelection(at pointInScreen: CGPoint) {
+        guard mode == .quickSelect, case .creatingSelection(let origin) = interaction else { return }
+        selectionRectInScreen = normalizedRect(from: origin, to: clamp(pointInScreen, to: overlayScreen.frame))
+    }
+
+    func finishQuickSelection() {
+        guard mode == .quickSelect else { return }
+        if let selectionRectInScreen, selectionRectInScreen.width >= 8, selectionRectInScreen.height >= 8 {
+            interaction = .none
+            onComplete?(selectionRectInScreen, overlayScreen, [])
+            return
+        }
+
+        selectionRectInScreen = nil
+        interaction = .none
+        needsDisplay = true
+    }
+
+    func completeQuickSelectionWithFullScreen() {
+        guard mode == .quickSelect, case .none = interaction else { return }
+        notifyActivationIfNeeded()
+        onComplete?(overlayScreen.frame, overlayScreen, [])
     }
 
     override func viewDidMoveToWindow() {

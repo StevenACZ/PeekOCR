@@ -15,6 +15,32 @@ import os
 final class NativeScreenCaptureService {
     static let shared = NativeScreenCaptureService()
 
+    struct ScreenSnapshot {
+        let displayID: CGDirectDisplayID
+        let screen: NSScreen
+        let image: CGImage
+
+        func crop(rectInScreen: CGRect) -> CGImage? {
+            let rect = rectInScreen.integral
+            guard rect.width > 0, rect.height > 0 else { return nil }
+
+            let scale = screen.backingScaleFactor
+            let localX = (rect.minX - screen.frame.minX) * scale
+            let localYFromTop = (screen.frame.height - (rect.minY - screen.frame.minY) - rect.height) * scale
+            let cropRect = CGRect(
+                x: localX,
+                y: localYFromTop,
+                width: rect.width * scale,
+                height: rect.height * scale
+            ).integral
+            let imageBounds = CGRect(x: 0, y: 0, width: CGFloat(image.width), height: CGFloat(image.height))
+            let boundedRect = cropRect.intersection(imageBounds)
+            guard !boundedRect.isNull, boundedRect.width > 0, boundedRect.height > 0 else { return nil }
+
+            return image.cropping(to: boundedRect)
+        }
+    }
+
     private init() {}
 
     // MARK: - Public Methods
@@ -82,6 +108,46 @@ final class NativeScreenCaptureService {
 
         AppLogger.capture.warning("ScreenCaptureKit region capture failed, falling back to screencapture CLI")
         return await captureRegionWithCLI(rect, on: screen)
+    }
+
+    /// Capture each active screen before the app shows any selection overlay.
+    /// Quick-select uses these frozen pixels so transient UI (menus, popovers,
+    /// hovers) survives even if the source app dismisses it while selecting.
+    func captureScreenSnapshots(
+        for screens: [(displayID: CGDirectDisplayID, screen: NSScreen)]
+    ) async -> [CGDirectDisplayID: ScreenSnapshot] {
+        guard !screens.isEmpty else { return [:] }
+
+        do {
+            let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
+            let ownPID = ProcessInfo.processInfo.processIdentifier
+            let ownWindows = content.windows.filter { $0.owningApplication?.processID == ownPID }
+            var snapshots: [CGDirectDisplayID: ScreenSnapshot] = [:]
+
+            for (displayID, screen) in screens {
+                guard let display = content.displays.first(where: { $0.displayID == displayID }) else { continue }
+                let filter = SCContentFilter(display: display, excludingWindows: ownWindows)
+                let configuration = SCStreamConfiguration()
+                configuration.sourceRect = CGRect(origin: .zero, size: screen.frame.size)
+                configuration.width = max(1, Int((screen.frame.width * screen.backingScaleFactor).rounded()))
+                configuration.height = max(1, Int((screen.frame.height * screen.backingScaleFactor).rounded()))
+                configuration.showsCursor = false
+                configuration.captureResolution = .best
+
+                do {
+                    let image = try await SCScreenshotManager.captureImage(contentFilter: filter, configuration: configuration)
+                    snapshots[displayID] = ScreenSnapshot(displayID: displayID, screen: screen, image: image)
+                } catch {
+                    AppLogger.capture.error(
+                        "SCScreenshotManager screen snapshot failed for display \(displayID): \(error.localizedDescription)")
+                }
+            }
+
+            return snapshots
+        } catch {
+            AppLogger.capture.error("Unable to enumerate screen snapshots: \(error.localizedDescription)")
+            return [:]
+        }
     }
 
     private func captureRegionWithScreenCaptureKit(_ rectInScreen: CGRect, on screen: NSScreen) async -> CGImage? {

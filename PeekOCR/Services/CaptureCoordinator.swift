@@ -125,8 +125,12 @@ final class CaptureCoordinator: ObservableObject {
     private func captureWithNativeScreenshot() async {
         AppLogger.capture.debug("Opening quick-select capture overlay")
 
+        let activeScreens = DisplayEnumerator.activeScreens()
+        let screenSnapshots = await nativeScreenCapture.captureScreenSnapshots(for: activeScreens)
+        let frozenImages = screenSnapshots.mapValues { $0.image }
+
         let overlayController = LiveAnnotationOverlayWindowController()
-        guard let session = await overlayController.runSession(mode: .quickSelect) else {
+        guard let session = await overlayController.runSession(mode: .quickSelect, frozenImages: frozenImages) else {
             let elapsed = CFAbsoluteTimeGetCurrent() - captureStartTime
             AppLogger.capture.info(
                 "Quick-select capture cancelled - elapsed: \(String(format: "%.2f", elapsed))s")
@@ -134,7 +138,15 @@ final class CaptureCoordinator: ObservableObject {
             return
         }
 
-        guard let image = await nativeScreenCapture.captureRegion(session.selectionRect, on: session.screen) else {
+        let frozenImage = frozenCaptureImage(for: session, snapshots: screenSnapshots)
+        let image: CGImage?
+        if let frozenImage {
+            image = frozenImage
+        } else {
+            image = await nativeScreenCapture.captureRegion(session.selectionRect, on: session.screen)
+        }
+
+        guard let image else {
             AppLogger.capture.error("Failed to capture selected region from quick-select overlay")
             isCapturing = false
             return
@@ -164,6 +176,18 @@ final class CaptureCoordinator: ObservableObject {
             "Capture flow complete - mode: \(self.currentMode.description), total time: \(String(format: "%.2f", elapsed))s")
 
         isCapturing = false
+    }
+
+    private func frozenCaptureImage(
+        for session: (selectionRect: CGRect, screen: NSScreen, annotations: [LiveAnnotation]),
+        snapshots: [CGDirectDisplayID: NativeScreenCaptureService.ScreenSnapshot]
+    ) -> CGImage? {
+        guard let displayID = displayID(for: session.screen) else { return nil }
+        return snapshots[displayID]?.crop(rectInScreen: session.selectionRect)
+    }
+
+    private func displayID(for screen: NSScreen) -> CGDirectDisplayID? {
+        screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID
     }
 
     // MARK: - OCR Processing
