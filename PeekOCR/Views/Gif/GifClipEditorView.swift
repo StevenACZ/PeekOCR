@@ -43,11 +43,7 @@ struct GifClipEditorView: View {
         _gifOptions = State(initialValue: clipSettings.makeDefaultGifOptions())
         _videoOptions = State(initialValue: clipSettings.makeDefaultVideoOptions())
 
-        _state = StateObject(
-            wrappedValue: GifClipEditorState(
-                videoURL: videoURL,
-                maxDurationSeconds: clipSettings.maxDurationSeconds
-            ))
+        _state = StateObject(wrappedValue: GifClipEditorState(videoURL: videoURL))
     }
 
     var body: some View {

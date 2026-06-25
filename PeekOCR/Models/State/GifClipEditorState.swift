@@ -15,7 +15,6 @@ import os
 final class GifClipEditorState: NSObject, ObservableObject {
     // MARK: - Public Properties
 
-    let maxDurationSeconds: Int
     let player: AVPlayer
 
     @Published private(set) var videoURL: URL
@@ -37,9 +36,8 @@ final class GifClipEditorState: NSObject, ObservableObject {
 
     // MARK: - Initialization
 
-    init(videoURL: URL, maxDurationSeconds: Int) {
+    init(videoURL: URL) {
         self.videoURL = videoURL
-        self.maxDurationSeconds = maxDurationSeconds
         self.asset = AVURLAsset(url: videoURL)
         self.player = AVPlayer(playerItem: AVPlayerItem(asset: asset))
         super.init()
@@ -76,8 +74,7 @@ final class GifClipEditorState: NSObject, ObservableObject {
 
             let duration = try await asset.load(.duration)
             let rawSeconds = duration.seconds.isFinite ? duration.seconds : 0
-            let clampedSeconds = min(rawSeconds, Double(maxDurationSeconds))
-            durationSeconds = max(0, clampedSeconds)
+            durationSeconds = max(0, rawSeconds)
             startSeconds = 0
             endSeconds = durationSeconds
             currentSeconds = 0
