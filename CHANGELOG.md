@@ -5,6 +5,11 @@ compact and avoid local machine, signing, or private environment details.
 
 ## Unreleased
 
+## 1.9.2 - Unlimited Clip Editor Duration - 2026-06-26
+
+- Fixed the clip editor so unlimited recordings show and export their full
+  recorded length instead of clamping to the configured duration limit.
+
 ## 1.9.1 - Capture Without Focus Steal - 2026-06-23
 
 - Fixed capture overlays so OCR, screenshots, annotations, and clip region
