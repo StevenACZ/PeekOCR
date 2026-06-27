@@ -6,16 +6,22 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- Standardized the changelog and public agent handoff docs around the shared
+  Swift project workflow.
 
 ## [1.9.2] - 2026-06-26
 
 ### Fixed
+
 - Fixed the clip editor so unlimited recordings show and export their full
   recorded length instead of clamping to the configured duration limit.
 
 ## [1.9.1] - 2026-06-23
 
 ### Fixed
+
 - Fixed capture overlays so OCR, screenshots, annotations, and clip region
   selection preserve transient UI such as menus, popovers, and hover states
   without activating PeekOCR.
@@ -25,6 +31,7 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [1.9.0] - 2026-06-12
 
 ### Added
+
 - Screen recording rebuilt on ScreenCaptureKit: recordings start the instant
   the region is picked, stop cleanly, capture at full Retina resolution, and
   no longer rely on the screencapture helper process.
@@ -82,6 +89,7 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [1.8.3] - 2026-05-29
 
 ### Added
+
 - Distribution-only patch: the macOS DMG is built with Developer ID signing,
   secure timestamping, notarization, and stapling. No app behavior changed.
 
@@ -110,6 +118,7 @@ Focused on Apple Silicon release size, code organization, and export diagnostics
 ## [1.8.1] - 2026-04-24
 
 ### Fixed
+
 - Fixed Light Mode contrast for permission guidance surfaces, including the
   floating System Settings assistant, requirements window, menu reminder,
   draggable app card, and settings permission rows.
@@ -118,6 +127,7 @@ Focused on Apple Silicon release size, code organization, and export diagnostics
 ## [1.8.0] - 2026-04-19
 
 ### Added
+
 - Added explicit, user-driven Screen Recording and Accessibility onboarding from
   settings, the menu bar reminder, and blocked capture attempts.
 - Added the missing-permissions window with stable layout, live status cards,
@@ -130,6 +140,7 @@ Focused on Apple Silicon release size, code organization, and export diagnostics
 ## [1.7.0] - 2026-04-18
 
 ### Added
+
 - Added multi-display overlays for annotated screenshot and GIF clip selection.
 - Added optional capture shutter sound with persistent toggle and volume.
 - Refined the GIF/Video clip editor sidebar, timeline trim styling, preview
@@ -141,6 +152,7 @@ Focused on Apple Silicon release size, code organization, and export diagnostics
 ## [1.6.0] - 2026-04-11
 
 ### Added
+
 - Replaced post-capture annotation with a live pre-capture overlay for region
   selection, move/resize, arrows, text, highlights, and undo.
 - Added direct region capture for annotated screenshots and synced overlay
