@@ -24,13 +24,6 @@ make ci-check
 
 - `make ci-check` runs lint plus a Debug build.
 - The project does not have a unit test target yet; there is no `make test` gate.
-- For a direct Debug build:
-
-```bash
-xcodebuild -project PeekOCR.xcodeproj -scheme PeekOCR \
-  -configuration Debug -destination 'platform=macOS,arch=arm64' build
-```
-
 - When diagnosing runtime behavior, prefer Console/log evidence from the app
   subsystem:
 
@@ -41,11 +34,19 @@ xcodebuild -project PeekOCR.xcodeproj -scheme PeekOCR \
 - Crash reports are written by macOS under
   `~/Library/Logs/DiagnosticReports/PeekOCR-*.ips`.
 
+## Local Iteration
+
+- Use `make install-dev` for routine local app testing on Steven's Mac.
+- It builds a Release app, verifies Apple Development signing, reinstalls to
+  `/Applications/PeekOCR.app`, and relaunches the app.
+- Keep the app name and bundle id unchanged so macOS can preserve Screen
+  Recording and Accessibility grants across rebuilds.
+- Use `make notarized-dmg` only for final distribution packaging.
+
 ## Signing And Local Configuration
 
 - The tracked signing defaults are intentionally safe for public development.
-- Keep private signing overrides in ignored local xcconfig files such as
-  `Signing.xcconfig` or `*.xcconfig.local`.
+- Keep private signing overrides in ignored local xcconfig files.
 - Never commit certificates, provisioning profiles, team identifiers,
   environment files, or release authentication material.
 - Release packaging scripts may pass explicit signing overrides; keep local

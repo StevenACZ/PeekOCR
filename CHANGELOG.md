@@ -6,6 +6,10 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- `make install-dev` / `scripts/install_dev.sh` for fast local reinstalls of the signed Release app without resetting macOS permission grants.
+
 ### Changed
 
 - Standardized the changelog and public agent handoff docs around the shared
