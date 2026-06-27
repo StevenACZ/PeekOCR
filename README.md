@@ -54,6 +54,8 @@ make build
 - `make lint` checks changed Swift files without editing them.
 - `make ci-check` runs `lint + Debug build`.
 - `make release-check` runs `lint + Release build + size check`.
+- `make install-dev` rebuilds the signed Release app and reinstalls it to
+  `/Applications` for fast local iteration without resetting macOS permissions.
 - `make format-all` and `make lint-all` are explicit full-repo passes; use them
   only for a planned formatting migration.
 

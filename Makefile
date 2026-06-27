@@ -1,4 +1,4 @@
-.PHONY: help tools format format-all lint lint-all build release size-check ci-check release-check notarized-dmg hooks-install
+.PHONY: help tools format format-all lint lint-all build release install-dev size-check ci-check release-check notarized-dmg hooks-install
 
 .DEFAULT_GOAL := help
 
@@ -20,6 +20,7 @@ help:
 	@printf "  make lint-all      Check all Swift sources explicitly\n"
 	@printf "  make build         Build Debug for Apple Silicon\n"
 	@printf "  make release       Build Release for Apple Silicon\n"
+	@printf "  make install-dev   Reinstall signed Release build to /Applications\n"
 	@printf "  make size-check    Measure the Release app bundle\n"
 	@printf "  make ci-check      Fast local gate: lint + Debug build\n"
 	@printf "  make release-check Release gate: lint + Release build + size check\n"
@@ -56,6 +57,10 @@ release:
 	xcodebuild -project $(PROJECT) -scheme $(SCHEME) \
 		-configuration Release -destination 'generic/platform=macOS' \
 		-derivedDataPath $(RELEASE_DERIVED_DATA) clean build
+
+install-dev:
+	@chmod +x scripts/install_dev.sh
+	@scripts/install_dev.sh
 
 size-check:
 	@test -d "$(RELEASE_APP)" || { echo "Release app not found. Run: make release"; exit 66; }
