@@ -23,6 +23,7 @@ make ci-check
 ```
 
 - `make ci-check` runs lint plus a Debug build.
+- The project does not have a unit test target yet; there is no `make test` gate.
 - For a direct Debug build:
 
 ```bash
