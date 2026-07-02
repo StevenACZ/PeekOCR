@@ -6,6 +6,8 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-07-01
+
 ### Added
 
 - Full Spanish and English localization: every menu, settings pane, editor,
