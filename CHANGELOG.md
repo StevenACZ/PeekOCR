@@ -8,6 +8,9 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- Full Spanish and English localization: every menu, settings pane, editor,
+  overlay, and error message. New installs follow the macOS language; a
+  language picker in Settings > General switches the UI instantly.
 - New About window with app icon, copyable version and build, feature chips,
   and GitHub links, opened from the menu bar panel.
 - `make install-dev` / `scripts/install_dev.sh` for fast local reinstalls of the signed Release app without resetting macOS permission grants.

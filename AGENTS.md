@@ -65,6 +65,11 @@ About, and Quit. Settings is a custom window (unified toolbar with segmented
 tabs + `SettingsCard` two-column layout), not a SwiftUI `Settings` scene.
 Shared design tokens live in `Theme.swift`.
 
+All user-facing strings are localized (es/en): use `"key".localized` /
+`.localized(args)` backed by `LocalizationManager`, adding every key to BOTH
+`Resources/es.lproj/Localizable.strings` and `en.lproj`. Never hardcode UI
+text; the language picker lives in Settings > General.
+
 ### Region Picking
 
 All captures share one overlay:
