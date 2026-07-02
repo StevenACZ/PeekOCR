@@ -23,19 +23,19 @@ enum VideoExportError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .invalidTimeRange:
-            return "El rango seleccionado no es válido."
+            return "export.invalid_time_range".localized
         case .missingVideoTrack:
-            return "El video no contiene una pista de imagen válida."
+            return "export.missing_video_track".localized
         case .cannotCreateReader:
-            return "No se pudo preparar la lectura del video."
+            return "export.cannot_create_reader".localized
         case .cannotCreateWriter:
-            return "No se pudo crear el archivo de salida."
+            return "export.cannot_create_writer".localized
         case .cannotAddWriterInput:
-            return "No se pudo configurar la exportación de video."
+            return "export.cannot_add_writer_input".localized
         case .exportFailed:
-            return "No se pudo exportar el video."
+            return "export.video_export_failed".localized
         case .directoryCreationFailed(let path, _):
-            return "No se pudo crear la carpeta de salida: \(path)"
+            return "export.directory_creation_failed".localized(path)
         }
     }
 }

@@ -60,7 +60,7 @@ struct HistoryItemRow: View {
         .animation(Theme.Anim.easeOut, value: isHovered)
         .onHover { isHovered = $0 }
         .padding(.horizontal, 8)
-        .help("Clic para copiar")
+        .help("menu.history.copy_help".localized)
     }
 
     private func copy() {

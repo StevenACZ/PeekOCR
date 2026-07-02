@@ -22,11 +22,11 @@ extension GifClipEditorView {
         let minSeconds = Int(Constants.Gif.minimumClipDurationSeconds.rounded())
 
         if state.durationSeconds < Constants.Gif.minimumClipDurationSeconds {
-            return "El clip grabado dura \(formatSeconds(state.durationSeconds)). El mínimo para exportar es \(minSeconds)s. Regraba."
+            return "clip_editor.export_min_clip_duration".localized(formatSeconds(state.durationSeconds), minSeconds)
         }
 
         guard selectionDuration < Constants.Gif.minimumClipDurationSeconds else { return nil }
-        return "Selecciona al menos \(minSeconds)s en la línea de tiempo para exportar."
+        return "clip_editor.export_min_selection".localized(minSeconds)
     }
 
     var isBlockingUI: Bool {
@@ -36,8 +36,8 @@ extension GifClipEditorView {
     func exportSelectedFormat() async {
         guard exportOverlay == nil else { return }
         guard canExport else {
-            errorAlertTitle = "No se pudo exportar"
-            errorAlertMessage = exportDisabledMessage ?? "No se puede exportar con la selección actual."
+            errorAlertTitle = "clip_editor.export_failed_title".localized
+            errorAlertMessage = exportDisabledMessage ?? "clip_editor.export_invalid_selection".localized
             return
         }
 
@@ -73,7 +73,7 @@ extension GifClipEditorView {
             onExport(ClipExportResult(url: url, format: exportFormat))
         } catch {
             AppLogger.capture.error("Clip export failed: \(error.localizedDescription)")
-            errorAlertTitle = "No se pudo exportar"
+            errorAlertTitle = "clip_editor.export_failed_title".localized
             errorAlertMessage = error.localizedDescription
             exportOverlay = nil
         }
@@ -117,7 +117,7 @@ extension GifClipEditorView {
         } catch {
             AppLogger.capture.error("Video frame capture failed: \(error.localizedDescription)")
             frameCaptureFeedback = nil
-            errorAlertTitle = "No se pudo guardar la captura"
+            errorAlertTitle = "clip_editor.frame_save_failed_title".localized
             errorAlertMessage = error.localizedDescription
         }
     }
@@ -184,16 +184,16 @@ extension GifClipEditorView {
         if let overlay = exportOverlay {
             switch overlay {
             case .exporting:
-                return "Exportando…"
+                return "clip_editor.exporting".localized
             case .success:
-                return "Listo"
+                return "clip_editor.done".localized
             }
         }
         switch exportFormat {
         case .gif:
-            return "Exportar GIF"
+            return "clip_editor.export_gif".localized
         case .video:
-            return "Exportar MP4"
+            return "clip_editor.export_mp4".localized
         }
     }
 
@@ -221,37 +221,38 @@ extension GifClipEditorView {
     }
 
     private func frameCaptureProgressTitle(settings: ScreenshotSettings) -> String {
-        settings.saveToFile ? "Guardando frame…" : "Copiando frame…"
+        settings.saveToFile ? "clip_editor.saving_frame".localized : "clip_editor.copying_frame".localized
     }
 
     private func frameCaptureProgressMessage(settings: ScreenshotSettings) -> String {
         switch (settings.saveToFile, settings.copyToClipboard) {
         case (true, true):
-            return "Se guardará en \(friendlyDirectoryName(for: settings.saveDirectoryURL)) y se copiará al portapapeles."
+            return "clip_editor.frame_save_and_copy_message".localized(friendlyDirectoryName(for: settings.saveDirectoryURL))
         case (true, false):
-            return "Se guardará como \(settings.imageFormat.displayName) en \(friendlyDirectoryName(for: settings.saveDirectoryURL))."
+            return "clip_editor.frame_save_message".localized(
+                settings.imageFormat.displayName, friendlyDirectoryName(for: settings.saveDirectoryURL))
         case (false, true):
-            return "Se copiará al portapapeles."
+            return "clip_editor.frame_copy_message".localized
         case (false, false):
-            return "Se procesará con la configuración actual."
+            return "clip_editor.frame_process_message".localized
         }
     }
 
     private func frameCaptureSuccessTitle(savedURL: URL?, settings: ScreenshotSettings) -> String {
         switch (savedURL != nil, settings.copyToClipboard) {
         case (true, true):
-            return "Frame guardado y copiado"
+            return "clip_editor.frame_saved_copied".localized
         case (true, false):
-            return "Frame guardado"
+            return "clip_editor.frame_saved".localized
         case (false, true):
-            return "Frame copiado"
+            return "clip_editor.frame_copied".localized
         case (false, false):
-            return "Frame procesado"
+            return "clip_editor.frame_processed".localized
         }
     }
 
     private func frameCaptureFallbackHistoryText(settings: ScreenshotSettings) -> String {
-        settings.copyToClipboard ? "Captura copiada al portapapeles" : "Frame procesado"
+        settings.copyToClipboard ? "clip_editor.capture_copied_clipboard".localized : "clip_editor.frame_processed".localized
     }
 
     private func showFrameCaptureFeedback(_ feedback: GifClipActionFeedback) {
@@ -272,10 +273,10 @@ extension GifClipEditorView {
     private func friendlyDirectoryName(for directory: URL) -> String {
         let path = directory.path
         if path.contains("/Downloads") || path.contains("/Descargas") {
-            return "Descargas"
+            return "common.downloads".localized
         }
         if path.contains("/Desktop") || path.contains("/Escritorio") {
-            return "Escritorio"
+            return "common.desktop_folder".localized
         }
         return directory.lastPathComponent
     }

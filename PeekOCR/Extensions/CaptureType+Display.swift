@@ -29,11 +29,11 @@ extension CaptureType {
     var displayLabel: String {
         switch self {
         case .text:
-            return "Texto"
+            return "capture.type_text".localized
         case .qrCode:
             return "QR"
         case .screenshot:
-            return "Captura"
+            return "capture.type_screenshot".localized
         case .gif:
             return "GIF"
         case .video:

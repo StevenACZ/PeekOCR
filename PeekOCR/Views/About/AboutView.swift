@@ -50,14 +50,14 @@ struct AboutView: View {
             Text("PeekOCR")
                 .font(.system(size: 24, weight: .bold))
 
-            Text("Versión \(version) · Build \(build)")
+            Text("about.version".localized(version, build))
                 .font(.caption.monospaced())
                 .foregroundStyle(.secondary)
         }
     }
 
     private var taglineSection: some View {
-        Text("Captura texto, pantalla y clips desde la barra de menús. OCR con Vision y detección automática de códigos QR.")
+        Text("about.tagline".localized)
             .font(.callout)
             .foregroundStyle(.secondary)
             .multilineTextAlignment(.center)
@@ -67,7 +67,7 @@ struct AboutView: View {
     private var featureChips: some View {
         HStack(spacing: 8) {
             chip(icon: "doc.text.viewfinder", label: "OCR Vision")
-            chip(icon: "qrcode", label: "Códigos QR")
+            chip(icon: "qrcode", label: "about.chip.qr".localized)
             chip(icon: "film", label: "Clips")
         }
     }
@@ -83,7 +83,7 @@ struct AboutView: View {
             linkButton(icon: "link", label: "GitHub", url: "https://github.com/StevenACZ/PeekOCR")
             linkButton(
                 icon: "ladybug",
-                label: "Reportar problema",
+                label: "about.link.report_issue".localized,
                 url: "https://github.com/StevenACZ/PeekOCR/issues"
             )
         }
@@ -91,7 +91,7 @@ struct AboutView: View {
 
     private var footerSection: some View {
         VStack(spacing: 3) {
-            Text("Desarrollado con ❤️ por StevenACZ")
+            Text("about.footer.credit".localized)
                 .font(.caption)
                 .foregroundStyle(.tertiary)
 

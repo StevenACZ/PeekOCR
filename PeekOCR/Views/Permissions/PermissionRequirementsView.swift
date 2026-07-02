@@ -105,7 +105,7 @@ struct PermissionRequirementsView: View {
     }
 
     private var sectionTitle: String {
-        "Permisos del sistema"
+        "permissions.window.section_title".localized
     }
 
     private var missingCount: Int {
@@ -114,10 +114,10 @@ struct PermissionRequirementsView: View {
 
     private var footerMessage: String {
         if missingCount == 0 {
-            return "Ya puedes cerrar esta ventana y continuar con PeekOCR."
+            return "permissions.window.footer.all_granted".localized
         }
 
-        return "Puedes cerrar esta ventana y volver luego."
+        return "permissions.window.footer.pending".localized
     }
 
     private var footerIconName: String {
@@ -131,7 +131,7 @@ struct PermissionRequirementsView: View {
     }
 
     private var footerButtonTitle: String {
-        missingCount == 0 ? "Cerrar" : "Ahora no"
+        missingCount == 0 ? "permissions.window.close".localized : "permissions.window.not_now".localized
     }
 
     private func refreshPermissionStatuses() {

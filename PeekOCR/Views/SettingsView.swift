@@ -11,6 +11,8 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var selectedTab: SettingsTab = .general
+    // Re-renders the whole window when the app language changes.
+    @ObservedObject private var localization = LocalizationManager.shared
 
     var body: some View {
         VStack(spacing: 0) {
@@ -32,7 +34,7 @@ struct SettingsView: View {
             }
 
             ToolbarItem(placement: .confirmationAction) {
-                Button("Cerrar") {
+                Button("common.close".localized) {
                     dismiss()
                 }
             }
@@ -76,10 +78,10 @@ enum SettingsTab: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .general: return "General"
-        case .shortcuts: return "Atajos"
-        case .screenshots: return "Capturas"
-        case .clips: return "Clips"
+        case .general: return "settings.tabs.general".localized
+        case .shortcuts: return "settings.tabs.shortcuts".localized
+        case .screenshots: return "settings.tabs.captures".localized
+        case .clips: return "settings.tabs.clips".localized
         }
     }
 }

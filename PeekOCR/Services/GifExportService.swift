@@ -22,17 +22,17 @@ enum GifExportError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .invalidTimeRange:
-            return "El rango seleccionado no es válido."
+            return "export.invalid_time_range".localized
         case .cannotCreateDestination:
-            return "No se pudo crear el archivo GIF de salida."
+            return "export.gif_cannot_create_destination".localized
         case .cannotFinalize:
-            return "No se pudo finalizar el archivo GIF."
+            return "export.gif_cannot_finalize".localized
         case .cannotLoadDuration:
-            return "No se pudo leer la duración del video."
+            return "export.cannot_load_duration".localized
         case .frameExtractionFailed:
-            return "No se pudieron extraer los fotogramas del video."
+            return "export.frame_extraction_failed".localized
         case .directoryCreationFailed(let path, _):
-            return "No se pudo crear la carpeta de salida: \(path)"
+            return "export.directory_creation_failed".localized(path)
         }
     }
 }

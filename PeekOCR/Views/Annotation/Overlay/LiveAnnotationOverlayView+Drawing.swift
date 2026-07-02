@@ -38,9 +38,9 @@ extension LiveAnnotationOverlayView {
             NSColor.black.withAlphaComponent(0.25).setFill()
             bounds.fill()
             if mode == .quickSelect {
-                drawCenteredHint(text: "Arrastra para seleccionar • Espacio = pantalla completa • Esc cancela")
+                drawCenteredHint(text: "capture.hint_quick_select".localized)
             } else {
-                drawCenteredHint(text: "Arrastra para seleccionar la zona a capturar • Esc cancela")
+                drawCenteredHint(text: "capture.hint_select_area".localized)
             }
         }
     }
@@ -148,8 +148,8 @@ extension LiveAnnotationOverlayView {
     func drawInstructions(in selectionRect: CGRect) {
         let text =
             isEditingText
-            ? "↩ nueva línea • ⌘↩ guardar texto • Esc cancela texto"
-            : "Enter captura • Esc cancela • ⌘Z deshacer • ⇧⌘Z rehacer • ⌫ elimina"
+            ? "capture.instructions_text_editing".localized
+            : "capture.instructions_default".localized
         let attributes: [NSAttributedString.Key: Any] = [
             .font: NSFont.systemFont(ofSize: 12, weight: .semibold),
             .foregroundColor: NSColor.white,

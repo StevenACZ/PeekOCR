@@ -66,7 +66,7 @@ private struct ToolsSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            SectionHeader(title: "Herramientas")
+            SectionHeader(title: "annotation.tools_header".localized)
                 .padding(.horizontal, 16)
 
             VStack(spacing: 4) {
@@ -100,7 +100,7 @@ private struct ActionButtonsSection: View {
             HStack(spacing: 8) {
                 ActionIconButton(
                     icon: "arrow.uturn.backward",
-                    label: "Deshacer",
+                    label: "annotation.undo".localized,
                     shortcut: "⌘Z",
                     isEnabled: canUndo,
                     action: onUndo
@@ -108,7 +108,7 @@ private struct ActionButtonsSection: View {
 
                 ActionIconButton(
                     icon: "arrow.uturn.forward",
-                    label: "Rehacer",
+                    label: "annotation.redo".localized,
                     shortcut: "⌘⇧Z",
                     isEnabled: canRedo,
                     action: onRedo
@@ -119,7 +119,7 @@ private struct ActionButtonsSection: View {
                 HStack(spacing: 6) {
                     Image(systemName: "trash")
                         .font(.system(size: 13))
-                    Text("Limpiar todo")
+                    Text("annotation.clear_all".localized)
                         .font(.system(size: 12, weight: .medium))
                 }
                 .frame(maxWidth: .infinity)
@@ -144,7 +144,7 @@ private struct SaveCancelSection: View {
                 HStack(spacing: 8) {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 16))
-                    Text("Guardar")
+                    Text("common.save".localized)
                         .font(.system(size: 14, weight: .semibold))
                 }
                 .frame(maxWidth: .infinity)
@@ -158,7 +158,7 @@ private struct SaveCancelSection: View {
                 HStack(spacing: 6) {
                     Image(systemName: "xmark.circle")
                         .font(.system(size: 14))
-                    Text("Cancelar")
+                    Text("common.cancel".localized)
                         .font(.system(size: 13, weight: .medium))
                 }
                 .frame(maxWidth: .infinity)

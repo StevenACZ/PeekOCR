@@ -88,16 +88,16 @@ final class RecordingHudView: NSView {
         pauseButton.bezelStyle = .texturedRounded
         pauseButton.isBordered = true
         pauseButton.contentTintColor = .white
-        pauseButton.image = NSImage(systemSymbolName: "pause.fill", accessibilityDescription: "Pausa")
-        pauseButton.toolTip = "Pausar"
+        pauseButton.image = NSImage(systemSymbolName: "pause.fill", accessibilityDescription: "capture.hud_pause".localized)
+        pauseButton.toolTip = "capture.hud_pause".localized
 
         stopButton.target = self
         stopButton.action = #selector(stopPressed)
         stopButton.bezelStyle = .texturedRounded
         stopButton.isBordered = true
         stopButton.contentTintColor = .white
-        stopButton.image = NSImage(systemSymbolName: "stop.fill", accessibilityDescription: "Stop")
-        stopButton.toolTip = "Detener"
+        stopButton.image = NSImage(systemSymbolName: "stop.fill", accessibilityDescription: "capture.hud_stop".localized)
+        stopButton.toolTip = "capture.hud_stop".localized
 
         let leftStack = NSStackView(views: [dotView, recLabel])
         leftStack.orientation = .horizontal
@@ -157,15 +157,18 @@ final class RecordingHudView: NSView {
             progressView.isHidden = true
         }
 
-        subtitleLabel.stringValue = qualityText.isEmpty ? (maxDuration > 0 ? "Restante" : "Grabando") : qualityText
+        subtitleLabel.stringValue =
+            qualityText.isEmpty
+            ? (maxDuration > 0 ? "capture.hud_remaining".localized : "capture.hud_recording".localized)
+            : qualityText
 
-        recLabel.stringValue = isPaused ? "PAUSA" : "REC"
+        recLabel.stringValue = isPaused ? "capture.hud_paused_badge".localized : "REC"
         dotView.layer?.backgroundColor = (isPaused ? NSColor.systemOrange : NSColor.systemRed).cgColor
         pauseButton.image = NSImage(
             systemSymbolName: isPaused ? "play.fill" : "pause.fill",
-            accessibilityDescription: isPaused ? "Reanudar" : "Pausa"
+            accessibilityDescription: isPaused ? "capture.hud_resume".localized : "capture.hud_pause".localized
         )
-        pauseButton.toolTip = isPaused ? "Reanudar" : "Pausar"
+        pauseButton.toolTip = isPaused ? "capture.hud_resume".localized : "capture.hud_pause".localized
 
         invalidateIntrinsicContentSize()
     }

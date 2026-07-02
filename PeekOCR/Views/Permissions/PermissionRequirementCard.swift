@@ -78,14 +78,14 @@ struct PermissionRequirementCard: View {
 
                 Group {
                     if isGranted {
-                        Label("Listo", systemImage: "checkmark.circle.fill")
+                        Label("permissions.card.granted_label".localized, systemImage: "checkmark.circle.fill")
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(.green)
                     } else {
                         Button {
                             onActivate(permission)
                         } label: {
-                            Text("Activar")
+                            Text("permissions.card.activate".localized)
                                 .font(.caption.weight(.semibold))
                                 .foregroundStyle(activationButtonForeground)
                                 .lineLimit(1)
@@ -108,19 +108,19 @@ struct PermissionRequirementCard: View {
     }
 
     private var statusTitle: String {
-        isGranted ? "Activo" : "Pendiente"
+        isGranted ? "permissions.card.status.granted".localized : "permissions.card.status.pending".localized
     }
 
     private var detailText: String {
         switch (permission, isGranted) {
         case (.screenRecording, true):
-            return "PeekOCR ya puede usar la pantalla para OCR, capturas y clips."
+            return "permissions.card.detail.screen_recording.granted".localized
         case (.accessibility, true):
-            return "Los atajos globales de PeekOCR ya quedaron habilitados."
+            return "permissions.card.detail.accessibility.granted".localized
         case (.screenRecording, false):
-            return "Necesario para OCR, capturas y clips GIF."
+            return "permissions.card.detail.screen_recording.pending".localized
         case (.accessibility, false):
-            return "Necesario para que funcionen los atajos globales de PeekOCR."
+            return "permissions.card.detail.accessibility.pending".localized
         }
     }
 

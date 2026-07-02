@@ -40,12 +40,12 @@ struct ClipSettingsTab: View {
 
     private var durationCard: some View {
         SettingsCard(icon: "timer", title: "Clip") {
-            SettingsToggleRow(title: "Limitar duración", isOn: $settings.durationLimitEnabled)
+            SettingsToggleRow(title: "settings.clips.limit_duration".localized, isOn: $settings.durationLimitEnabled)
 
             if settings.durationLimitEnabled {
                 VStack(alignment: .leading, spacing: 6) {
                     HStack {
-                        Text("Duración máxima")
+                        Text("settings.clips.max_duration".localized)
                             .font(.system(size: 13))
 
                         Spacer()
@@ -83,16 +83,19 @@ struct ClipSettingsTab: View {
 
             SettingsCaption(
                 settings.durationLimitEnabled
-                    ? "El clip se detiene automáticamente al llegar al límite. Mínimo \(Constants.Gif.maxDurationRange.lowerBound)s, máximo \(Constants.Gif.maxDurationRange.upperBound)s."
-                    : "Sin límite: la grabación continúa hasta que la detengas con el botón Stop o el atajo."
+                    ? "settings.clips.duration_caption_limited".localized(
+                        Constants.Gif.maxDurationRange.lowerBound,
+                        Constants.Gif.maxDurationRange.upperBound
+                    )
+                    : "settings.clips.duration_caption_unlimited".localized
             )
         }
         .animation(.smooth(duration: 0.25), value: settings.durationLimitEnabled)
     }
 
     private var recordingCard: some View {
-        SettingsCard(icon: "record.circle", title: "Grabación") {
-            segmentedRow(label: "FPS de grabación") {
+        SettingsCard(icon: "record.circle", title: "settings.clips.recording".localized) {
+            segmentedRow(label: "settings.clips.recording_fps".localized) {
                 Picker("", selection: $settings.recordingFps) {
                     ForEach(Constants.Gif.recordingFpsOptions, id: \.self) { fps in
                         Text("\(fps)").tag(fps)
@@ -100,22 +103,22 @@ struct ClipSettingsTab: View {
                 }
             }
 
-            SettingsToggleRow(title: "Mostrar el cursor", isOn: $settings.recordingShowsCursor)
+            SettingsToggleRow(title: "settings.clips.show_cursor".localized, isOn: $settings.recordingShowsCursor)
 
             SettingsToggleRow(
-                title: "Grabar audio del sistema",
+                title: "settings.clips.system_audio".localized,
                 isOn: $settings.recordingCapturesSystemAudio
             )
 
             SettingsCaption(
-                "Durante la selección, pulsa Espacio para grabar la pantalla completa. El audio del sistema se conserva al exportar MP4 (el GIF no lleva audio); macOS puede pedir el permiso de grabación de audio la primera vez."
+                "settings.clips.recording_caption".localized
             )
         }
     }
 
     private var exportCard: some View {
-        SettingsCard(icon: "square.and.arrow.up", title: "Exportación") {
-            segmentedRow(label: "Formato por defecto") {
+        SettingsCard(icon: "square.and.arrow.up", title: "settings.clips.export".localized) {
+            segmentedRow(label: "settings.clips.default_format".localized) {
                 Picker("", selection: $settings.defaultExportFormat) {
                     ForEach(ClipExportFormat.allCases) { format in
                         Text(format.displayName).tag(format)
@@ -123,13 +126,13 @@ struct ClipSettingsTab: View {
                 }
             }
 
-            SettingsCaption("Define el formato que se preselecciona al abrir el editor.")
+            SettingsCaption("settings.clips.default_format_caption".localized)
         }
     }
 
     private var gifCard: some View {
         SettingsCard(icon: "photo.stack", title: "GIF") {
-            segmentedRow(label: "Perfil") {
+            segmentedRow(label: "settings.clips.profile".localized) {
                 Picker("", selection: $settings.gifProfile) {
                     ForEach(GifExportProfile.allCases) { profile in
                         Text(profile.displayName).tag(profile)
@@ -145,15 +148,15 @@ struct ClipSettingsTab: View {
                 }
             }
 
-            SettingsToggleRow(title: "Loop (infinito)", isOn: $settings.gifLoopEnabled)
+            SettingsToggleRow(title: "settings.clips.loop".localized, isOn: $settings.gifLoopEnabled)
 
-            SettingsCaption("AI Debug es ideal para revisar frame-by-frame (ej: 10s → ~10 frames a 1 FPS).")
+            SettingsCaption("settings.clips.gif_caption".localized)
         }
     }
 
     private var videoCard: some View {
         SettingsCard(icon: "film", title: "Video (MP4)") {
-            segmentedRow(label: "Resolución (máx)") {
+            segmentedRow(label: "settings.clips.max_resolution".localized) {
                 Picker("", selection: $settings.videoResolution) {
                     ForEach(VideoExportResolution.allCases) { resolution in
                         Text(resolution.displayName).tag(resolution)
@@ -178,7 +181,7 @@ struct ClipSettingsTab: View {
                 }
             }
 
-            SettingsCaption("H.264 es más compatible. HEVC suele ser más ligero pero puede ser menos compatible.")
+            SettingsCaption("settings.clips.codec_caption".localized)
         }
     }
 

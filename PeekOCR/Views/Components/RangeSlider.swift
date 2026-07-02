@@ -83,7 +83,7 @@ struct RangeSlider: View {
                         activeHandle = nil
                     }
             )
-            .accessibilityLabel(handle == .lower ? "Inicio" : "Fin")
+            .accessibilityLabel(handle == .lower ? "common.start".localized : "common.end".localized)
             .accessibilityValue(Text(String(format: "%.1f", value)))
     }
 

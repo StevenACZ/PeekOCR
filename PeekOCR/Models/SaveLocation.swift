@@ -19,11 +19,11 @@ enum SaveLocation: String, CaseIterable, Identifiable {
 
     var displayName: String {
         switch self {
-        case .desktop: return "Escritorio"
-        case .downloads: return "Descargas"
-        case .documents: return "Documentos"
-        case .pictures: return "Imágenes"
-        case .custom: return "Personalizada..."
+        case .desktop: return "settings.captures.location_desktop".localized
+        case .downloads: return "settings.captures.location_downloads".localized
+        case .documents: return "settings.captures.location_documents".localized
+        case .pictures: return "settings.captures.location_pictures".localized
+        case .custom: return "settings.captures.location_custom".localized
         }
     }
 

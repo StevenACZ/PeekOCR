@@ -50,7 +50,7 @@ struct GifClipTimelineReadoutView: View {
             Image(systemName: "scissors")
                 .font(.system(size: 10, weight: .semibold))
                 .foregroundStyle(.secondary)
-            Text("Selección")
+            Text("clip_editor.selection".localized)
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)
             Text(format(startSeconds: startSeconds, endSeconds: endSeconds))

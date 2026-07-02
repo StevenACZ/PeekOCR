@@ -18,7 +18,7 @@ enum CaptureSound: String, CaseIterable, Identifiable {
 
     var displayName: String {
         switch self {
-        case .shutter: return "Obturador"
+        case .shutter: return "settings.general.sound_shutter".localized
         case .tink: return "Tink"
         case .pop: return "Pop"
         case .glass: return "Glass"

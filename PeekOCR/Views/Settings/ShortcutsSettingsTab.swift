@@ -21,7 +21,7 @@ struct ShortcutsSettingsTab: View {
         VStack(spacing: 20) {
             Spacer(minLength: 0)
 
-            Text("Cuatro formas de capturar. Haz clic en un atajo para cambiarlo.")
+            Text("settings.shortcuts.intro".localized)
                 .font(.callout)
                 .foregroundStyle(.secondary)
 
@@ -29,8 +29,8 @@ struct ShortcutsSettingsTab: View {
                 ShortcutTile(
                     icon: "doc.text.viewfinder",
                     tint: .blue,
-                    title: "Capturar Texto",
-                    subtitle: "OCR con Vision y códigos QR",
+                    title: "settings.shortcuts.capture_text".localized,
+                    subtitle: "settings.shortcuts.capture_text_subtitle".localized,
                     currentShortcut: settings.captureHotKeyDisplayString()
                 ) { modifiers, keyCode in
                     settings.captureHotKeyModifiers = modifiers
@@ -41,8 +41,8 @@ struct ShortcutsSettingsTab: View {
                 ShortcutTile(
                     icon: "camera.viewfinder",
                     tint: .green,
-                    title: "Captura de Pantalla",
-                    subtitle: "Imagen del área seleccionada",
+                    title: "settings.shortcuts.screenshot".localized,
+                    subtitle: "settings.shortcuts.screenshot_subtitle".localized,
                     currentShortcut: settings.screenshotHotKeyDisplayString()
                 ) { modifiers, keyCode in
                     settings.screenshotHotKeyModifiers = modifiers
@@ -53,8 +53,8 @@ struct ShortcutsSettingsTab: View {
                 ShortcutTile(
                     icon: "pencil.and.scribble",
                     tint: .purple,
-                    title: "Captura con Anotación",
-                    subtitle: "Flechas, texto y highlights",
+                    title: "settings.shortcuts.annotated".localized,
+                    subtitle: "settings.shortcuts.annotated_subtitle".localized,
                     currentShortcut: settings.annotatedScreenshotHotKeyDisplayString()
                 ) { modifiers, keyCode in
                     settings.annotatedScreenshotHotKeyModifiers = modifiers
@@ -65,8 +65,8 @@ struct ShortcutsSettingsTab: View {
                 ShortcutTile(
                     icon: "film",
                     tint: .orange,
-                    title: "Grabar Clip",
-                    subtitle: "Exporta como GIF o video MP4",
+                    title: "settings.shortcuts.record_clip".localized,
+                    subtitle: "settings.shortcuts.record_clip_subtitle".localized,
                     currentShortcut: settings.gifHotKeyDisplayString()
                 ) { modifiers, keyCode in
                     settings.gifHotKeyModifiers = modifiers
@@ -76,7 +76,7 @@ struct ShortcutsSettingsTab: View {
             }
 
             VStack(spacing: 10) {
-                Text("⌘⇧5 y ⌘⇧6 pueden estar reservados por macOS; si un atajo no responde, elige otra combinación.")
+                Text("settings.shortcuts.reserved_note".localized)
                     .font(.caption)
                     .foregroundStyle(.tertiary)
                     .multilineTextAlignment(.center)
@@ -84,7 +84,7 @@ struct ShortcutsSettingsTab: View {
                 Button {
                     restoreDefaults()
                 } label: {
-                    Label("Restaurar valores por defecto", systemImage: "arrow.counterclockwise")
+                    Label("settings.shortcuts.restore_defaults".localized, systemImage: "arrow.counterclockwise")
                         .font(.caption)
                 }
                 .buttonStyle(.borderless)
@@ -158,7 +158,7 @@ private struct ShortcutTile: View {
                             .symbolEffect(.pulse)
                     }
 
-                    Text(isRecording ? "Presiona teclas…" : currentShortcut)
+                    Text(isRecording ? "settings.shortcuts.press_keys".localized : currentShortcut)
                         .font(.system(.caption, design: .monospaced).weight(.medium))
                 }
                 .padding(.horizontal, 10)
@@ -178,7 +178,7 @@ private struct ShortcutTile: View {
                 .contentShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
             }
             .buttonStyle(.plain)
-            .help(isRecording ? "Presiona la nueva combinación (Esc cancela)" : "Clic para cambiar el atajo")
+            .help(isRecording ? "settings.shortcuts.recording_help".localized : "settings.shortcuts.change_help".localized)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 18)

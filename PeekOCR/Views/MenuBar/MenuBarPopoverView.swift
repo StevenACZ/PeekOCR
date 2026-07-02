@@ -56,20 +56,20 @@ struct MenuBarPopoverView: View {
 
             ActionRow(
                 icon: "gearshape",
-                title: "Configuración",
-                subtitle: "Atajos, capturas, clips e historial",
+                title: "menu.settings".localized,
+                subtitle: "menu.settings.subtitle".localized,
                 action: openSettings
             )
 
             Divider()
                 .padding(.horizontal, 16)
 
-            ActionRow(icon: "info.circle", title: "Acerca de PeekOCR", action: openAbout)
+            ActionRow(icon: "info.circle", title: "menu.about".localized, action: openAbout)
 
             Divider()
                 .padding(.horizontal, 16)
 
-            ActionRow(icon: "power", title: "Salir de PeekOCR", isDestructive: true, action: quit)
+            ActionRow(icon: "power", title: "menu.quit".localized, isDestructive: true, action: quit)
                 .padding(.bottom, 4)
         }
         .frame(width: Theme.Layout.panelWidth)
@@ -110,21 +110,21 @@ struct MenuBarPopoverView: View {
             Spacer()
 
             HotkeyBadge(text: settings.captureHotKeyDisplayString())
-                .help("Atajo para capturar texto")
+                .help("menu.hotkey.help".localized)
         }
     }
 
     private var statusLine: String {
         if !missingPermissions.isEmpty {
-            return "Permisos pendientes"
+            return "menu.status.permissions_pending".localized
         }
         switch historyManager.items.count {
         case 0:
-            return "Listo para capturar"
+            return "menu.status.ready".localized
         case 1:
-            return "1 captura en el historial"
+            return "menu.status.history_one".localized
         case let count:
-            return "\(count) capturas en el historial"
+            return "menu.status.history_count".localized(count)
         }
     }
 
@@ -137,12 +137,12 @@ struct MenuBarPopoverView: View {
 
     private var historySection: some View {
         VStack(alignment: .leading, spacing: 6) {
-            SectionHeader(title: "Historial")
+            SectionHeader(title: "menu.history.title".localized)
                 .padding(.horizontal, 16)
 
             if historyManager.items.isEmpty {
                 EmptyStateView(
-                    detail: "Usa \(settings.captureHotKeyDisplayString()) para capturar texto"
+                    detail: "menu.history.empty_detail".localized(settings.captureHotKeyDisplayString())
                 )
             } else {
                 VStack(spacing: 2) {

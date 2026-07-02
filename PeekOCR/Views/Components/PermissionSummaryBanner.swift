@@ -22,11 +22,11 @@ struct PermissionSummaryBanner: View {
                 .padding(.top, 2)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text("Permisos pendientes")
+                Text("permissions.pending_title".localized)
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.primary)
 
-                Text("Activa \(permissionListText) para usar PeekOCR por completo.")
+                Text("permissions.pending_message".localized(permissionListText))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -34,7 +34,7 @@ struct PermissionSummaryBanner: View {
 
             Spacer(minLength: 8)
 
-            Button("Revisar") {
+            Button("permissions.review".localized) {
                 onReview()
             }
             .buttonStyle(.borderedProminent)
@@ -57,14 +57,14 @@ struct PermissionSummaryBanner: View {
 
         switch titles.count {
         case 0:
-            return "los permisos"
+            return "permissions.list_fallback".localized
         case 1:
             return titles[0]
         case 2:
-            return "\(titles[0]) y \(titles[1])"
+            return "permissions.list_two".localized(titles[0], titles[1])
         default:
             let head = titles.dropLast().joined(separator: ", ")
-            return "\(head) y \(titles.last ?? "")"
+            return "permissions.list_two".localized(head, titles.last ?? "")
         }
     }
 }

@@ -22,7 +22,7 @@ enum AnnotationWindowFactory {
             defer: false
         )
 
-        window.title = "Editor de Anotaciones"
+        window.title = "annotation.editor_window_title".localized
         window.titlebarAppearsTransparent = true
         window.titleVisibility = .hidden
         window.level = .floating

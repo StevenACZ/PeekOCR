@@ -264,8 +264,8 @@ struct GifClipActionFeedbackView: View {
         GifClipActionFeedbackView(
             feedback: GifClipActionFeedback(
                 tone: .progress,
-                title: "Guardando frame…",
-                message: "Se guardará como PNG en Descargas.",
+                title: "clip_editor.saving_frame".localized,
+                message: "clip_editor.frame_save_message".localized("PNG", "common.downloads".localized),
                 badgeText: "PNG"
             )
         )
@@ -273,7 +273,7 @@ struct GifClipActionFeedbackView: View {
         GifClipActionFeedbackView(
             feedback: GifClipActionFeedback(
                 tone: .success,
-                title: "Frame guardado",
+                title: "clip_editor.frame_saved".localized,
                 message: "PeekOCR_Frame_2026-04-18_19-48-22.png",
                 badgeText: "PNG"
             )
@@ -287,8 +287,8 @@ struct GifClipActionFeedbackView: View {
     GifClipActionFeedbackView(
         feedback: GifClipActionFeedback(
             tone: .progress,
-            title: "Exportando GIF…",
-            message: "Guardando en Descargas. Esto puede tardar unos segundos.",
+            title: "clip_editor.exporting_gif".localized,
+            message: "clip_editor.export_saving_message".localized("common.downloads".localized),
             badgeText: "GIF"
         ),
         layout: .prominent

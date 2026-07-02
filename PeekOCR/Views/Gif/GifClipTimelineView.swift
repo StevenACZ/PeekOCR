@@ -179,7 +179,7 @@ struct GifClipTimelineView: View {
         .contentShape(Rectangle())
         .offset(x: clampedOffsetX)
         .zIndex(10)
-        .accessibilityLabel(isLeading ? "Inicio" : "Fin")
+        .accessibilityLabel(isLeading ? "clip_editor.start".localized : "clip_editor.end".localized)
     }
 
     private func beginDragIfNeeded() {

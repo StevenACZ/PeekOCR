@@ -15,7 +15,7 @@ struct EmptyStateView: View {
 
     init(
         icon: String = "doc.text.magnifyingglass",
-        message: String = "No hay capturas recientes",
+        message: String = "menu.history.empty".localized,
         detail: String? = nil
     ) {
         self.icon = icon

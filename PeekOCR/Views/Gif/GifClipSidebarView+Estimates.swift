@@ -5,8 +5,8 @@ import Foundation
 extension GifClipSidebarView {
     func friendlyDirectoryName() -> String {
         let path = outputDirectory.path
-        if path.contains("/Downloads") || path.contains("/Descargas") { return "Descargas" }
-        if path.contains("/Desktop") || path.contains("/Escritorio") { return "Escritorio" }
+        if path.contains("/Downloads") || path.contains("/Descargas") { return "common.downloads".localized }
+        if path.contains("/Desktop") || path.contains("/Escritorio") { return "common.desktop_folder".localized }
         return outputDirectory.lastPathComponent
     }
 
@@ -48,10 +48,10 @@ extension GifClipSidebarView {
     func estimateSummary() -> String {
         switch exportFormat {
         case .gif:
-            return "GIF · \(gifOptions.profile.displayName) · \(gifOptions.fps) FPS"
+            return "clip_editor.estimate_gif_summary".localized(gifOptions.profile.displayName, gifOptions.fps)
         case .video:
             let resolution = videoOptions.resolution.displayName
-            return "Video · \(resolution) · \(videoOptions.fps) FPS · \(videoOptions.codec.displayName)"
+            return "clip_editor.estimate_video_summary".localized(resolution, videoOptions.fps, videoOptions.codec.displayName)
         }
     }
 }

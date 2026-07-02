@@ -13,7 +13,7 @@ final class PermissionAppDragSourceView: NSView, NSPasteboardItemDataProvider, N
     private let rowView = NSView()
     private let iconChrome = NSView()
     private let titleLabel: NSTextField
-    private let subtitleLabel = NSTextField(labelWithString: "Arrástrame hacia la lista")
+    private let subtitleLabel = NSTextField(labelWithString: "permissions.drag_card.subtitle".localized)
 
     init(hostApp: PermissionHostApp, accentColor: NSColor) {
         self.hostApp = hostApp

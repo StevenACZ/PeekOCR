@@ -10,11 +10,11 @@ enum LiveAnnotationTool: String, CaseIterable {
 
     var displayName: String {
         switch self {
-        case .select: return "Seleccionar"
-        case .arrow: return "Flecha"
-        case .text: return "Texto"
-        case .highlight: return "Highlight"
-        case .pen: return "Lápiz"
+        case .select: return "annotation.tool_select".localized
+        case .arrow: return "annotation.tool_arrow".localized
+        case .text: return "annotation.tool_text".localized
+        case .highlight: return "annotation.tool_highlight".localized
+        case .pen: return "annotation.tool_pen".localized
         }
     }
 

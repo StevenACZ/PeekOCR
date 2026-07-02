@@ -32,12 +32,12 @@ struct ScreenshotSettingsTab: View {
     // MARK: - Cards
 
     private var saveCard: some View {
-        SettingsCard(icon: "square.and.arrow.down", title: "Guardado") {
-            SettingsToggleRow(title: "Copiar al portapapeles", isOn: $settings.copyToClipboard)
+        SettingsCard(icon: "square.and.arrow.down", title: "settings.captures.saving".localized) {
+            SettingsToggleRow(title: "settings.captures.copy_to_clipboard".localized, isOn: $settings.copyToClipboard)
 
-            SettingsToggleRow(title: "Guardar como archivo", isOn: $settings.saveToFile)
+            SettingsToggleRow(title: "settings.captures.save_to_file".localized, isOn: $settings.saveToFile)
 
-            SettingsCaption("Puedes activar ambas opciones para copiar y guardar al mismo tiempo.")
+            SettingsCaption("settings.captures.save_both_caption".localized)
 
             if settings.saveToFile {
                 Divider()
@@ -53,7 +53,7 @@ struct ScreenshotSettingsTab: View {
     private var locationRows: some View {
         Group {
             HStack {
-                Text("Carpeta de destino")
+                Text("settings.captures.destination_folder".localized)
                     .font(.system(size: 13))
 
                 Spacer()
@@ -73,7 +73,7 @@ struct ScreenshotSettingsTab: View {
 
             if settings.saveLocation == .custom {
                 HStack {
-                    Text(settings.customSavePath.isEmpty ? "Ninguna seleccionada" : settings.customSavePath)
+                    Text(settings.customSavePath.isEmpty ? "settings.captures.no_folder_selected".localized : settings.customSavePath)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
@@ -81,7 +81,7 @@ struct ScreenshotSettingsTab: View {
 
                     Spacer()
 
-                    Button("Elegir...") {
+                    Button("settings.captures.choose".localized) {
                         chooseSaveFolder()
                     }
                     .buttonStyle(.bordered)
@@ -93,9 +93,9 @@ struct ScreenshotSettingsTab: View {
     }
 
     private var imageCard: some View {
-        SettingsCard(icon: "photo", title: "Imagen") {
+        SettingsCard(icon: "photo", title: "settings.captures.image".localized) {
             HStack {
-                Text("Formato")
+                Text("settings.captures.format".localized)
                     .font(.system(size: 13))
 
                 Spacer()
@@ -113,7 +113,7 @@ struct ScreenshotSettingsTab: View {
             if settings.imageFormat == .jpg {
                 VStack(alignment: .leading, spacing: 6) {
                     HStack {
-                        Text("Calidad JPG")
+                        Text("settings.captures.jpg_quality".localized)
                             .font(.system(size: 13))
 
                         Spacer()
@@ -134,7 +134,7 @@ struct ScreenshotSettingsTab: View {
 
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
-                    Text("Tamaño de imagen")
+                    Text("settings.captures.image_size".localized)
                         .font(.system(size: 13))
 
                     Spacer()
@@ -163,17 +163,17 @@ struct ScreenshotSettingsTab: View {
 
             SettingsCaption(
                 settings.imageScale < 1.0
-                    ? "La imagen se reducirá al \(Int(settings.imageScale * 100))% de su tamaño original."
-                    : "La imagen se guardará a tamaño completo (máxima calidad)."
+                    ? "settings.captures.scale_caption_reduced".localized(Int(settings.imageScale * 100))
+                    : "settings.captures.scale_caption_full".localized
             )
         }
         .animation(.smooth(duration: 0.25), value: settings.imageFormat)
     }
 
     private var annotationsCard: some View {
-        SettingsCard(icon: "pencil.and.scribble", title: "Anotaciones") {
+        SettingsCard(icon: "pencil.and.scribble", title: "settings.captures.annotations".localized) {
             annotationSlider(
-                label: "Grosor de línea",
+                label: "settings.captures.stroke_width".localized,
                 value: $appSettings.defaultAnnotationStrokeWidth,
                 range: 1...10,
                 step: 1,
@@ -181,7 +181,7 @@ struct ScreenshotSettingsTab: View {
             )
 
             annotationSlider(
-                label: "Grosor del lápiz",
+                label: "settings.captures.pen_width".localized,
                 value: $appSettings.defaultPenStrokeWidth,
                 range: 1...12,
                 step: 1,
@@ -189,14 +189,14 @@ struct ScreenshotSettingsTab: View {
             )
 
             annotationSlider(
-                label: "Tamaño de fuente",
+                label: "settings.captures.font_size".localized,
                 value: $appSettings.defaultAnnotationFontSize,
                 range: 12...48,
                 step: 2,
                 unit: "pt"
             )
 
-            SettingsCaption("Estos valores se usarán como predeterminados al abrir el editor de anotaciones.")
+            SettingsCaption("settings.captures.annotations_caption".localized)
         }
     }
 
@@ -243,8 +243,8 @@ struct ScreenshotSettingsTab: View {
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = false
         panel.canCreateDirectories = true
-        panel.prompt = "Seleccionar"
-        panel.message = "Elige la carpeta donde guardar las capturas"
+        panel.prompt = "settings.captures.select".localized
+        panel.message = "settings.captures.choose_folder_message".localized
 
         if panel.runModal() == .OK, let url = panel.url {
             settings.customSavePath = url.path

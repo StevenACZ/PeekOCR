@@ -168,7 +168,7 @@ final class MenuBarStatusController: NSObject, NSPopoverDelegate, NSWindowDelega
                 styleMask: [.titled, .closable, .miniaturizable],
                 backing: .buffered,
                 defer: false)
-            target.title = "Configuración de PeekOCR"
+            target.title = "menu.settings_window.title".localized
             target.titleVisibility = .hidden
             target.titlebarAppearsTransparent = true
             target.toolbarStyle = .unified
@@ -195,7 +195,7 @@ final class MenuBarStatusController: NSObject, NSPopoverDelegate, NSWindowDelega
                 styleMask: [.titled, .closable, .fullSizeContentView],
                 backing: .buffered,
                 defer: false)
-            target.title = "Acerca de PeekOCR"
+            target.title = "menu.about".localized
             target.titleVisibility = .hidden
             target.titlebarAppearsTransparent = true
             target.isReleasedWhenClosed = false

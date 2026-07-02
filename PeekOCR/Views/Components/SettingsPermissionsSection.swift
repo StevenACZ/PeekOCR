@@ -28,7 +28,7 @@ struct SettingsPermissionsSection: View {
                 permissionRows
 
                 SettingsCaption(
-                    "PeekOCR puede guiarte dentro de Ajustes del Sistema y actualizará el estado cuando regreses a la app."
+                    "permissions.settings_caption".localized
                 )
             }
         }
@@ -86,18 +86,18 @@ struct SettingsPermissionsSection: View {
             }
 
             VStack(alignment: .leading, spacing: 4) {
-                Text("Todos los permisos activos")
+                Text("permissions.all_granted_title".localized)
                     .font(.body.weight(.semibold))
                     .foregroundStyle(.primary)
 
-                Text("Grabación de pantalla y accesibilidad listos.")
+                Text("permissions.all_granted_subtitle".localized)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
             Spacer(minLength: 8)
 
-            Text("\(AppPermission.allCases.count) activos")
+            Text("permissions.granted_count".localized(AppPermission.allCases.count))
                 .font(.caption.weight(.semibold))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 3)
@@ -144,7 +144,7 @@ struct SettingsPermissionsSection: View {
 
 #Preview("Settings Permissions Section") {
     VStack(alignment: .leading, spacing: 12) {
-        Label("Permisos", systemImage: "lock.shield")
+        Label("settings.general.permissions".localized, systemImage: "lock.shield")
             .font(.headline)
         SettingsPermissionsSection()
     }
