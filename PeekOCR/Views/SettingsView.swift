@@ -48,7 +48,6 @@ struct SettingsView: View {
             tabContent(for: .shortcuts) { ShortcutsSettingsTab() }
             tabContent(for: .screenshots) { ScreenshotSettingsTab() }
             tabContent(for: .clips) { ClipSettingsTab() }
-            tabContent(for: .history) { HistorySettingsTab() }
         }
         .animation(Theme.Anim.easeOut, value: selectedTab)
     }
@@ -72,7 +71,6 @@ enum SettingsTab: String, CaseIterable, Identifiable {
     case shortcuts
     case screenshots
     case clips
-    case history
 
     var id: String { rawValue }
 
@@ -82,7 +80,6 @@ enum SettingsTab: String, CaseIterable, Identifiable {
         case .shortcuts: return "Atajos"
         case .screenshots: return "Capturas"
         case .clips: return "Clips"
-        case .history: return "Historial"
         }
     }
 }

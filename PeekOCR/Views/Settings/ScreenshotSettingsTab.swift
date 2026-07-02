@@ -17,13 +17,13 @@ struct ScreenshotSettingsTab: View {
         ScrollView {
             HStack(alignment: .top, spacing: 16) {
                 VStack(spacing: 12) {
-                    hotkeyCard
                     saveCard
+                    imageCard
                 }
                 .frame(maxWidth: .infinity, alignment: .top)
 
                 VStack(spacing: 12) {
-                    imageCard
+                    captureShortcutsCard
                     annotationsCard
                 }
                 .frame(maxWidth: .infinity, alignment: .top)
@@ -34,24 +34,32 @@ struct ScreenshotSettingsTab: View {
 
     // MARK: - Cards
 
-    private var hotkeyCard: some View {
-        SettingsCard(icon: "keyboard", title: "Atajo de teclado") {
-            HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 1) {
-                    Text("Captura de Pantalla")
-                        .font(.system(size: 13))
+    private var captureShortcutsCard: some View {
+        SettingsCard(icon: "keyboard", title: "Atajos de captura") {
+            shortcutRow(
+                title: "Captura de Pantalla",
+                shortcut: appSettings.screenshotHotKeyDisplayString()
+            )
 
-                    Text("Captura y guarda una imagen del área seleccionada")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
+            Divider()
 
-                Spacer()
+            shortcutRow(
+                title: "Captura con Anotación",
+                shortcut: appSettings.annotatedScreenshotHotKeyDisplayString()
+            )
 
-                HotkeyBadge(text: appSettings.screenshotHotKeyDisplayString())
-            }
+            SettingsCaption("Puedes cambiar las combinaciones en la pestaña Atajos.")
+        }
+    }
 
-            SettingsCaption("Puedes cambiar la combinación en la pestaña Atajos.")
+    private func shortcutRow(title: String, shortcut: String) -> some View {
+        HStack {
+            Text(title)
+                .font(.system(size: 13))
+
+            Spacer()
+
+            HotkeyBadge(text: shortcut)
         }
     }
 

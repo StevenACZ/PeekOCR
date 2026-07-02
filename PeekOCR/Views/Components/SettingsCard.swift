@@ -11,6 +11,7 @@ import SwiftUI
 struct SettingsCard<Content: View>: View {
     let icon: String
     let title: String
+    var fillsHeight = false
     @ViewBuilder let content: () -> Content
 
     var body: some View {
@@ -29,7 +30,7 @@ struct SettingsCard<Content: View>: View {
             content()
         }
         .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, maxHeight: fillsHeight ? .infinity : nil, alignment: .topLeading)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(Color.primary.opacity(0.04))

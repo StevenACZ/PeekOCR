@@ -22,11 +22,11 @@ struct ClipSettingsTab: View {
                 VStack(spacing: 12) {
                     durationCard
                     recordingCard
+                    exportCard
                 }
                 .frame(maxWidth: .infinity, alignment: .top)
 
                 VStack(spacing: 12) {
-                    exportCard
                     gifCard
                     videoCard
                 }
