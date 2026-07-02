@@ -13,9 +13,14 @@ struct MenuBarPanelHost: View {
     let openAbout: () -> Void
     let quit: () -> Void
 
+    @ObservedObject private var localization = LocalizationManager.shared
+
     var body: some View {
         MenuBarPopoverView(openSettings: openSettings, openAbout: openAbout, quit: quit)
             .fixedSize(horizontal: false, vertical: true)
+            // Identity reset so every cached subtree re-resolves its strings
+            // when the app language changes.
+            .id(localization.language)
     }
 }
 

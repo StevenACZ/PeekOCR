@@ -52,6 +52,9 @@ struct SettingsView: View {
             tabContent(for: .clips) { ClipSettingsTab() }
         }
         .animation(Theme.Anim.easeOut, value: selectedTab)
+        // Identity reset: keep-alive tabs skip re-rendering when nothing they
+        // observe changes, which would leave their strings in the old language.
+        .id(localization.language)
     }
 
     @ViewBuilder

@@ -9,6 +9,8 @@ import SwiftUI
 
 /// About window: app identity, version, feature chips, and links.
 struct AboutView: View {
+    @ObservedObject private var localization = LocalizationManager.shared
+
     private var version: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—"
     }
@@ -36,6 +38,8 @@ struct AboutView: View {
         .frame(width: 380)
         .fixedSize(horizontal: false, vertical: true)
         .background(backgroundLayer)
+        // Identity reset so cached subtrees re-resolve strings on language change.
+        .id(localization.language)
     }
 
     // MARK: - Sections

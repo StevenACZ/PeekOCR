@@ -168,7 +168,6 @@ final class MenuBarStatusController: NSObject, NSPopoverDelegate, NSWindowDelega
                 styleMask: [.titled, .closable, .miniaturizable],
                 backing: .buffered,
                 defer: false)
-            target.title = "menu.settings_window.title".localized
             target.titleVisibility = .hidden
             target.titlebarAppearsTransparent = true
             target.toolbarStyle = .unified
@@ -176,6 +175,8 @@ final class MenuBarStatusController: NSObject, NSPopoverDelegate, NSWindowDelega
             target.delegate = self
             target.setFrameAutosaveName("PeekOCRSettingsWindow")
         }
+        // Re-applied on every present so a reused window follows language changes.
+        target.title = "menu.settings_window.title".localized
         let wasVisible = target.isVisible
         target.contentViewController = hosting
         // NSHostingController collapses to the view minimum; force the intended size back.
@@ -195,7 +196,6 @@ final class MenuBarStatusController: NSObject, NSPopoverDelegate, NSWindowDelega
                 styleMask: [.titled, .closable, .fullSizeContentView],
                 backing: .buffered,
                 defer: false)
-            target.title = "menu.about".localized
             target.titleVisibility = .hidden
             target.titlebarAppearsTransparent = true
             target.isReleasedWhenClosed = false
@@ -204,6 +204,8 @@ final class MenuBarStatusController: NSObject, NSPopoverDelegate, NSWindowDelega
             target.delegate = self
             target.setFrameAutosaveName("PeekOCRAboutWindow")
         }
+        // Re-applied on every present so a reused window follows language changes.
+        target.title = "menu.about".localized
         let wasVisible = target.isVisible
         target.contentViewController = hosting
         target.setContentSize(hosting.view.fittingSize)
