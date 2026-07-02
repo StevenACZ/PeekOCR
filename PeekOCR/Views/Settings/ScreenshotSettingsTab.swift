@@ -22,46 +22,14 @@ struct ScreenshotSettingsTab: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .top)
 
-                VStack(spacing: 12) {
-                    captureShortcutsCard
-                    annotationsCard
-                }
-                .frame(maxWidth: .infinity, alignment: .top)
+                annotationsCard
+                    .frame(maxWidth: .infinity, alignment: .top)
             }
             .padding(16)
         }
     }
 
     // MARK: - Cards
-
-    private var captureShortcutsCard: some View {
-        SettingsCard(icon: "keyboard", title: "Atajos de captura") {
-            shortcutRow(
-                title: "Captura de Pantalla",
-                shortcut: appSettings.screenshotHotKeyDisplayString()
-            )
-
-            Divider()
-
-            shortcutRow(
-                title: "Captura con Anotación",
-                shortcut: appSettings.annotatedScreenshotHotKeyDisplayString()
-            )
-
-            SettingsCaption("Puedes cambiar las combinaciones en la pestaña Atajos.")
-        }
-    }
-
-    private func shortcutRow(title: String, shortcut: String) -> some View {
-        HStack {
-            Text(title)
-                .font(.system(size: 13))
-
-            Spacer()
-
-            HotkeyBadge(text: shortcut)
-        }
-    }
 
     private var saveCard: some View {
         SettingsCard(icon: "square.and.arrow.down", title: "Guardado") {

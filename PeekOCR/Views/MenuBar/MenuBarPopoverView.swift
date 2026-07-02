@@ -130,6 +130,11 @@ struct MenuBarPopoverView: View {
 
     // MARK: - History
 
+    /// The popover shows only the latest captures; the full list lives in Settings.
+    private var recentItems: [CaptureItem] {
+        Array(historyManager.items.prefix(4))
+    }
+
     private var historySection: some View {
         VStack(alignment: .leading, spacing: 6) {
             SectionHeader(title: "Historial")
@@ -141,7 +146,7 @@ struct MenuBarPopoverView: View {
                 )
             } else {
                 VStack(spacing: 2) {
-                    ForEach(historyManager.items) { item in
+                    ForEach(recentItems) { item in
                         HistoryItemRow(item: item) {
                             historyManager.copyItem(item)
                         }
@@ -153,7 +158,7 @@ struct MenuBarPopoverView: View {
                         )
                     }
                 }
-                .animation(.spring(duration: 0.35, bounce: 0.15), value: historyManager.items.map(\.id))
+                .animation(.spring(duration: 0.35, bounce: 0.15), value: recentItems.map(\.id))
             }
         }
     }
