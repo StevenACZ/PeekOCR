@@ -128,15 +128,7 @@ struct GeneralSettingsTab: View {
 
     private var permissionsCard: some View {
         SettingsCard(icon: "lock.shield", title: "Permisos") {
-            PermissionStatusRow(permission: .screenRecording)
-
-            Divider()
-
-            PermissionStatusRow(permission: .accessibility)
-
-            SettingsCaption(
-                "PeekOCR puede guiarte dentro de Ajustes del Sistema y actualizará el estado cuando regreses a la app."
-            )
+            SettingsPermissionsSection()
         }
     }
 
