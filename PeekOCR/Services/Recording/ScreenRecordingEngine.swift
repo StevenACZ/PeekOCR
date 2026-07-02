@@ -36,9 +36,9 @@ final class ScreenRecordingEngine: NSObject {
 
         var errorDescription: String? {
             switch self {
-            case .displayNotFound: return "No se encontró la pantalla a grabar."
-            case .regionTooSmall: return "La región seleccionada es demasiado pequeña."
-            case .concatenationFailed: return "No se pudieron unir los segmentos grabados."
+            case .displayNotFound: return "recording.display_not_found".localized
+            case .regionTooSmall: return "recording.region_too_small".localized
+            case .concatenationFailed: return "recording.concatenation_failed".localized
             }
         }
     }

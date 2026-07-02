@@ -34,7 +34,7 @@ struct PermissionStatusRow: View {
                     Text(permission.title)
                         .font(.body.weight(.semibold))
 
-                    Text(isGranted ? "Activo" : "Pendiente")
+                    Text(isGranted ? "permissions.status_active".localized : "permissions.status_pending".localized)
                         .font(.caption.weight(.semibold))
                         .padding(.horizontal, 8)
                         .padding(.vertical, 3)
@@ -50,7 +50,7 @@ struct PermissionStatusRow: View {
                     .foregroundStyle(.secondary)
 
                 if !isGranted {
-                    Text("PeekOCR te lleva al ajuste correcto y refresca el estado al volver.")
+                    Text("permissions.guided_hint".localized)
                         .font(.caption2)
                         .foregroundStyle(.tertiary)
                 }
@@ -62,7 +62,7 @@ struct PermissionStatusRow: View {
                 Image(systemName: "checkmark.circle.fill")
                     .foregroundStyle(.green)
             } else {
-                Button("Activar") {
+                Button("permissions.enable".localized) {
                     PermissionService.shared.requestInteractively(permission)
                     refreshPermissionStatus()
                 }

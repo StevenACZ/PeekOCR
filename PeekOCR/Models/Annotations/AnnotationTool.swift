@@ -31,12 +31,12 @@ enum AnnotationTool: String, CaseIterable {
     /// Display name for the tool
     var displayName: String {
         switch self {
-        case .select: return "Seleccionar"
-        case .arrow: return "Flecha"
-        case .text: return "Texto"
-        case .freehand: return "Dibujo libre"
-        case .rectangle: return "Rectangulo"
-        case .oval: return "Ovalo"
+        case .select: return "annotation.tool_select".localized
+        case .arrow: return "annotation.tool_arrow".localized
+        case .text: return "annotation.tool_text".localized
+        case .freehand: return "annotation.tool_freehand".localized
+        case .rectangle: return "annotation.tool_rectangle".localized
+        case .oval: return "annotation.tool_oval".localized
         }
     }
 

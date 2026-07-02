@@ -20,7 +20,7 @@ struct TextInputOverlay: View {
 
     var body: some View {
         GeometryReader { geometry in
-            TextField("Escribe aquí...", text: $text)
+            TextField("annotation.text_placeholder".localized, text: $text)
                 .textFieldStyle(.plain)
                 .font(.system(size: max(14, fontSize), weight: .bold))
                 .foregroundColor(.primary)

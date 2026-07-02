@@ -21,7 +21,7 @@ struct StrokeWidthPicker: View {
         VStack(alignment: .leading, spacing: 12) {
             // Header with badge
             HStack {
-                Text("GROSOR")
+                Text("annotation.stroke_header".localized)
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(.secondary)
                     .tracking(0.5)
@@ -52,11 +52,11 @@ struct StrokeWidthPicker: View {
 
                     // Min/Max labels
                     HStack {
-                        Text("Fino")
+                        Text("annotation.stroke_thin".localized)
                             .font(.system(size: 9))
                             .foregroundStyle(.tertiary)
                         Spacer()
-                        Text("Grueso")
+                        Text("annotation.stroke_thick".localized)
                             .font(.system(size: 9))
                             .foregroundStyle(.tertiary)
                     }

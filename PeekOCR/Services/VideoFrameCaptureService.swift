@@ -20,15 +20,15 @@ enum VideoFrameCaptureError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .invalidTime:
-            return "No se pudo capturar el frame en ese instante."
+            return "capture.error_frame_time".localized
         case .directoryCreationFailed(let path, _):
-            return "No se pudo crear la carpeta de salida: \(path)"
+            return "capture.error_output_directory".localized(path)
         case .frameExtractionFailed:
-            return "No se pudo extraer el frame del video."
+            return "capture.error_frame_extraction".localized
         case .encodingFailed(let format):
-            return "No se pudo codificar la captura en formato \(format.fileExtension.uppercased())."
+            return "capture.error_encoding_format".localized(format.fileExtension.uppercased())
         case .saveFailed(let path, _):
-            return "No se pudo guardar la captura en: \(path)"
+            return "capture.error_save_path".localized(path)
         }
     }
 }

@@ -80,7 +80,7 @@ struct GifClipEditorView: View {
         ) {
             Button("OK") {}
         } message: {
-            Text(errorAlertMessage ?? "Error desconocido")
+            Text(errorAlertMessage ?? "common.unknown_error".localized)
         }
     }
 
@@ -148,7 +148,7 @@ struct GifClipEditorView: View {
 
                 GifClipTimelineReadoutView(startSeconds: state.startSeconds, endSeconds: state.endSeconds)
             } else {
-                Text("Cargando…")
+                Text("common.loading".localized)
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -158,7 +158,7 @@ struct GifClipEditorView: View {
 
     private var bottomBar: some View {
         HStack(alignment: .center, spacing: 12) {
-            Button("Cancelar", role: .cancel) {
+            Button("common.cancel".localized, role: .cancel) {
                 let finalVideoURL = state.videoURL
                 state.stopPlayback()
                 try? FileManager.default.removeItem(at: finalVideoURL)
@@ -179,7 +179,7 @@ struct GifClipEditorView: View {
                 Button {
                     Task { await reRecord() }
                 } label: {
-                    Label("Regrabar", systemImage: "arrow.clockwise")
+                    Label("clip_editor.rerecord".localized, systemImage: "arrow.clockwise")
                         .labelStyle(.titleAndIcon)
                 }
                 .buttonStyle(.bordered)

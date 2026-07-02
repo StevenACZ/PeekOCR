@@ -84,7 +84,7 @@ final class GifClipEditorState: NSObject, ObservableObject {
             }
         } catch {
             AppLogger.capture.error("Failed to load video duration: \(error.localizedDescription)")
-            loadErrorMessage = "No se pudo cargar el video. Intenta grabar de nuevo."
+            loadErrorMessage = "capture.error_video_load".localized
             durationSeconds = 0
             startSeconds = 0
             endSeconds = 0

@@ -17,18 +17,18 @@ enum AppPermission: CaseIterable, Hashable {
     var title: String {
         switch self {
         case .screenRecording:
-            return "Grabar Pantalla"
+            return "permissions.screen_recording.title".localized
         case .accessibility:
-            return "Accesibilidad"
+            return "permissions.accessibility.title".localized
         }
     }
 
     var summary: String {
         switch self {
         case .screenRecording:
-            return "Necesario para OCR, capturas y clips."
+            return "permissions.screen_recording.summary".localized
         case .accessibility:
-            return "Necesario para atajos globales."
+            return "permissions.accessibility.summary".localized
         }
     }
 
@@ -53,24 +53,23 @@ enum AppPermission: CaseIterable, Hashable {
     var overlayTitle: String {
         switch self {
         case .screenRecording:
-            return "Activa Grabar Pantalla"
+            return "permissions.screen_recording.overlay_title".localized
         case .accessibility:
-            return "Activa Accesibilidad"
+            return "permissions.accessibility.overlay_title".localized
         }
     }
 
     var overlayMessage: String {
         switch self {
         case .screenRecording:
-            return
-                "Si PeekOCR ya aparece en la lista, solo activa el interruptor. Si no aparece todavía, arrástralo desde la tarjeta inferior."
+            return "permissions.screen_recording.overlay_message".localized
         case .accessibility:
-            return "Si PeekOCR ya aparece en la lista, solo habilítalo. Si todavía no está visible, arrástralo desde la tarjeta inferior."
+            return "permissions.accessibility.overlay_message".localized
         }
     }
 
     var overlayFootnote: String {
-        "Cuando vuelvas a PeekOCR, actualizaremos este estado automáticamente."
+        "permissions.overlay.footnote".localized
     }
 
     private var extensionAnchor: String {

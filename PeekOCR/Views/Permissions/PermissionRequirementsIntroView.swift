@@ -40,7 +40,7 @@ struct PermissionRequirementsIntroView: View {
                         Text(titleText)
                             .font(.title2.weight(.semibold))
 
-                        Text("Faltan accesos del sistema para usar captura, OCR y atajos globales sin fricción.")
+                        Text("permissions.intro.subtitle".localized)
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -109,22 +109,22 @@ struct PermissionRequirementsIntroView: View {
     private var titleText: String {
         switch missingCount {
         case 0:
-            return "Todo listo para capturar"
+            return "permissions.intro.title.ready".localized
         case 1:
-            return "Activa el permiso pendiente"
+            return "permissions.intro.title.one".localized
         default:
-            return "Activa los permisos pendientes"
+            return "permissions.intro.title.many".localized
         }
     }
 
     private var summaryBadgeText: String {
         switch missingCount {
         case 0:
-            return "Todo listo"
+            return "permissions.intro.badge.ready".localized
         case 1:
-            return "1 pendiente"
+            return "permissions.intro.badge.one".localized
         default:
-            return "\(missingCount) pendientes"
+            return "permissions.intro.badge.many".localized(missingCount)
         }
     }
 
@@ -134,9 +134,9 @@ struct PermissionRequirementsIntroView: View {
 
     private var helperText: String {
         if missingCount == 0 {
-            return "Ya puedes volver a PeekOCR y usar OCR, capturas y atajos globales con normalidad."
+            return "permissions.intro.helper.ready".localized
         }
 
-        return "Te guiaremos al ajuste correcto y verificaremos el estado cuando regreses."
+        return "permissions.intro.helper.pending".localized
     }
 }

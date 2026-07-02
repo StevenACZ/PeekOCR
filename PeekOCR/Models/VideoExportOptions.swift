@@ -27,12 +27,14 @@ enum VideoExportResolution: String, CaseIterable, Identifiable {
     }
 
     var helpText: String {
+        let dimensions: String
         switch self {
-        case .p720: return "Máx 1280×720 (mantiene proporción)."
-        case .p1080: return "Máx 1920×1080 (mantiene proporción)."
-        case .p1440: return "Máx 2560×1440 (mantiene proporción)."
-        case .p2160: return "Máx 3840×2160 (mantiene proporción)."
+        case .p720: dimensions = "1280×720"
+        case .p1080: dimensions = "1920×1080"
+        case .p1440: dimensions = "2560×1440"
+        case .p2160: dimensions = "3840×2160"
         }
+        return "settings.clips.resolution_help".localized(dimensions)
     }
 
     var maxSize: CGSize {

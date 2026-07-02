@@ -7,46 +7,71 @@
 
 import SwiftUI
 
-/// Row displaying a capture history item
+/// Row displaying a capture history item; clicking copies it back to the clipboard.
 struct HistoryItemRow: View {
     let item: CaptureItem
     let onTap: () -> Void
 
     @State private var isHovered = false
+    @State private var showCopied = false
 
     var body: some View {
-        Button(action: onTap) {
-            HStack(spacing: 12) {
-                Image(systemName: item.icon)
+        Button(action: copy) {
+            HStack(spacing: 10) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        .fill(item.captureType.displayColor.opacity(0.14))
+                        .frame(width: 24, height: 24)
+
+                    Image(systemName: item.icon)
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(item.captureType.displayColor)
+                }
+
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(item.displayText)
+                        .font(.caption)
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+
+                    Text(item.formattedTime)
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
+
+                Spacer(minLength: 8)
+
+                Image(systemName: showCopied ? "checkmark.circle.fill" : "doc.on.doc")
                     .font(.caption)
-                    .foregroundStyle(item.captureType.displayColor)
-                    .frame(width: 16)
-
-                Text(item.displayText)
-                    .font(.caption)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-
-                Spacer()
-
-                Text(item.formattedTime)
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(showCopied ? Color.green : Color.secondary)
+                    .opacity(showCopied || isHovered ? 1 : 0)
+                    .contentTransition(.symbolEffect(.replace))
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
             .background(
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(isHovered ? Color.blue.opacity(0.12) : Color.clear)
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(isHovered ? Color(nsColor: .controlBackgroundColor) : Color.clear)
             )
-            .contentShape(Rectangle())
+            .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         }
         .buttonStyle(.plain)
-        .animation(.easeOut(duration: 0.12), value: isHovered)
-        .onHover { hovering in
-            isHovered = hovering
+        .animation(Theme.Anim.easeOut, value: isHovered)
+        .onHover { isHovered = $0 }
+        .padding(.horizontal, 8)
+        .help("menu.history.copy_help".localized)
+    }
+
+    private func copy() {
+        onTap()
+        withAnimation(Theme.Anim.spring) {
+            showCopied = true
         }
-        .padding(.horizontal, 6)
-        .help("Clic para copiar")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+            withAnimation(Theme.Anim.easeOut) {
+                showCopied = false
+            }
+        }
     }
 }

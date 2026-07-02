@@ -34,12 +34,12 @@ struct GifClipPlaybackControlsView: View {
                 stepButton(
                     symbol: "backward.frame.fill",
                     action: onStepBackward,
-                    help: "Frame anterior  (←)"
+                    help: "clip_editor.step_backward_help".localized
                 )
                 stepButton(
                     symbol: "forward.frame.fill",
                     action: onStepForward,
-                    help: "Frame siguiente  (→)"
+                    help: "clip_editor.step_forward_help".localized
                 )
             }
 
@@ -54,7 +54,7 @@ struct GifClipPlaybackControlsView: View {
             }
             .buttonStyle(.plain)
             .disabled(isCaptureDisabled)
-            .help("Guardar frame actual como imagen")
+            .help("clip_editor.capture_frame_help".localized)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
@@ -77,7 +77,7 @@ struct GifClipPlaybackControlsView: View {
                 )
         }
         .buttonStyle(.plain)
-        .help(isPlaying ? "Pausar  (Espacio)" : "Reproducir  (Espacio)")
+        .help(isPlaying ? "clip_editor.pause_help".localized : "clip_editor.play_help".localized)
     }
 
     private func stepButton(symbol: String, action: @escaping () -> Void, help: String) -> some View {

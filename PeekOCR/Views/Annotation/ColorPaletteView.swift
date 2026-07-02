@@ -29,7 +29,7 @@ struct ColorPaletteView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             // Section header
-            Text("COLOR")
+            Text("annotation.color_header".localized)
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(.secondary)
                 .tracking(0.5)
@@ -118,15 +118,15 @@ private struct ColorCircle: View {
     /// Display name for the color
     private var colorName: String {
         switch color {
-        case .red: return "Rojo"
-        case .orange: return "Naranja"
-        case .yellow: return "Amarillo"
-        case .green: return "Verde"
-        case .blue: return "Azul"
-        case .purple: return "Morado"
-        case .black: return "Negro"
-        case .white: return "Blanco"
-        default: return "Color"
+        case .red: return "annotation.color_red".localized
+        case .orange: return "annotation.color_orange".localized
+        case .yellow: return "annotation.color_yellow".localized
+        case .green: return "annotation.color_green".localized
+        case .blue: return "annotation.color_blue".localized
+        case .purple: return "annotation.color_purple".localized
+        case .black: return "annotation.color_black".localized
+        case .white: return "annotation.color_white".localized
+        default: return "annotation.color_generic".localized
         }
     }
 }

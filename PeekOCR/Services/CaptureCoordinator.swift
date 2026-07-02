@@ -225,7 +225,7 @@ final class CaptureCoordinator: ObservableObject {
             displayText = url.lastPathComponent
             AppLogger.capture.info("Screenshot saved: \(url.lastPathComponent)")
         } else {
-            displayText = "Captura copiada al portapapeles"
+            displayText = "capture.copied_to_clipboard".localized
             AppLogger.capture.info("Screenshot copied to clipboard (not saved to file)")
         }
 

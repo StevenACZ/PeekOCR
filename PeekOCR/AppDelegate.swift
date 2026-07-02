@@ -8,70 +8,36 @@
 import AppKit
 import SwiftUI
 
-class AppDelegate: NSObject, NSApplicationDelegate {
+@MainActor
+final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Properties
 
-    private var statusItem: NSStatusItem?
-    private var popover: NSPopover?
-
-    let appState = AppState.shared
     private let hotKeyManager = HotKeyManager.shared
-    private let historyManager = HistoryManager.shared
+    private var menuBarController: MenuBarStatusController?
 
     // MARK: - Lifecycle
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        setupMenuBar()
-        setupHotKeys()
-        CaptureSoundService.shared.prewarm()
-
-        // Hide dock icon
+        // Menu-bar-only agent app: no Dock icon.
         NSApp.setActivationPolicy(.accessory)
+
+        let controller = MenuBarStatusController()
+        controller.start()
+        menuBarController = controller
+
+        hotKeyManager.registerHotKeys()
+        CaptureSoundService.shared.prewarm()
     }
 
     func applicationDidBecomeActive(_ notification: Notification) {
         hotKeyManager.refreshRegistrationIfNeeded()
     }
 
-    // MARK: - Menu Bar Setup
-
-    private func setupMenuBar() {
-        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-
-        if let button = statusItem?.button {
-            button.image = NSImage(systemSymbolName: "eye", accessibilityDescription: "PeekOCR")
-            button.action = #selector(togglePopover)
-            button.target = self
-        }
-
-        popover = NSPopover()
-        popover?.contentSize = NSSize(width: 320, height: 400)
-        popover?.behavior = .transient
-        popover?.contentViewController = NSHostingController(
-            rootView: MenuBarPopoverView()
-                .environmentObject(appState)
-        )
-    }
-    // MARK: - Hotkeys
-
-    private func setupHotKeys() {
-        hotKeyManager.registerHotKeys()
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        false
     }
 
-    // MARK: - Actions
-
-    @objc private func togglePopover() {
-        guard let button = statusItem?.button, let popover = popover else { return }
-
-        if popover.isShown {
-            popover.performClose(nil)
-        } else {
-            popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
-            NSApp.activate(ignoringOtherApps: true)
-        }
-    }
-
-    func closePopover() {
-        popover?.performClose(nil)
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        false
     }
 }

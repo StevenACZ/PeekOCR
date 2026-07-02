@@ -12,10 +12,9 @@ struct PeekOCRApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
     var body: some Scene {
-        // Settings window accessible from menu
+        // Menu-bar-only app: every real window is managed by MenuBarStatusController.
         Settings {
-            SettingsView()
-                .environmentObject(appDelegate.appState)
+            EmptyView()
         }
     }
 }

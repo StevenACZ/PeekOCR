@@ -39,7 +39,7 @@ struct GifClipSidebarView: View {
 
     private var header: some View {
         HStack(spacing: 12) {
-            Text("Exportación")
+            Text("clip_editor.export_section".localized)
                 .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(.primary)
 
@@ -69,9 +69,9 @@ struct GifClipSidebarView: View {
     }
 
     private var gifQualityCard: some View {
-        cardSection(title: "Calidad") {
+        cardSection(title: "clip_editor.quality".localized) {
             VStack(alignment: .leading, spacing: 14) {
-                fieldLabel("Perfil")
+                fieldLabel("clip_editor.profile".localized)
                 Picker(
                     "",
                     selection: Binding(
@@ -101,9 +101,9 @@ struct GifClipSidebarView: View {
     }
 
     private var videoQualityCard: some View {
-        cardSection(title: "Calidad") {
+        cardSection(title: "clip_editor.quality".localized) {
             VStack(alignment: .leading, spacing: 14) {
-                fieldLabel("Resolución")
+                fieldLabel("clip_editor.resolution".localized)
                 Picker("", selection: $videoOptions.resolution) {
                     ForEach(VideoExportResolution.allCases) { resolution in
                         Text(resolution.displayName).tag(resolution)
@@ -133,21 +133,21 @@ struct GifClipSidebarView: View {
                 .pickerStyle(.segmented)
                 .labelsHidden()
                 .frame(maxWidth: .infinity)
-                .help("Si la fuente tiene menos FPS, se exporta al ritmo de la fuente.")
+                .help("clip_editor.fps_source_help".localized)
             }
         }
     }
 
     private var loopCard: some View {
-        cardSection(title: "Opciones GIF") {
-            Toggle("Loop infinito", isOn: $gifOptions.isLoopEnabled)
+        cardSection(title: "clip_editor.gif_options".localized) {
+            Toggle("clip_editor.infinite_loop".localized, isOn: $gifOptions.isLoopEnabled)
                 .toggleStyle(.switch)
-                .help("Repite el GIF indefinidamente. Desactívalo para reproducir una sola vez.")
+                .help("clip_editor.infinite_loop_help".localized)
         }
     }
 
     private var outputCard: some View {
-        cardSection(title: "Salida") {
+        cardSection(title: "clip_editor.output".localized) {
             VStack(alignment: .leading, spacing: 10) {
                 HStack(spacing: 6) {
                     Image(systemName: "folder.fill")
@@ -165,12 +165,12 @@ struct GifClipSidebarView: View {
                     Button {
                         NSWorkspace.shared.open(outputDirectory)
                     } label: {
-                        Label("Abrir", systemImage: "folder.fill")
+                        Label("common.open".localized, systemImage: "folder.fill")
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
 
-                    Button("Cambiar en Ajustes…") {
+                    Button("clip_editor.change_in_settings".localized) {
                         NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
                     }
                     .buttonStyle(.link)
@@ -183,7 +183,7 @@ struct GifClipSidebarView: View {
     }
 
     private var estimationCard: some View {
-        cardSection(title: "Estimación") {
+        cardSection(title: "clip_editor.estimate".localized) {
             VStack(alignment: .leading, spacing: 8) {
                 Text(estimateSummary())
                     .font(.system(size: 12, weight: .semibold))
@@ -194,12 +194,12 @@ struct GifClipSidebarView: View {
                     InlineNoticeView(style: .warning, text: message)
                 }
 
-                estimationRow(label: "Duración", value: formatSeconds(selectionDurationSeconds))
+                estimationRow(label: "clip_editor.duration".localized, value: formatSeconds(selectionDurationSeconds))
                 if exportFormat == .gif {
-                    estimationRow(label: "Frames", value: "~\(estimatedGifFrames())")
-                    estimationRow(label: "Tamaño", value: "~\(formatBytes(estimatedGifSizeBytes()))")
+                    estimationRow(label: "clip_editor.frames".localized, value: "~\(estimatedGifFrames())")
+                    estimationRow(label: "clip_editor.size".localized, value: "~\(formatBytes(estimatedGifSizeBytes()))")
                 } else {
-                    estimationRow(label: "Tamaño", value: "~\(formatBytes(estimatedVideoSizeBytes()))")
+                    estimationRow(label: "clip_editor.size".localized, value: "~\(formatBytes(estimatedVideoSizeBytes()))")
                 }
             }
         }

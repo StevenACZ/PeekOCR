@@ -31,10 +31,10 @@ enum ImageFormat: String, CaseIterable, Identifiable {
 
     nonisolated var description: String {
         switch self {
-        case .png: return "Sin pérdida, transparencia"
-        case .jpg: return "Comprimido, más ligero"
-        case .tiff: return "Alta calidad, profesional"
-        case .heic: return "Eficiente, Apple"
+        case .png: return "settings.captures.format_png_desc".localized
+        case .jpg: return "settings.captures.format_jpg_desc".localized
+        case .tiff: return "settings.captures.format_tiff_desc".localized
+        case .heic: return "settings.captures.format_heic_desc".localized
         }
     }
 }

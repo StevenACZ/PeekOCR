@@ -37,14 +37,14 @@ struct ClipExportOverlay: View {
             return GifClipActionFeedback(
                 tone: .progress,
                 title: exportTitle(format: format),
-                message: "Guardando en \(destinationName). Esto puede tardar unos segundos.",
+                message: "clip_editor.export_saving_message".localized(destinationName),
                 badgeText: exportBadge(format: format)
             )
         case .success(let format, let destinationName):
             return GifClipActionFeedback(
                 tone: .success,
                 title: successTitle(format: format),
-                message: "Archivo listo en \(destinationName).",
+                message: "clip_editor.export_ready_message".localized(destinationName),
                 badgeText: exportBadge(format: format)
             )
         }
@@ -53,18 +53,18 @@ struct ClipExportOverlay: View {
     private func exportTitle(format: ClipExportFormat) -> String {
         switch format {
         case .gif:
-            return "Exportando GIF…"
+            return "clip_editor.exporting_gif".localized
         case .video:
-            return "Exportando MP4…"
+            return "clip_editor.exporting_mp4".localized
         }
     }
 
     private func successTitle(format: ClipExportFormat) -> String {
         switch format {
         case .gif:
-            return "GIF listo"
+            return "clip_editor.gif_ready".localized
         case .video:
-            return "MP4 listo"
+            return "clip_editor.mp4_ready".localized
         }
     }
 
@@ -79,6 +79,6 @@ struct ClipExportOverlay: View {
 }
 
 #Preview {
-    ClipExportOverlay(state: .exporting(format: .gif, destinationName: "Descargas"))
+    ClipExportOverlay(state: .exporting(format: .gif, destinationName: "common.downloads".localized))
         .frame(width: 720, height: 520)
 }
