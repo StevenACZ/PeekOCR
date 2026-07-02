@@ -29,6 +29,8 @@ screenshots, live annotation capture, GIF clip recording, and MP4/GIF export.
   missing-permissions window.
 - Selectable capture sounds plus an optional OCR copy confirmation.
 - Recent capture history from the menu bar.
+- Fully bilingual UI (Spanish and English): new installs follow the macOS
+  language, and Settings > General has a picker that switches instantly.
 
 ## Quick Start
 
@@ -101,6 +103,8 @@ The current Release bundle is expected to contain only:
 - `Contents/Resources/Assets.car`
 - `Contents/Resources/capture-shutter.m4a`
 - `Contents/Resources/ATTRIBUTIONS.md`
+- `Contents/Resources/es.lproj/Localizable.strings` and
+  `Contents/Resources/en.lproj/Localizable.strings`
 - standard bundle metadata and code signature files
 
 ## Public Repo Safety
