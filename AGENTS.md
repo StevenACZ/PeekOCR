@@ -54,6 +54,17 @@ make ci-check
 
 ## Architecture Snapshot
 
+### Menu Bar UI
+
+`MenuBarStatusController` owns the status item, the transient auto-sized
+`NSPopover` panel (`MenuBarPanelHost` → `MenuBarPopoverView`), and the
+hand-built Settings and About windows (SwiftUI content is rebuilt on show and
+dropped on `windowWillClose`). The panel exposes no capture actions on
+purpose — captures run through hotkeys; the panel offers history, Settings,
+About, and Quit. Settings is a custom window (unified toolbar with segmented
+tabs + `SettingsCard` two-column layout), not a SwiftUI `Settings` scene.
+Shared design tokens live in `Theme.swift`.
+
 ### Region Picking
 
 All captures share one overlay:

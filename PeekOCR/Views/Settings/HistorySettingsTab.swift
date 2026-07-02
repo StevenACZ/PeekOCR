@@ -7,50 +7,19 @@
 
 import SwiftUI
 
-/// History settings tab
+/// History settings tab.
 struct HistorySettingsTab: View {
     @ObservedObject private var historyManager = HistoryManager.shared
     @State private var showClearConfirmation = false
 
     var body: some View {
-        Form {
-            Section {
-                HStack {
-                    Text("Capturas guardadas")
-                    Spacer()
-                    Text("\(historyManager.items.count) de \(Constants.History.maxItems)")
-                        .foregroundStyle(.secondary)
-                }
-            } header: {
-                Text("Estado del Historial")
+        ScrollView {
+            VStack(spacing: 12) {
+                statusCard
+                recentCapturesCard
             }
-
-            Section {
-                if historyManager.items.isEmpty {
-                    HStack {
-                        Image(systemName: "tray")
-                            .foregroundStyle(.tertiary)
-                        Text("El historial está vacío")
-                            .foregroundStyle(.secondary)
-                    }
-                } else {
-                    ForEach(historyManager.items) { item in
-                        HistoryItemDetailRow(item: item, historyManager: historyManager)
-                    }
-                }
-            } header: {
-                Text("Capturas Recientes")
-            }
-
-            Section {
-                Button("Limpiar Historial", role: .destructive) {
-                    showClearConfirmation = true
-                }
-                .disabled(historyManager.items.isEmpty)
-            }
+            .padding(16)
         }
-        .formStyle(.grouped)
-        .padding()
         .confirmationDialog(
             "¿Limpiar todo el historial?",
             isPresented: $showClearConfirmation,
@@ -59,9 +28,54 @@ struct HistorySettingsTab: View {
             Button("Limpiar", role: .destructive) {
                 historyManager.clearHistory()
             }
+
             Button("Cancelar", role: .cancel) {}
         } message: {
             Text("Esta acción no se puede deshacer.")
+        }
+    }
+
+    // MARK: - Cards
+
+    private var statusCard: some View {
+        SettingsCard(icon: "clock.arrow.circlepath", title: "Estado del historial") {
+            HStack {
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("Capturas guardadas")
+                        .font(.system(size: 13))
+
+                    Text("\(historyManager.items.count) de \(Constants.History.maxItems)")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                Button("Limpiar historial", role: .destructive) {
+                    showClearConfirmation = true
+                }
+                .controlSize(.small)
+                .disabled(historyManager.items.isEmpty)
+            }
+        }
+    }
+
+    private var recentCapturesCard: some View {
+        SettingsCard(icon: "tray.full", title: "Capturas recientes") {
+            if historyManager.items.isEmpty {
+                EmptyStateView(icon: "tray", message: "El historial está vacío")
+            } else {
+                VStack(spacing: 0) {
+                    ForEach(historyManager.items) { item in
+                        HistoryItemDetailRow(item: item, historyManager: historyManager)
+
+                        if item.id != historyManager.items.last?.id {
+                            Divider()
+                        }
+                    }
+                }
+                .animation(Theme.Anim.spring, value: historyManager.items.map(\.id))
+            }
         }
     }
 }
@@ -73,27 +87,33 @@ private struct HistoryItemDetailRow: View {
     @ObservedObject var historyManager: HistoryManager
 
     var body: some View {
-        HStack {
-            Image(systemName: item.icon)
-                .foregroundStyle(item.captureType.displayColor)
-                .frame(width: 20)
+        HStack(spacing: 10) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .fill(item.captureType.displayColor.opacity(0.14))
+                    .frame(width: 28, height: 28)
+
+                Image(systemName: item.icon)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(item.captureType.displayColor)
+            }
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(item.displayText)
-                    .font(.body)
+                    .font(.system(size: 13))
                     .lineLimit(1)
 
-                HStack {
+                HStack(spacing: 6) {
                     Text(item.captureType.displayLabel)
                         .font(.caption2)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2)
                         .background(item.captureType.displayColor.opacity(0.1))
                         .foregroundStyle(item.captureType.displayColor)
-                        .clipShape(RoundedRectangle(cornerRadius: 4))
+                        .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
 
                     Text(item.formattedTime)
-                        .font(.caption)
+                        .font(.caption2)
                         .foregroundStyle(.tertiary)
                 }
             }
@@ -116,7 +136,7 @@ private struct HistoryItemDetailRow: View {
             .buttonStyle(.borderless)
             .help("Eliminar")
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, 6)
     }
 }
 

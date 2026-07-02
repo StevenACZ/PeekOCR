@@ -2,48 +2,88 @@
 //  SettingsView.swift
 //  PeekOCR
 //
-//  Created by Steven on 14/12/25.
+//  Settings window shell: unified-toolbar segmented tabs over keep-alive tab content.
 //
 
 import SwiftUI
 
-/// Settings window view
+/// Settings window view.
 struct SettingsView: View {
-    @EnvironmentObject var appState: AppState
+    @Environment(\.dismiss) private var dismiss
+    @State private var selectedTab: SettingsTab = .general
 
     var body: some View {
-        TabView {
-            GeneralSettingsTab()
-                .tabItem {
-                    Label("General", systemImage: "gear")
-                }
-
-            ShortcutsSettingsTab()
-                .tabItem {
-                    Label("Atajos", systemImage: "keyboard")
-                }
-
-            ScreenshotSettingsTab()
-                .tabItem {
-                    Label("Capturas", systemImage: "camera.viewfinder")
-                }
-
-            ClipSettingsTab()
-                .tabItem {
-                    Label("Clips", systemImage: "film")
-                }
-
-            HistorySettingsTab()
-                .tabItem {
-                    Label("Historial", systemImage: "clock")
-                }
-
-            AboutTab()
-                .tabItem {
-                    Label("Acerca de", systemImage: "info.circle")
-                }
+        VStack(spacing: 0) {
+            selectedTabContent
         }
-        .frame(width: 520, height: 450)
+        .frame(width: 760, height: 560)
+        .background(Color(nsColor: .windowBackgroundColor))
+        .toolbarBackground(Color(nsColor: .windowBackgroundColor), for: .windowToolbar)
+        .toolbarBackground(.visible, for: .windowToolbar)
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                Picker("", selection: $selectedTab) {
+                    ForEach(SettingsTab.allCases) { tab in
+                        Text(tab.title).tag(tab)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .fixedSize()
+            }
+
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Cerrar") {
+                    dismiss()
+                }
+            }
+        }
+        .tint(Theme.accent)
+    }
+
+    /// All tabs stay alive in a ZStack so recorders, scroll positions, and
+    /// drafts survive tab switches; selection only flips opacity.
+    private var selectedTabContent: some View {
+        ZStack {
+            tabContent(for: .general) { GeneralSettingsTab() }
+            tabContent(for: .shortcuts) { ShortcutsSettingsTab() }
+            tabContent(for: .screenshots) { ScreenshotSettingsTab() }
+            tabContent(for: .clips) { ClipSettingsTab() }
+            tabContent(for: .history) { HistorySettingsTab() }
+        }
+        .animation(Theme.Anim.easeOut, value: selectedTab)
+    }
+
+    @ViewBuilder
+    private func tabContent<Content: View>(
+        for tab: SettingsTab,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        content()
+            .opacity(selectedTab == tab ? 1 : 0)
+            .allowsHitTesting(selectedTab == tab)
+            .accessibilityHidden(selectedTab != tab)
+    }
+}
+
+// MARK: - Tabs
+
+enum SettingsTab: String, CaseIterable, Identifiable {
+    case general
+    case shortcuts
+    case screenshots
+    case clips
+    case history
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .general: return "General"
+        case .shortcuts: return "Atajos"
+        case .screenshots: return "Capturas"
+        case .clips: return "Clips"
+        case .history: return "Historial"
+        }
     }
 }
 
@@ -51,5 +91,4 @@ struct SettingsView: View {
 
 #Preview {
     SettingsView()
-        .environmentObject(AppState.shared)
 }

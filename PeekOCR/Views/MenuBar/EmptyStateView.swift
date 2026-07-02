@@ -7,27 +7,39 @@
 
 import SwiftUI
 
-/// Empty state placeholder for lists
+/// Empty state placeholder for lists.
 struct EmptyStateView: View {
     let icon: String
     let message: String
+    let detail: String?
 
-    init(icon: String = "doc.text.magnifyingglass", message: String = "No hay capturas recientes") {
+    init(
+        icon: String = "doc.text.magnifyingglass",
+        message: String = "No hay capturas recientes",
+        detail: String? = nil
+    ) {
         self.icon = icon
         self.message = message
+        self.detail = detail
     }
 
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 6) {
             Image(systemName: icon)
-                .font(.title2)
+                .font(.title3)
                 .foregroundStyle(.tertiary)
 
             Text(message)
                 .font(.caption)
                 .foregroundStyle(.secondary)
+
+            if let detail {
+                Text(detail)
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 20)
+        .padding(.vertical, 18)
     }
 }

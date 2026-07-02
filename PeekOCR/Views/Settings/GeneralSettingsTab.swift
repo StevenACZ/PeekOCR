@@ -8,101 +8,120 @@
 import AppKit
 import SwiftUI
 
-/// General settings tab
+/// General settings tab.
 struct GeneralSettingsTab: View {
     @ObservedObject private var settings = AppSettings.shared
     @ObservedObject private var soundSettings = SoundSettings.shared
     @State private var launchAtLoginEnabled: Bool = LaunchAtLoginManager.shared.isEnabled
 
     var body: some View {
-        Form {
-            Section {
-                Toggle("Iniciar PeekOCR con macOS", isOn: $launchAtLoginEnabled)
-                    .onChange(of: launchAtLoginEnabled) { _, newValue in
-                        settings.launchAtLogin = newValue
-                    }
-            } header: {
-                Text("Inicio")
-            } footer: {
-                Text("La app se iniciará automáticamente cuando enciendas tu Mac.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+        ScrollView {
+            HStack(alignment: .top, spacing: 16) {
+                VStack(spacing: 12) {
+                    startupCard
+                    permissionsCard
+                }
+                .frame(maxWidth: .infinity, alignment: .top)
+
+                VStack(spacing: 12) {
+                    soundCard
+                }
+                .frame(maxWidth: .infinity, alignment: .top)
+            }
+            .padding(16)
+        }
+    }
+
+    // MARK: - Cards
+
+    private var startupCard: some View {
+        SettingsCard(icon: "power", title: "Inicio") {
+            SettingsToggleRow(
+                title: "Iniciar PeekOCR con macOS",
+                isOn: $launchAtLoginEnabled
+            )
+            .onChange(of: launchAtLoginEnabled) { _, newValue in
+                settings.launchAtLogin = newValue
             }
 
-            Section {
-                Toggle("Reproducir sonido de captura", isOn: $soundSettings.captureSoundEnabled)
+            SettingsCaption("La app se iniciará automáticamente cuando enciendas tu Mac.")
+        }
+    }
 
-                Picker("Sonido", selection: $soundSettings.captureSound) {
-                    ForEach(CaptureSound.allCases) { sound in
-                        Text(sound.displayName).tag(sound)
+    private var permissionsCard: some View {
+        SettingsCard(icon: "lock.shield", title: "Permisos") {
+            PermissionStatusRow(permission: .screenRecording)
+
+            Divider()
+
+            PermissionStatusRow(permission: .accessibility)
+
+            SettingsCaption(
+                "PeekOCR puede guiarte dentro de Ajustes del Sistema y actualizará el estado cuando regreses a la app."
+            )
+        }
+    }
+
+    private var soundCard: some View {
+        SettingsCard(icon: "speaker.wave.2", title: "Sonido") {
+            SettingsToggleRow(
+                title: "Reproducir sonido de captura",
+                isOn: $soundSettings.captureSoundEnabled
+            )
+
+            Group {
+                HStack {
+                    Text("Sonido")
+                        .font(.system(size: 13))
+
+                    Spacer()
+
+                    Picker("", selection: $soundSettings.captureSound) {
+                        ForEach(CaptureSound.allCases) { sound in
+                            Text(sound.displayName).tag(sound)
+                        }
                     }
-                }
-                .disabled(!soundSettings.captureSoundEnabled)
-                .onChange(of: soundSettings.captureSound) { _, newSound in
-                    CaptureSoundService.shared.preview(newSound)
+                    .labelsHidden()
+                    .pickerStyle(.menu)
+                    .fixedSize()
+                    .onChange(of: soundSettings.captureSound) { _, newSound in
+                        CaptureSoundService.shared.preview(newSound)
+                    }
                 }
 
                 HStack {
                     Text("Volumen")
+                        .font(.system(size: 13))
+
                     Slider(value: $soundSettings.captureSoundVolume, in: 0...1)
-                        .disabled(!soundSettings.captureSoundEnabled)
+                        .tint(Theme.accent)
+
                     Text("\(Int(soundSettings.captureSoundVolume * 100))%")
-                        .monospacedDigit()
-                        .foregroundStyle(.secondary)
-                        .frame(width: 44, alignment: .trailing)
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(Theme.accent)
+                        .frame(width: 40, alignment: .trailing)
                 }
 
-                Toggle("Sonido al copiar texto (OCR)", isOn: $soundSettings.ocrFeedbackEnabled)
-                    .disabled(!soundSettings.captureSoundEnabled)
+                SettingsToggleRow(
+                    title: "Sonido al copiar texto (OCR)",
+                    isOn: $soundSettings.ocrFeedbackEnabled
+                )
 
-                Button("Probar sonido") {
+                Button {
                     CaptureSoundService.shared.preview(soundSettings.captureSound)
+                } label: {
+                    Label("Probar sonido", systemImage: "play.circle")
+                        .font(.system(size: 12))
                 }
-                .disabled(!soundSettings.captureSoundEnabled)
-            } header: {
-                Text("Sonido")
-            } footer: {
-                Text("Se reproduce al guardar una captura, GIF o video.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                .buttonStyle(.borderless)
+                .tint(Theme.accent)
             }
+            .disabled(!soundSettings.captureSoundEnabled)
+            .opacity(soundSettings.captureSoundEnabled ? 1 : 0.55)
 
-            Section {
-                HStack {
-                    Text("Versión")
-                    Spacer()
-                    Text(Constants.App.version)
-                        .foregroundStyle(.secondary)
-                }
-
-                HStack {
-                    Text("Requerimientos")
-                    Spacer()
-                    Text(Constants.App.minimumOSVersion)
-                        .foregroundStyle(.secondary)
-                }
-            } header: {
-                Text("Información")
-            }
-
-            Section {
-                PermissionStatusRow(
-                    permission: .screenRecording
-                )
-
-                PermissionStatusRow(
-                    permission: .accessibility
-                )
-            } header: {
-                Text("Permisos")
-            } footer: {
-                Text("PeekOCR puede guiarte dentro de Ajustes del Sistema y actualizará el estado cuando regreses a la app.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
+            SettingsCaption("Se reproduce al guardar una captura, GIF o video.")
         }
-        .formStyle(.grouped)
-        .padding()
+        .animation(Theme.Anim.easeOut, value: soundSettings.captureSoundEnabled)
     }
 }
 

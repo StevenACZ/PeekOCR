@@ -2,75 +2,159 @@
 //  MenuBarPopoverView.swift
 //  PeekOCR
 //
-//  Main popover view shown from menu bar with quick actions and history.
+//  Menu bar panel: header, capture history, and app actions.
 //
 
 import SwiftUI
 
-/// Main popover view shown from menu bar
+/// Bridges the popover hosting controller with the SwiftUI panel content.
+struct MenuBarPanelHost: View {
+    let openSettings: () -> Void
+    let openAbout: () -> Void
+    let quit: () -> Void
+
+    var body: some View {
+        MenuBarPopoverView(openSettings: openSettings, openAbout: openAbout, quit: quit)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+}
+
+/// Main panel shown from the menu bar status item.
 struct MenuBarPopoverView: View {
-    @EnvironmentObject var appState: AppState
+    let openSettings: () -> Void
+    let openAbout: () -> Void
+    let quit: () -> Void
+
     @ObservedObject private var historyManager = HistoryManager.shared
     @ObservedObject private var settings = AppSettings.shared
-
-    var body: some View {
-        VStack(spacing: 0) {
-            HeaderSection()
-            Divider()
-            PermissionReminderSection()
-            QuickActionsSection(settings: settings)
-            Divider()
-            HistorySection(historyManager: historyManager)
-            Divider()
-            FooterSection()
-        }
-        .frame(width: Constants.UI.popoverWidth)
-    }
-}
-
-// MARK: - Header Section
-
-private struct HeaderSection: View {
-    var body: some View {
-        HStack {
-            Image(systemName: "eye.fill")
-                .font(.title2)
-                .foregroundStyle(.blue)
-
-            Text("PeekOCR")
-                .font(.headline)
-
-            Spacer()
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-    }
-}
-
-// MARK: - Quick Actions Section
-
-private struct PermissionReminderSection: View {
     @State private var missingPermissions: [AppPermission] = []
 
     var body: some View {
-        Group {
-            if !missingPermissions.isEmpty {
-                VStack(spacing: 0) {
-                    PermissionSummaryBanner(missingPermissions: missingPermissions) {
-                        PermissionRequirementsWindowController.shared.showWindow()
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
+        VStack(spacing: 0) {
+            header
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+                .background(Color(nsColor: .controlBackgroundColor).opacity(0.5))
 
-                    Divider()
+            Divider()
+
+            if !missingPermissions.isEmpty {
+                PermissionSummaryBanner(missingPermissions: missingPermissions) {
+                    PermissionRequirementsWindowController.shared.showWindow()
                 }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+
+                Divider()
             }
+
+            historySection
+                .padding(.vertical, 10)
+
+            Divider()
+                .padding(.horizontal, 16)
+
+            ActionRow(
+                icon: "gearshape",
+                title: "Configuración",
+                subtitle: "Atajos, capturas, clips e historial",
+                action: openSettings
+            )
+
+            Divider()
+                .padding(.horizontal, 16)
+
+            ActionRow(icon: "info.circle", title: "Acerca de PeekOCR", action: openAbout)
+
+            Divider()
+                .padding(.horizontal, 16)
+
+            ActionRow(icon: "power", title: "Salir de PeekOCR", isDestructive: true, action: quit)
+                .padding(.bottom, 4)
         }
-        .onAppear {
+        .frame(width: Theme.Layout.panelWidth)
+        .background(Color(nsColor: .windowBackgroundColor))
+        .onAppear(perform: refreshMissingPermissions)
+        .onReceive(
+            NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)
+        ) { _ in
             refreshMissingPermissions()
         }
-        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
-            refreshMissingPermissions()
+    }
+
+    // MARK: - Header
+
+    private var header: some View {
+        HStack(spacing: 12) {
+            ZStack {
+                Circle()
+                    .fill(Theme.accent.opacity(0.18))
+                    .frame(width: 44, height: 44)
+
+                Image(nsImage: NSApp.applicationIconImage)
+                    .resizable()
+                    .frame(width: 32, height: 32)
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("PeekOCR")
+                    .font(.headline)
+
+                Text(statusLine)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .contentTransition(.opacity)
+            }
+            .animation(Theme.Anim.easeOut, value: statusLine)
+
+            Spacer()
+
+            HotkeyBadge(text: settings.captureHotKeyDisplayString())
+                .help("Atajo para capturar texto")
+        }
+    }
+
+    private var statusLine: String {
+        if !missingPermissions.isEmpty {
+            return "Permisos pendientes"
+        }
+        switch historyManager.items.count {
+        case 0:
+            return "Listo para capturar"
+        case 1:
+            return "1 captura en el historial"
+        case let count:
+            return "\(count) capturas en el historial"
+        }
+    }
+
+    // MARK: - History
+
+    private var historySection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            SectionHeader(title: "Historial")
+                .padding(.horizontal, 16)
+
+            if historyManager.items.isEmpty {
+                EmptyStateView(
+                    detail: "Usa \(settings.captureHotKeyDisplayString()) para capturar texto"
+                )
+            } else {
+                VStack(spacing: 2) {
+                    ForEach(historyManager.items) { item in
+                        HistoryItemRow(item: item) {
+                            historyManager.copyItem(item)
+                        }
+                        .transition(
+                            .asymmetric(
+                                insertion: .move(edge: .top).combined(with: .opacity),
+                                removal: .opacity
+                            )
+                        )
+                    }
+                }
+                .animation(.spring(duration: 0.35, bounce: 0.15), value: historyManager.items.map(\.id))
+            }
         }
     }
 
@@ -79,134 +163,8 @@ private struct PermissionReminderSection: View {
     }
 }
 
-// MARK: - Quick Actions Section
-
-private struct QuickActionsSection: View {
-    @ObservedObject var settings: AppSettings
-    @ObservedObject private var clipSettings = GifClipSettings.shared
-
-    var body: some View {
-        VStack(spacing: 4) {
-            MenuBarActionButton(
-                title: "Capturar Texto",
-                icon: "doc.text.viewfinder",
-                shortcut: settings.captureHotKeyDisplayString()
-            ) {
-                CaptureCoordinator.shared.startCapture(mode: .ocr)
-            }
-
-            MenuBarActionButton(
-                title: "Captura de Pantalla",
-                icon: "camera.viewfinder",
-                shortcut: settings.screenshotHotKeyDisplayString()
-            ) {
-                CaptureCoordinator.shared.startCapture(mode: .screenshot)
-            }
-
-            MenuBarActionButton(
-                title: clipSettings.durationLimitEnabled
-                    ? "Grabar Clip (\(clipSettings.maxDurationSeconds)s)"
-                    : "Grabar Clip",
-                icon: "film",
-                shortcut: settings.gifHotKeyDisplayString()
-            ) {
-                CaptureCoordinator.shared.startCapture(mode: .gifClip)
-            }
-        }
-        .padding(.vertical, 8)
-    }
-}
-
-// MARK: - History Section
-
-private struct HistorySection: View {
-    @ObservedObject var historyManager: HistoryManager
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Image(systemName: "clock.arrow.circlepath")
-                    .foregroundStyle(.secondary)
-
-                Text("Historial")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-
-                Spacer()
-            }
-            .padding(.horizontal, 16)
-            .padding(.top, 8)
-
-            if historyManager.items.isEmpty {
-                EmptyStateView()
-            } else {
-                ScrollView {
-                    VStack(spacing: 2) {
-                        ForEach(historyManager.items) { item in
-                            HistoryItemRow(item: item) {
-                                historyManager.copyItem(item)
-                            }
-                            .transition(
-                                .asymmetric(
-                                    insertion: .move(edge: .top).combined(with: .opacity),
-                                    removal: .opacity
-                                )
-                            )
-                        }
-                    }
-                    .animation(.spring(duration: 0.35, bounce: 0.15), value: historyManager.items.map(\.id))
-                }
-                .frame(maxHeight: Constants.UI.historyMaxHeight)
-            }
-        }
-        .padding(.bottom, 8)
-    }
-}
-
-// MARK: - Footer Section
-
-private struct FooterSection: View {
-    @State private var isHoveringSettings = false
-    @State private var isHoveringQuit = false
-
-    var body: some View {
-        HStack {
-            settingsButton
-
-            Spacer()
-
-            Button {
-                NSApplication.shared.terminate(nil)
-            } label: {
-                Label("Salir", systemImage: "xmark.circle")
-                    .font(.caption)
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(isHoveringQuit ? .primary : .secondary)
-            .onHover { hovering in
-                isHoveringQuit = hovering
-            }
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-    }
-
-    private var settingsButton: some View {
-        SettingsLink {
-            Label("Configuración", systemImage: "gear")
-                .font(.caption)
-        }
-        .buttonStyle(.plain)
-        .foregroundStyle(isHoveringSettings ? .primary : .secondary)
-        .onHover { hovering in
-            isHoveringSettings = hovering
-        }
-    }
-}
-
 // MARK: - Preview
 
 #Preview {
-    MenuBarPopoverView()
-        .environmentObject(AppState.shared)
+    MenuBarPanelHost(openSettings: {}, openAbout: {}, quit: {})
 }
