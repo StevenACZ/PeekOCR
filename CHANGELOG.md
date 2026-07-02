@@ -8,12 +8,31 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- New About window with app icon, copyable version and build, feature chips,
+  and GitHub links, opened from the menu bar panel.
 - `make install-dev` / `scripts/install_dev.sh` for fast local reinstalls of the signed Release app without resetting macOS permission grants.
 
 ### Changed
 
+- Redesigned the menu bar panel: status header with live subtitle and OCR
+  shortcut badge, restyled capture history (latest 4 entries, color-coded by
+  type, copy feedback), and clearer Settings, About, and Quit rows. Capture
+  actions now run through hotkeys only.
+- Rebuilt Settings as its own window with a segmented toolbar and four tabs:
+  General now hosts permissions and full history management side by side,
+  Shortcuts is a visual 2x2 grid of capture modes with inline key recording,
+  and Captures and Clips were rebalanced into two-column card layouts.
+- The permissions card collapses into a compact "all permissions active"
+  summary once everything is granted, expandable back to the detailed rows.
+- Save-location picker entries now have proper spacing between icon and
+  title.
 - Standardized the changelog and public agent handoff docs around the shared
   Swift project workflow.
+
+### Removed
+
+- The duplicated capture-shortcuts card in the Captures tab and the capture
+  action buttons in the menu bar panel; shortcuts live in the Shortcuts tab.
 
 ## [1.9.2] - 2026-06-26
 
