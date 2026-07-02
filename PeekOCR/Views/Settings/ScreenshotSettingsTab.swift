@@ -92,7 +92,9 @@ struct ScreenshotSettingsTab: View {
 
                 Picker("", selection: $settings.saveLocation) {
                     ForEach(SaveLocation.allCases) { location in
-                        Label(location.displayName, systemImage: location.icon)
+                        // Interpolated image + spaces: Label renders the icon glued
+                        // to the title in the collapsed menu picker.
+                        Text("\(Image(systemName: location.icon))  \(location.displayName)")
                             .tag(location)
                     }
                 }
