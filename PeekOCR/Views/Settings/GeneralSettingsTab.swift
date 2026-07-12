@@ -14,6 +14,7 @@ struct GeneralSettingsTab: View {
     @ObservedObject private var soundSettings = SoundSettings.shared
     @ObservedObject private var historyManager = HistoryManager.shared
     @ObservedObject private var localization = LocalizationManager.shared
+    @ObservedObject private var updateManager = UpdateManager.shared
     @State private var launchAtLoginEnabled: Bool = LaunchAtLoginManager.shared.isEnabled
     @State private var showClearConfirmation = false
 
@@ -25,6 +26,7 @@ struct GeneralSettingsTab: View {
                     languageCard
                     soundCard
                     permissionsCard
+                    updatesCard
                 }
                 .frame(maxWidth: .infinity, alignment: .top)
 
@@ -152,6 +154,20 @@ struct GeneralSettingsTab: View {
     private var permissionsCard: some View {
         SettingsCard(icon: "lock.shield", title: "settings.general.permissions".localized) {
             SettingsPermissionsSection()
+        }
+    }
+
+    private var updatesCard: some View {
+        SettingsCard(icon: "arrow.down.circle", title: "settings.general.updates".localized) {
+            SettingsToggleRow(
+                title: "settings.general.auto_updates".localized,
+                isOn: Binding(
+                    get: { updateManager.autoCheckEnabled },
+                    set: { updateManager.setAutoCheckEnabled($0) }
+                )
+            )
+
+            SettingsCaption("settings.general.auto_updates_caption".localized)
         }
     }
 

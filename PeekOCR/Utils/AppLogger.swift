@@ -48,6 +48,10 @@ enum AppLogger {
     /// Use for view lifecycle, user interactions, and interface state changes.
     nonisolated static let ui = Logger(subsystem: subsystem, category: "ui")
 
+    /// Logger for in-app update (Sparkle) events.
+    /// Use for update checks, downloads, and install lifecycle events.
+    nonisolated static let updates = Logger(subsystem: subsystem, category: "updates")
+
     // MARK: - Convenience Helper Functions
 
     /// Logs a debug message to the specified category.

@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		B05A121E2F060001000000A3 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = B05A121E2F060001000000A4 /* Sparkle */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		B0D251B42EEF870D006F4EAA /* PeekOCR.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PeekOCR.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B0517CF6516000000000000C /* SigningDefaults.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = SigningDefaults.xcconfig; sourceTree = "<group>"; };
@@ -37,6 +41,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B05A121E2F060001000000A3 /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -80,6 +85,7 @@
 			);
 			name = PeekOCR;
 			packageProductDependencies = (
+				B05A121E2F060001000000A4 /* Sparkle */,
 			);
 			productName = PeekOCR;
 			productReference = B0D251B42EEF870D006F4EAA /* PeekOCR.app */;
@@ -110,6 +116,9 @@
 			);
 			mainGroup = B0D251AB2EEF870D006F4EAA;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				B05A121E2F060001000000B2 /* XCRemoteSwiftPackageReference "Sparkle" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = B0D251B52EEF870D006F4EAA /* Products */;
 			projectDirPath = "";
@@ -274,7 +283,7 @@
 				ARCHS = arm64;
 				CODE_SIGN_ENTITLEMENTS = PeekOCR/PeekOCR.entitlements;
 				COMBINE_HIDPI_IMAGES = YES;
-					CURRENT_PROJECT_VERSION = 9;
+					CURRENT_PROJECT_VERSION = 10;
 				DEAD_CODE_STRIPPING = YES;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_PREVIEWS = YES;
@@ -285,7 +294,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-					MARKETING_VERSION = 2.0.0;
+					MARKETING_VERSION = 2.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = oli.PeekOCR;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -307,7 +316,7 @@
 				ARCHS = arm64;
 				CODE_SIGN_ENTITLEMENTS = PeekOCR/PeekOCR.entitlements;
 				COMBINE_HIDPI_IMAGES = YES;
-					CURRENT_PROJECT_VERSION = 9;
+					CURRENT_PROJECT_VERSION = 10;
 				DEAD_CODE_STRIPPING = YES;
 				ENABLE_APP_SANDBOX = NO;
 					ENABLE_HARDENED_RUNTIME = YES;
@@ -319,7 +328,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-					MARKETING_VERSION = 2.0.0;
+					MARKETING_VERSION = 2.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = oli.PeekOCR;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -354,6 +363,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		B05A121E2F060001000000B2 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.9.4;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		B05A121E2F060001000000A4 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B05A121E2F060001000000B2 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = B0D251AC2EEF870D006F4EAA /* Project object */;
 }

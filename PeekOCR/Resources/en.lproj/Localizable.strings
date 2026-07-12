@@ -296,3 +296,22 @@
 "settings.tabs.clips" = "Clips";
 "settings.tabs.general" = "General";
 "settings.tabs.shortcuts" = "Shortcuts";
+
+/* In-app updates (Sparkle) */
+"menu.update_available" = "Update available";
+"menu.update_install_hint" = "v%@ — click to install";
+"menu.update_downloading" = "Downloading update…";
+"menu.update_installing" = "Installing update…";
+"menu.update_relaunch" = "PeekOCR will relaunch by itself";
+"menu.update_failed" = "Update failed";
+"menu.update_retry_hint" = "Click to try again";
+"about.update_install" = "Install v%@";
+"about.update_downloading" = "Downloading…";
+"about.update_installing" = "Installing…";
+"about.update_retry" = "Update failed — try again";
+"about.update_release_notes" = "View release notes";
+"about.update_check" = "Check for updates";
+"about.update_up_to_date" = "You're up to date";
+"settings.general.updates" = "Updates";
+"settings.general.auto_updates" = "Check for updates automatically";
+"settings.general.auto_updates_caption" = "Checks GitHub Releases once a day. Nothing is sent.";

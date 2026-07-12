@@ -88,6 +88,13 @@ Screen Recording may lag after being enabled in System Settings depending on
 macOS behavior. Reopen the app or retry the capture flow if macOS has not
 refreshed the permission yet.
 
+## Updates
+
+PeekOCR keeps itself up to date. It checks GitHub Releases once a day and
+offers new versions as a one-click install from the menu bar panel or the
+About window (EdDSA-signed updates via Sparkle; nothing is ever sent to any
+server). The automatic check can be turned off in Settings → General.
+
 ## Release Size
 
 Release builds target Apple Silicon only. Measure a built app with:
@@ -100,6 +107,7 @@ make size-check
 The current Release bundle is expected to contain only:
 
 - `Contents/MacOS/PeekOCR`
+- `Contents/Frameworks/Sparkle.framework` (in-app updates)
 - `Contents/Resources/Assets.car`
 - `Contents/Resources/capture-shutter.m4a`
 - `Contents/Resources/ATTRIBUTIONS.md`
