@@ -10,6 +10,7 @@ import SwiftUI
 /// About window: app identity, version, feature chips, and links.
 struct AboutView: View {
     @ObservedObject private var localization = LocalizationManager.shared
+    @ObservedObject private var updateManager = UpdateManager.shared
 
     private var version: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—"
@@ -57,7 +58,125 @@ struct AboutView: View {
             Text("about.version".localized(version, build))
                 .font(.caption.monospaced())
                 .foregroundStyle(.secondary)
+
+            updateStatus
         }
+    }
+
+    /// Update capsule mirroring `UpdateManager.phase`, plus a manual
+    /// "check for updates" affordance when nothing is pending.
+    @ViewBuilder
+    private var updateStatus: some View {
+        switch updateManager.phase {
+        case .idle:
+            checkForUpdatesButton
+
+        case .available(let version):
+            VStack(spacing: 5) {
+                Button {
+                    updateManager.installPendingUpdate()
+                } label: {
+                    updateCapsule(
+                        icon: "arrow.down.circle",
+                        text: "about.update_install".localized(version)
+                    )
+                }
+                .buttonStyle(.plain)
+
+                if updateManager.releasePageURL != nil {
+                    Button {
+                        updateManager.openReleasePage()
+                    } label: {
+                        Text("about.update_release_notes".localized)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .underline()
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+
+        case .downloading(let fraction):
+            updateProgressCapsule(
+                text: "about.update_downloading".localized
+                    + (fraction.map { " \(Int($0 * 100))%" } ?? ""))
+
+        case .installing:
+            updateProgressCapsule(text: "about.update_installing".localized)
+
+        case .failed:
+            Button {
+                updateManager.installPendingUpdate()
+            } label: {
+                updateCapsule(
+                    icon: "exclamationmark.arrow.circlepath",
+                    text: "about.update_retry".localized
+                )
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    @ViewBuilder
+    private var checkForUpdatesButton: some View {
+        switch updateManager.manualCheckStatus {
+        case .checking:
+            HStack(spacing: 5) {
+                ProgressView()
+                    .controlSize(.mini)
+                Text("about.update_check".localized)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+        case .upToDate:
+            HStack(spacing: 4) {
+                Image(systemName: "checkmark.circle")
+                    .font(.caption2)
+                Text("about.update_up_to_date".localized)
+                    .font(.caption2.weight(.medium))
+            }
+            .foregroundStyle(Theme.accent)
+        case .idle:
+            Button {
+                updateManager.checkForUpdatesManually()
+            } label: {
+                Text("about.update_check".localized)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .underline()
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private func updateCapsule(icon: String, text: String) -> some View {
+        HStack(spacing: 5) {
+            Image(systemName: icon)
+                .font(.caption2)
+
+            Text(text)
+                .font(.caption2.weight(.medium))
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
+        .background(Capsule().fill(Theme.accent.opacity(0.12)))
+        .overlay(Capsule().strokeBorder(Theme.accent.opacity(0.22), lineWidth: 1))
+        .foregroundStyle(Theme.accent)
+    }
+
+    private func updateProgressCapsule(text: String) -> some View {
+        HStack(spacing: 6) {
+            ProgressView()
+                .controlSize(.mini)
+
+            Text(text)
+                .font(.caption2.weight(.medium))
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
+        .background(Capsule().fill(Theme.accent.opacity(0.12)))
+        .overlay(Capsule().strokeBorder(Theme.accent.opacity(0.22), lineWidth: 1))
+        .foregroundStyle(Theme.accent)
     }
 
     private var taglineSection: some View {

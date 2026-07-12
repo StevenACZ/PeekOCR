@@ -32,6 +32,7 @@ struct MenuBarPopoverView: View {
 
     @ObservedObject private var historyManager = HistoryManager.shared
     @ObservedObject private var settings = AppSettings.shared
+    @ObservedObject private var updateManager = UpdateManager.shared
     @State private var missingPermissions: [AppPermission] = []
 
     var body: some View {
@@ -58,6 +59,13 @@ struct MenuBarPopoverView: View {
 
             Divider()
                 .padding(.horizontal, 16)
+
+            if updateManager.phase != .idle {
+                UpdateMenuRow(manager: updateManager)
+
+                Divider()
+                    .padding(.horizontal, 16)
+            }
 
             ActionRow(
                 icon: "gearshape",

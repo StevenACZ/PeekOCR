@@ -25,6 +25,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         controller.start()
         menuBarController = controller
 
+        UpdateManager.shared.start()
         hotKeyManager.registerHotKeys()
         CaptureSoundService.shared.prewarm()
     }
