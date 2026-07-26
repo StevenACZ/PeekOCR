@@ -36,7 +36,7 @@ make ci-check
 
 ## Local Iteration
 
-- Use `make install-dev` for routine local app testing on Steven's Mac.
+- Use `make install-dev` for routine local app testing on the maintainer's Mac.
 - It builds a Release app, verifies Apple Development signing, reinstalls to
   `/Applications/PeekOCR.app`, and relaunches the app.
 - Keep the app name and bundle id unchanged so macOS can preserve Screen
