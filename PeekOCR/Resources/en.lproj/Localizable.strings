@@ -163,7 +163,7 @@
 "permissions.accessibility.overlay_title" = "Enable Accessibility";
 "permissions.accessibility.summary" = "Required for global shortcuts.";
 "permissions.accessibility.title" = "Accessibility";
-"permissions.all_granted_subtitle" = "Screen recording and accessibility ready.";
+"permissions.all_granted_subtitle" = "macOS reports screen and accessibility access as granted.";
 "permissions.all_granted_title" = "All permissions granted";
 "permissions.card.activate" = "Enable";
 "permissions.card.detail.accessibility.granted" = "PeekOCR's global shortcuts are now enabled.";
@@ -197,7 +197,7 @@
 "permissions.screen_recording.summary" = "Required for OCR, captures, and clips.";
 "permissions.screen_recording.title" = "Screen Recording";
 "permissions.settings_caption" = "PeekOCR can guide you within System Settings and will update the status when you return to the app.";
-"permissions.status_active" = "Active";
+"permissions.status_active" = "Granted";
 "permissions.status_pending" = "Pending";
 "permissions.window.close" = "Close";
 "permissions.window.footer.all_granted" = "You can now close this window and continue with PeekOCR.";
@@ -315,3 +315,10 @@
 "settings.general.updates" = "Updates";
 "settings.general.auto_updates" = "Check for updates automatically";
 "settings.general.auto_updates_caption" = "Checks GitHub Releases once a day. Nothing is sent.";
+
+"permissions.welcome.title" = "Welcome to PeekOCR";
+"permissions.welcome.subtitle" = "A quick setup before your first capture.";
+"permissions.welcome.granted" = "Permission access detected";
+"permissions.welcome.done" = "Done";
+"permissions.guide.granted" = "macOS reports this permission as granted. You can close this guide.";
+"permissions.screen_recording.restart_hint" = "macOS reports screen access as granted. If it asks you to quit and reopen PeekOCR, do that before your next capture.";

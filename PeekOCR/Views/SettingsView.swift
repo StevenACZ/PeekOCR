@@ -31,6 +31,7 @@ struct SettingsView: View {
                 }
                 .pickerStyle(.segmented)
                 .fixedSize()
+                .id(localization.language)
             }
 
             ToolbarItem(placement: .confirmationAction) {

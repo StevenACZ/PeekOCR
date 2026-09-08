@@ -1,80 +1,42 @@
-//
-//  PermissionStatusRow.swift
-//  PeekOCR
-//
-//  Displays a guided permission row inside Settings.
-//
-
 import AppKit
-import Combine
 import SwiftUI
 
-/// A reusable row component for displaying guided permission setup.
 struct PermissionStatusRow: View {
     let permission: AppPermission
-
-    @Environment(\.colorScheme) private var colorScheme
     @State private var isGranted = false
 
+    private var accent: Color { Color(nsColor: permission.accentColor) }
+
     var body: some View {
-        HStack(spacing: 12) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(iconBackgroundColor)
-                    .frame(width: 40, height: 40)
-
-                Image(systemName: permission.iconName)
-                    .font(.title3)
-                    .foregroundStyle(isGranted ? .green : Color(nsColor: permission.accentColor))
-            }
-            .frame(width: 40, height: 40)
-
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 8) {
-                    Text(permission.title)
-                        .font(.body.weight(.semibold))
-
-                    Text(isGranted ? "permissions.status_active".localized : "permissions.status_pending".localized)
-                        .font(.caption.weight(.semibold))
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
-                        .background(
-                            Capsule(style: .continuous)
-                                .fill(isGranted ? Color.green.opacity(0.14) : Color.orange.opacity(0.14))
-                        )
-                        .foregroundStyle(isGranted ? .green : .orange)
-                }
-
-                Text(permission.summary)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-
-                if !isGranted {
-                    Text("permissions.guided_hint".localized)
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Label(permission.title, systemImage: permission.iconName)
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(accent)
+                Spacer(minLength: 8)
+                if isGranted {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
+                        .accessibilityLabel("permissions.card.status.granted".localized)
+                } else {
+                    Button("permissions.enable".localized) {
+                        PermissionService.shared.requestInteractively(permission)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.small)
+                    .tint(accent)
                 }
             }
-
-            Spacer()
-
-            if isGranted {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(.green)
-            } else {
-                Button("permissions.enable".localized) {
-                    PermissionService.shared.requestInteractively(permission)
-                    refreshPermissionStatus()
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.small)
-                .tint(Color(nsColor: permission.accentColor))
-            }
+            Text(
+                isGranted && permission == .screenRecording
+                    ? "permissions.screen_recording.restart_hint".localized : permission.summary
+            )
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(.vertical, 6)
-        .onAppear {
-            refreshPermissionStatus()
-        }
+        .padding(.vertical, 8)
+        .onAppear { refreshPermissionStatus() }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             refreshPermissionStatus()
         }
@@ -82,10 +44,5 @@ struct PermissionStatusRow: View {
 
     private func refreshPermissionStatus() {
         isGranted = PermissionService.shared.isGranted(permission)
-    }
-
-    private var iconBackgroundColor: Color {
-        let tone = isGranted ? Color.green : Color(nsColor: permission.accentColor)
-        return tone.opacity(colorScheme == .dark ? 0.16 : 0.10)
     }
 }

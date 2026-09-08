@@ -48,9 +48,9 @@ struct SettingsPermissionsSection: View {
             }
         } label: {
             compactReadySummary
+                .contentShape(RoundedRectangle(cornerRadius: 10))
         }
         .buttonStyle(.plain)
-        .contentShape(Rectangle())
         .onHover { hovering in
             isHoveringSummary = hovering
         }

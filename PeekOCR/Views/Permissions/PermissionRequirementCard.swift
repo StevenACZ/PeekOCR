@@ -1,161 +1,51 @@
-//
-//  PermissionRequirementCard.swift
-//  PeekOCR
-//
-//  Renders a polished card for one pending macOS permission.
-//
-
-import AppKit
 import SwiftUI
 
-/// Step card used inside the permissions requirements window.
 struct PermissionRequirementCard: View {
     let permission: AppPermission
-    let index: Int
-    let isLast: Bool
     let isGranted: Bool
     let onActivate: (AppPermission) -> Void
 
-    @Environment(\.colorScheme) private var colorScheme
+    private var accent: Color { Color(nsColor: permission.accentColor) }
 
     var body: some View {
-        HStack(alignment: .center, spacing: 14) {
-            VStack(spacing: 8) {
-                ZStack {
-                    Circle()
-                        .fill(toneColor.opacity(0.14))
-                        .frame(width: 28, height: 28)
-
-                    Text("\(index)")
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(toneColor)
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Label(permission.title, systemImage: permission.iconName)
+                    .font(.headline)
+                    .foregroundStyle(accent)
+                Spacer(minLength: 8)
+                if isGranted {
+                    Label("permissions.card.status.granted".localized, systemImage: "checkmark.circle.fill")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.green)
                 }
-
-                Rectangle()
-                    .fill(toneColor.opacity(0.10))
-                    .frame(width: 1, height: 34)
-                    .opacity(isLast ? 0 : 1)
             }
-
-            HStack(alignment: .center, spacing: 14) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .fill(toneColor.opacity(0.12))
-                        .frame(width: 46, height: 46)
-
-                    Image(systemName: permission.iconName)
+            Text(permission.summary)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            if isGranted && permission == .screenRecording {
+                Text("permissions.screen_recording.restart_hint".localized)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            if !isGranted {
+                Button {
+                    onActivate(permission)
+                } label: {
+                    Text("permissions.card.activate".localized)
                         .font(.body.weight(.semibold))
-                        .foregroundStyle(toneColor)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 9)
+                        .background(accent, in: RoundedRectangle(cornerRadius: 9))
+                        .foregroundStyle(.white)
+                        .contentShape(RoundedRectangle(cornerRadius: 9))
                 }
-
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack(spacing: 8) {
-                        Text(permission.title)
-                            .font(.body.weight(.semibold))
-
-                        Text(statusTitle)
-                            .font(.caption2.weight(.semibold))
-                            .padding(.horizontal, 7)
-                            .padding(.vertical, 3)
-                            .background(
-                                Capsule(style: .continuous)
-                                    .fill(toneColor.opacity(0.12))
-                            )
-                            .foregroundStyle(toneColor)
-                    }
-
-                    Text(permission.summary)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-
-                    Label(detailText, systemImage: "arrow.up.right.square")
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                Spacer(minLength: 12)
-
-                Group {
-                    if isGranted {
-                        Label("permissions.card.granted_label".localized, systemImage: "checkmark.circle.fill")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.green)
-                    } else {
-                        Button {
-                            onActivate(permission)
-                        } label: {
-                            Text("permissions.card.activate".localized)
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(activationButtonForeground)
-                                .lineLimit(1)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
-                                .frame(minWidth: 74)
-                                .background(
-                                    Capsule(style: .continuous)
-                                        .fill(toneColor)
-                                )
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .frame(minWidth: 84, alignment: .trailing)
+                .buttonStyle(.plain)
             }
         }
-        .padding(14)
-        .background(cardBackground)
-    }
-
-    private var statusTitle: String {
-        isGranted ? "permissions.card.status.granted".localized : "permissions.card.status.pending".localized
-    }
-
-    private var detailText: String {
-        switch (permission, isGranted) {
-        case (.screenRecording, true):
-            return "permissions.card.detail.screen_recording.granted".localized
-        case (.accessibility, true):
-            return "permissions.card.detail.accessibility.granted".localized
-        case (.screenRecording, false):
-            return "permissions.card.detail.screen_recording.pending".localized
-        case (.accessibility, false):
-            return "permissions.card.detail.accessibility.pending".localized
-        }
-    }
-
-    private var toneColor: Color {
-        isGranted ? .green : Color(nsColor: permission.accentColor)
-    }
-
-    private var cardBackground: some View {
-        RoundedRectangle(cornerRadius: 18, style: .continuous)
-            .fill(Color(nsColor: .controlBackgroundColor).opacity(colorScheme == .dark ? 0.88 : 1))
-            .overlay(
-                LinearGradient(
-                    colors: [
-                        toneColor.opacity(colorScheme == .dark ? 0.14 : 0.07),
-                        .clear,
-                    ],
-                    startPoint: .leading,
-                    endPoint: .trailing
-                )
-                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .stroke(borderColor, lineWidth: 1)
-            )
-            .shadow(color: .black.opacity(colorScheme == .dark ? 0.16 : 0.05), radius: 12, y: 6)
-    }
-
-    private var borderColor: Color {
-        colorScheme == .dark
-            ? toneColor.opacity(0.20)
-            : Color(nsColor: .separatorColor).opacity(0.18)
-    }
-
-    private var activationButtonForeground: Color {
-        .black.opacity(0.82)
+        .padding(16)
+        .background(accent.opacity(0.09), in: RoundedRectangle(cornerRadius: 16))
     }
 }

@@ -6,6 +6,14 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- Refresh permission labels and settings tabs together when switching the app language.
+- Distinguish Screen Recording in red and Accessibility in blue across permission cards and guidance, with larger draggable icons.
+- Compact branded permission welcome with content-sized layout and native close control.
+- Smooth permission guidance follows System Settings at the display refresh rate, stops tracking while hidden, and keeps completion explicit.
+- Screen access messaging distinguishes a detected grant from macOS requests to reopen the app.
+
 ## [2.1.0] - 2026-07-11
 
 ### Added

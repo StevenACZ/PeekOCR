@@ -1,31 +1,31 @@
-//
-//  PermissionOverlayWindowController.swift
-//  PeekOCR
-//
-//  Hosts the floating permission helper overlay shown over System Settings.
-//
-
 import AppKit
-import QuartzCore
+import SwiftUI
 
 final class PermissionOverlayWindowController: NSWindowController {
-    private let windowSize = PermissionOverlayContentView.preferredSize
+    private let hostApp: PermissionHostApp
+    private let permission: AppPermission
+    private let onClose: () -> Void
+    private var isGranted = false
+    private var measuredSize: CGSize?
+    private var hostingController: NSHostingController<AnyView>?
 
     init(hostApp: PermissionHostApp, permission: AppPermission, onClose: @escaping () -> Void) {
+        self.hostApp = hostApp
+        self.permission = permission
+        self.onClose = onClose
         let panel = PassiveOverlayPanel(
-            contentRect: NSRect(origin: .zero, size: PermissionOverlayContentView.preferredSize),
-            styleMask: [.borderless, .nonactivatingPanel],
-            backing: .buffered,
-            defer: false
+            contentRect: .zero, styleMask: [.borderless, .nonactivatingPanel],
+            backing: .buffered, defer: false
         )
-
         super.init(window: panel)
-        configureWindow(panel)
-        panel.contentView = PermissionOverlayContentView(
-            hostApp: hostApp,
-            permission: permission,
-            onClose: onClose
-        )
+        panel.isOpaque = false
+        panel.backgroundColor = .clear
+        panel.level = .statusBar
+        panel.hasShadow = true
+        panel.hidesOnDeactivate = false
+        panel.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle, .fullScreenAuxiliary]
+        panel.animationBehavior = .none
+        updateContent()
     }
 
     @available(*, unavailable)
@@ -33,64 +33,74 @@ final class PermissionOverlayWindowController: NSWindowController {
         fatalError("init(coder:) has not been implemented")
     }
 
-    func present(from sourceFrameInScreen: CGRect?, settingsFrame: CGRect, visibleFrame: CGRect) {
+    func setGranted(_ granted: Bool) {
+        guard granted != isGranted else { return }
+        isGranted = granted
+        updateContent()
+    }
+
+    private func updateContent() {
         guard let window else { return }
-
-        let targetOrigin = anchoredOrigin(for: settingsFrame, visibleFrame: visibleFrame)
-        let targetFrame = NSRect(origin: targetOrigin, size: windowSize)
-
-        if let sourceFrameInScreen, !sourceFrameInScreen.isEmpty {
-            window.alphaValue = 0.45
-            window.setFrame(sourceFrameInScreen, display: false)
-            window.orderFrontRegardless()
-
-            NSAnimationContext.runAnimationGroup { context in
-                context.duration = 0.28
-                context.timingFunction = CAMediaTimingFunction(name: .easeOut)
-                window.animator().setFrame(targetFrame, display: true)
-                window.animator().alphaValue = 1
-            }
+        window.contentViewController = nil
+        hostingController = nil
+        measuredSize = nil
+        if isGranted {
+            let view = PermissionGrantedGuideView(permission: permission, width: 400, onClose: onClose)
+            let hosting = NSHostingController(rootView: AnyView(view))
+            hosting.sizingOptions = []
+            hosting.safeAreaRegions = []
+            hostingController = hosting
+            window.contentViewController = hosting
         } else {
-            window.alphaValue = 1
-            window.setFrame(targetFrame, display: false)
-            window.orderFrontRegardless()
+            let content = PermissionOverlayContentView(hostApp: hostApp, permission: permission, onClose: onClose)
+            window.contentView = content
         }
     }
 
+    func present(from sourceFrameInScreen: CGRect?, settingsFrame: CGRect, visibleFrame: CGRect) {
+        updatePosition(with: settingsFrame, visibleFrame: visibleFrame)
+    }
+
     func updatePosition(with settingsFrame: CGRect, visibleFrame: CGRect) {
-        let origin = anchoredOrigin(for: settingsFrame, visibleFrame: visibleFrame)
-        window?.setFrameOrigin(origin)
-        window?.orderFrontRegardless()
+        guard let window, let frame = targetFrame(settingsFrame: settingsFrame, visibleFrame: visibleFrame) else {
+            hide()
+            return
+        }
+        if window.frame != frame { window.setFrame(frame, display: true) }
+        if !window.isVisible { window.orderFrontRegardless() }
     }
 
     func hide() {
         window?.orderOut(nil)
     }
 
-    private func configureWindow(_ window: NSWindow) {
-        window.isOpaque = false
-        window.backgroundColor = .clear
-        window.level = .statusBar
-        window.hasShadow = true
-        window.hidesOnDeactivate = false
-        window.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle, .fullScreenAuxiliary]
-        window.animationBehavior = .none
-    }
-
-    private func anchoredOrigin(for settingsFrame: CGRect, visibleFrame: CGRect) -> NSPoint {
-        let sidebarWidth: CGFloat = 168
-        let contentMinX = settingsFrame.minX + sidebarWidth
-        let contentWidth = max(settingsFrame.width - sidebarWidth, windowSize.width)
-        let preferredX = contentMinX + ((contentWidth - windowSize.width) / 2) - 10
-        let preferredY = settingsFrame.minY + 22
-        let minX = visibleFrame.minX + 10
-        let maxX = visibleFrame.maxX - windowSize.width - 10
-        let minY = visibleFrame.minY + 10
-        let maxY = visibleFrame.maxY - windowSize.height - 10
-
-        return NSPoint(
-            x: min(max(preferredX, minX), maxX),
-            y: min(max(preferredY, minY), maxY)
+    private func targetFrame(settingsFrame: CGRect, visibleFrame: CGRect) -> CGRect? {
+        let visible = visibleFrame.insetBy(dx: 10, dy: 10)
+        guard let column = PermissionOverlayPlacement.frame(settings: settingsFrame, visible: visible, height: 1)
+        else { return nil }
+        if measuredSize?.width != column.width {
+            let height: CGFloat
+            if let hostingController {
+                hostingController.rootView = AnyView(
+                    PermissionGrantedGuideView(
+                        permission: permission, width: column.width, onClose: onClose
+                    ))
+                height =
+                    hostingController.sizeThatFits(
+                        in: NSSize(
+                            width: column.width, height: .greatestFiniteMagnitude
+                        )
+                    ).height
+            } else if let content = window?.contentView as? PermissionOverlayContentView {
+                height = content.preferredHeight(for: column.width)
+            } else {
+                return nil
+            }
+            measuredSize = CGSize(width: column.width, height: ceil(height))
+        }
+        guard let measuredSize, measuredSize.height > 0 else { return nil }
+        return PermissionOverlayPlacement.frame(
+            settings: settingsFrame, visible: visible, height: measuredSize.height
         )
     }
 }

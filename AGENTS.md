@@ -6,8 +6,7 @@ local details in ignored local files such as `AGENTS.local.md`.
 
 ## Project Basics
 
-- PeekOCR is a macOS menu bar app for OCR, screenshots, annotations, and short
-  screen recordings.
+- PeekOCR is a macOS menu bar app for OCR, screenshots, annotations, and short recordings.
 - Deployment target: macOS 15, Apple Silicon only. Swift 5 mode.
 - The Xcode project uses file-system synchronized groups. Creating, moving, or
   deleting source files on disk is enough; do not edit `project.pbxproj` just
@@ -16,13 +15,7 @@ local details in ignored local files such as `AGENTS.local.md`.
 
 ## Build And Verification
 
-- Use the Makefile for the standard local gate:
-
-```bash
-make ci-check
-```
-
-- `make ci-check` runs lint plus a Debug build.
+- Standard local gate: `make ci-check` (lint plus a Debug build).
 - The project does not have a unit test target yet; there is no `make test` gate.
 - When diagnosing runtime behavior, prefer Console/log evidence from the app
   subsystem:
@@ -31,24 +24,21 @@ make ci-check
 /usr/bin/log stream --style compact --level debug --predicate 'subsystem == "com.peekocr"'
 ```
 
-- Crash reports are written by macOS under
-  `~/Library/Logs/DiagnosticReports/PeekOCR-*.ips`.
+- Crash reports: `~/Library/Logs/DiagnosticReports/PeekOCR-*.ips`.
 
 ## Local Iteration
 
 - Use `make install-dev` for routine local app testing on the maintainer's Mac.
 - It builds a Release app, verifies Apple Development signing, reinstalls to
   `/Applications/PeekOCR.app`, and relaunches the app.
-- Keep the app name and bundle id unchanged so macOS can preserve Screen
-  Recording and Accessibility grants across rebuilds.
+- Preserve app name and bundle id so macOS can retain Screen Recording and Accessibility grants.
 - Use `make notarized-dmg` only for final distribution packaging.
 
 ## Signing And Local Configuration
 
 - The tracked signing defaults are intentionally safe for public development.
 - Keep private signing overrides in ignored local xcconfig files.
-- Never commit certificates, provisioning profiles, team identifiers,
-  environment files, or release authentication material.
+- Never commit certificates, profiles, team identifiers, environment files, or release authentication.
 - Release packaging scripts may pass explicit signing overrides; keep local
   development defaults separate from release authentication.
 
@@ -70,16 +60,19 @@ All user-facing strings are localized (es/en): use `"key".localized` /
 `Resources/es.lproj/Localizable.strings` and `en.lproj`. Never hardcode UI
 text; the language picker lives in Settings > General.
 
+### Permission Identity
+
+Keep permission colors consistent: screen recording red, Accessibility blue,
+microphone orange, system audio teal, input monitoring purple, speech recognition indigo, local network cyan.
+Green denotes granted/ready status. Retain permission labels and icons; color alone
+must not convey identity or status. Verify these mappings in permission UI changes.
+
 ### Region Picking
 
-All captures share one overlay:
-`LiveAnnotationOverlayView` plus its focused extensions, presented by
-`LiveAnnotationOverlayWindowController`.
-
-- `.annotate`: adjustable selection with annotation tools and Enter to
-  capture.
-- `.quickSelect`: drag to capture immediately on mouse-up. Space selects the
-  full screen under the cursor.
+All captures share `LiveAnnotationOverlayView` and its focused extensions,
+presented by `LiveAnnotationOverlayWindowController`.
+- `.annotate`: adjustable selection with annotation tools; Enter captures.
+- `.quickSelect`: mouse-up captures the drag selection; Space selects the screen under the cursor.
 
 Still pixels come from `NativeScreenCaptureService.captureRegion` through
 `SCScreenshotManager`, excluding PeekOCR windows where possible. The
@@ -92,13 +85,8 @@ Still pixels come from `NativeScreenCaptureService.captureRegion` through
 rounded contour and then fill. The floating editor uses AppKit text editing and
 only approximates that final rendered look with fill plus a strong shadow.
 
-Multi-line text behavior:
-
-- Enter inserts a newline.
-- Command-Enter commits.
-- Escape cancels.
-- Text anchors at its top-left `startPoint` and is measured with
-  `LiveAnnotation.textSize`.
+Text behavior: Enter inserts a newline, Command-Enter commits, Escape cancels.
+Text anchors at its top-left `startPoint` and is measured with `LiveAnnotation.textSize`.
 
 Undo is transactional for drags through `beginAnnotationTransaction` and
 `commitAnnotationTransaction`; no-op drags should not create undo steps. Atomic
@@ -115,13 +103,10 @@ Clip recording lives under `Services/Recording/`.
 frame, HUD, and `ScreenRecordingEngine`. The engine records to temporary
 `.mov` files with ScreenCaptureKit and `SCRecordingOutput`.
 
-Important capture exclusion ordering:
-
-- Fetch `SCShareableContent` inside `ScreenRecordingEngine.start()`, after the
-  recording frame and HUD are visible.
+Capture exclusion order:
+- Fetch `SCShareableContent` inside `ScreenRecordingEngine.start()`, after the frame and HUD are visible.
 - Exclude by application first, with an excluding-windows fallback.
-- Keep the recording outline outside the captured rect as a second layer of
-  protection.
+- Keep the recording outline outside the captured rect as a second layer of protection.
 
 Pause/resume swaps `SCRecordingOutput` instances on the live stream. Each
 resume creates a new segment; stop either moves the single segment or
@@ -161,6 +146,5 @@ clip.
 
 ## Known Legacy Code
 
-The older post-capture editor and some legacy capture helpers still exist for
-compatibility. Do not remove them unless the task explicitly asks for that
-cleanup.
+The older post-capture editor and legacy capture helpers remain for compatibility.
+Do not remove them unless the task explicitly asks for that cleanup.

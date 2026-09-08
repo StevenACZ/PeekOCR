@@ -44,9 +44,9 @@ enum AppPermission: CaseIterable, Hashable {
     var accentColor: NSColor {
         switch self {
         case .screenRecording:
-            return NSColor.systemBlue
+            return NSColor.systemRed
         case .accessibility:
-            return NSColor.systemOrange
+            return NSColor.systemBlue
         }
     }
 
