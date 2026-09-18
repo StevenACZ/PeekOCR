@@ -6,6 +6,21 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2.2.0] - 2026-09-18
+
+### Added
+
+- In-app update card in the menu bar panel: it announces the new version,
+  shows download progress, and switches to a "ready to install" state with
+  "Install now" and "Later". Choosing "Later" keeps the prepared update on the
+  card so it can be installed at any time.
+- The About window mirrors the same states, with "Install now" and "Later"
+  actions next to the existing update capsule.
+- Installing an update quits and reopens PeekOCR by itself; the card and the
+  About window say so before the restart.
+- Shorter version-less wording for the update states, used when the version
+  number is not available yet.
+
 ### Changed
 
 - Refresh permission labels and settings tabs together when switching the app language.

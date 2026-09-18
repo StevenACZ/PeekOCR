@@ -283,7 +283,7 @@
 				ARCHS = arm64;
 				CODE_SIGN_ENTITLEMENTS = PeekOCR/PeekOCR.entitlements;
 				COMBINE_HIDPI_IMAGES = YES;
-					CURRENT_PROJECT_VERSION = 10;
+					CURRENT_PROJECT_VERSION = 12;
 				DEAD_CODE_STRIPPING = YES;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_PREVIEWS = YES;
@@ -294,7 +294,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-					MARKETING_VERSION = 2.1.0;
+					MARKETING_VERSION = 2.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = oli.PeekOCR;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -316,7 +316,7 @@
 				ARCHS = arm64;
 				CODE_SIGN_ENTITLEMENTS = PeekOCR/PeekOCR.entitlements;
 				COMBINE_HIDPI_IMAGES = YES;
-					CURRENT_PROJECT_VERSION = 10;
+					CURRENT_PROJECT_VERSION = 12;
 				DEAD_CODE_STRIPPING = YES;
 				ENABLE_APP_SANDBOX = NO;
 					ENABLE_HARDENED_RUNTIME = YES;
@@ -328,7 +328,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-					MARKETING_VERSION = 2.1.0;
+					MARKETING_VERSION = 2.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = oli.PeekOCR;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
