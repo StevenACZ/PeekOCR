@@ -169,7 +169,7 @@ struct UpdateCard: View {
             )
 
             cardButton(title: "update.card.retry".localized) {
-                manager.installNow()
+                manager.retryPendingUpdate()
             }
         }
     }

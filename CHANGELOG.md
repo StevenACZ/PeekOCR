@@ -6,6 +6,11 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- Retry after a failed update now downloads again and stops at "Ready to
+  install", asking before it installs.
+
 ## [2.2.0] - 2026-09-18
 
 ### Added

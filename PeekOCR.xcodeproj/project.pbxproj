@@ -10,7 +10,18 @@
 		B05A121E2F060001000000A3 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = B05A121E2F060001000000A4 /* Sparkle */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		B0FE990000000000000006 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B0D251AC2EEF870D006F4EAA /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B0D251B32EEF870D006F4EAA;
+			remoteInfo = PeekOCR;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
+		B0FE990000000000000001 /* PeekOCRTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PeekOCRTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B0D251B42EEF870D006F4EAA /* PeekOCR.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PeekOCR.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B0517CF6516000000000000C /* SigningDefaults.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = SigningDefaults.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -26,6 +37,11 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		B0FE990000000000000002 /* PeekOCRTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = PeekOCRTests;
+			sourceTree = "<group>";
+		};
 		B0D251B62EEF870D006F4EAA /* PeekOCR */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -37,6 +53,13 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		B0FE990000000000000004 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		B0D251B12EEF870D006F4EAA /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -52,6 +75,7 @@
 			isa = PBXGroup;
 			children = (
 				B0D251B62EEF870D006F4EAA /* PeekOCR */,
+				B0FE990000000000000002 /* PeekOCRTests */,
 				B0517CF6516000000000000C /* SigningDefaults.xcconfig */,
 				B0D251B52EEF870D006F4EAA /* Products */,
 			);
@@ -61,6 +85,7 @@
 			isa = PBXGroup;
 			children = (
 				B0D251B42EEF870D006F4EAA /* PeekOCR.app */,
+				B0FE990000000000000001 /* PeekOCRTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -68,6 +93,29 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		B0FE990000000000000008 /* PeekOCRTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B0FE990000000000000009 /* Build configuration list for PBXNativeTarget "PeekOCRTests" */;
+			buildPhases = (
+				B0FE990000000000000003 /* Sources */,
+				B0FE990000000000000004 /* Frameworks */,
+				B0FE990000000000000005 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				B0FE990000000000000007 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				B0FE990000000000000002 /* PeekOCRTests */,
+			);
+			name = PeekOCRTests;
+			packageProductDependencies = (
+			);
+			productName = PeekOCRTests;
+			productReference = B0FE990000000000000001 /* PeekOCRTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		B0D251B32EEF870D006F4EAA /* PeekOCR */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = B0D251BF2EEF870E006F4EAA /* Build configuration list for PBXNativeTarget "PeekOCR" */;
@@ -104,6 +152,10 @@
 					B0D251B32EEF870D006F4EAA = {
 						CreatedOnToolsVersion = 26.1.1;
 					};
+					B0FE990000000000000008 = {
+						CreatedOnToolsVersion = 26.1.1;
+						TestTargetID = B0D251B32EEF870D006F4EAA;
+					};
 				};
 			};
 			buildConfigurationList = B0D251AF2EEF870D006F4EAA /* Build configuration list for PBXProject "PeekOCR" */;
@@ -125,11 +177,19 @@
 			projectRoot = "";
 			targets = (
 				B0D251B32EEF870D006F4EAA /* PeekOCR */,
+				B0FE990000000000000008 /* PeekOCRTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		B0FE990000000000000005 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		B0D251B22EEF870D006F4EAA /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -140,6 +200,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		B0FE990000000000000003 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		B0D251B02EEF870D006F4EAA /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -149,7 +216,45 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		B0FE990000000000000007 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B0D251B32EEF870D006F4EAA /* PeekOCR */;
+			targetProxy = B0FE990000000000000006 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		B0FE99000000000000000A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = arm64;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				PRODUCT_BUNDLE_IDENTIFIER = oli.PeekOCRTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PeekOCR.app/Contents/MacOS/PeekOCR";
+			};
+			name = Debug;
+		};
+		B0FE99000000000000000B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = arm64;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				PRODUCT_BUNDLE_IDENTIFIER = oli.PeekOCRTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PeekOCR.app/Contents/MacOS/PeekOCR";
+			};
+			name = Release;
+		};
 		B0D251BD2EEF870E006F4EAA /* Debug */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = B0517CF6516000000000000C /* SigningDefaults.xcconfig */;
@@ -358,6 +463,15 @@
 			buildConfigurations = (
 				B0D251C02EEF870E006F4EAA /* Debug */,
 				B0D251C12EEF870E006F4EAA /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B0FE990000000000000009 /* Build configuration list for PBXNativeTarget "PeekOCRTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B0FE99000000000000000A /* Debug */,
+				B0FE99000000000000000B /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

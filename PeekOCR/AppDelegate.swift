@@ -15,11 +15,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let hotKeyManager = HotKeyManager.shared
     private var menuBarController: MenuBarStatusController?
 
+    /// The unit tests are hosted by the app; XCTest must not get the status
+    /// item, the onboarding window, the hotkeys, or the updater.
+    static let isRunningTests = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+
     // MARK: - Lifecycle
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Menu-bar-only agent app: no Dock icon.
         NSApp.setActivationPolicy(.accessory)
+        guard !Self.isRunningTests else { return }
 
         let controller = MenuBarStatusController()
         controller.start()
