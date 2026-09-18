@@ -131,7 +131,7 @@ struct AboutView: View {
 
         case .failed:
             Button {
-                updateManager.installNow()
+                updateManager.retryPendingUpdate()
             } label: {
                 updateCapsule(
                     icon: "exclamationmark.arrow.circlepath",

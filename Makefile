@@ -1,4 +1,4 @@
-.PHONY: help tools format format-all lint lint-all build release install-dev size-check ci-check release-check notarized-dmg appcast hooks-install
+.PHONY: help tools format format-all lint lint-all build release test install-dev size-check ci-check release-check notarized-dmg appcast hooks-install
 
 .DEFAULT_GOAL := help
 
@@ -20,10 +20,11 @@ help:
 	@printf "  make lint-all      Check all Swift sources explicitly\n"
 	@printf "  make build         Build Debug for Apple Silicon\n"
 	@printf "  make release       Build Release for Apple Silicon\n"
+	@printf "  make test          Run the PeekOCRTests unit tests\n"
 	@printf "  make install-dev   Reinstall signed Release build to /Applications\n"
 	@printf "  make size-check    Measure the Release app bundle\n"
-	@printf "  make ci-check      Fast local gate: lint + Debug build\n"
-	@printf "  make release-check Release gate: lint + Release build + size check\n"
+	@printf "  make ci-check      Fast local gate: lint + tests + Debug build\n"
+	@printf "  make release-check Release gate: lint + tests + Release build + size check\n"
 	@printf "  make notarized-dmg Build, sign, notarize, staple, and validate the release DMG\n"
 	@printf "  make appcast       Zip the notarized app, EdDSA-sign it, and write appcast.xml\n"
 	@printf "  make hooks-install Install optional Lefthook git hooks\n"
@@ -59,6 +60,11 @@ release:
 		-configuration Release -destination 'generic/platform=macOS' \
 		-derivedDataPath $(RELEASE_DERIVED_DATA) clean build
 
+test:
+	xcodebuild -project $(PROJECT) -scheme $(SCHEME) \
+		-configuration Debug -destination 'platform=macOS,arch=arm64' \
+		-derivedDataPath $(DEBUG_DERIVED_DATA) test
+
 install-dev:
 	@chmod +x scripts/install_dev.sh
 	@scripts/install_dev.sh
@@ -70,10 +76,10 @@ size-check:
 	@lipo -archs "$(RELEASE_APP)/Contents/MacOS/PeekOCR"
 	@find "$(RELEASE_APP)" -maxdepth 4 -type f | sort
 
-ci-check: lint build
+ci-check: lint test build
 	@printf "ci-check: passed\n"
 
-release-check: lint release size-check
+release-check: lint test release size-check
 	@printf "release-check: passed\n"
 
 notarized-dmg:

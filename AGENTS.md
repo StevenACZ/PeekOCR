@@ -15,8 +15,8 @@ local details in ignored local files such as `AGENTS.local.md`.
 
 ## Build And Verification
 
-- Standard local gate: `make ci-check` (lint plus a Debug build).
-- The project does not have a unit test target yet; there is no `make test` gate.
+- Standard local gate: `make ci-check` (lint, unit tests, plus a Debug build).
+- Unit tests live in the `PeekOCRTests` target; `make test`, `ci-check`, and `release-check` all run them.
 - When diagnosing runtime behavior, prefer Console/log evidence from the app
   subsystem:
 
