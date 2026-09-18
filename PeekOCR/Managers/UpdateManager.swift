@@ -60,7 +60,6 @@ final class UpdateManager: ObservableObject {
 
     private var installRequested = false
     private var installNowRequested = false
-    private var retryRequested = false
     private var resumeCheckPending = false
     private var pendingInstallReply: ((SPUUserUpdateChoice) -> Void)?
     @Published private(set) var pendingVersion: String?
@@ -120,8 +119,8 @@ final class UpdateManager: ObservableObject {
 
     // MARK: - User actions
 
-    /// Update card / About capsule click: download + install + relaunch, or
-    /// retry after a failure. Information-only updates open the release page.
+    /// Update card / About capsule click: download the pending update and stop
+    /// at the ready card. Information-only updates open the release page.
     func installPendingUpdate() {
         guard let updaterSession else { return }
         if pendingIsInformationOnly {
@@ -129,7 +128,6 @@ final class UpdateManager: ObservableObject {
             return
         }
         guard updaterSession.isInProgress() == false else { return }
-        retryRequested = false
         installRequested = true
         phase = .downloading(fraction: nil)
         updaterSession.checkForUpdates()
@@ -147,7 +145,6 @@ final class UpdateManager: ObservableObject {
             return
         }
         guard updaterSession != nil else { return }
-        retryRequested = false
         installRequested = true
         installNowRequested = true
         resumeCheckPending = true
@@ -162,16 +159,19 @@ final class UpdateManager: ObservableObject {
             openReleasePage()
             return
         }
+        guard pendingInstallReply == nil else {
+            phase = .readyToInstall(version: pendingVersion ?? "")
+            return
+        }
         installRequested = true
         installNowRequested = false
-        retryRequested = true
         resumeCheckPending = true
         phase = .downloading(fraction: nil)
         startResumeCheck(attempt: 0)
     }
 
     /// Resumes the prepared update once Sparkle releases the dismissed session.
-    private func startResumeCheck(attempt: Int) {
+    func startResumeCheck(attempt: Int) {
         guard resumeCheckPending else { return }
         guard let updaterSession else { return }
         guard updaterSession.isInProgress() else {
@@ -182,7 +182,6 @@ final class UpdateManager: ObservableObject {
         guard attempt < 40 else {
             installRequested = false
             installNowRequested = false
-            retryRequested = false
             resumeCheckPending = false
             phase = .failed(version: pendingVersion ?? "")
             return
@@ -197,7 +196,6 @@ final class UpdateManager: ObservableObject {
         guard let reply = pendingInstallReply else { return }
         pendingInstallReply = nil
         installRequested = false
-        retryRequested = false
         reply(.dismiss)
     }
 
@@ -231,13 +229,12 @@ final class UpdateManager: ObservableObject {
 
         switch stage {
         case .downloaded, .installing:
-            if (installRequested || installNowRequested) && !retryRequested {
+            if installNowRequested && !informationOnly {
                 phase = .installing
                 return .install
             }
             installRequested = false
             installNowRequested = false
-            retryRequested = false
             phase = .readyToInstall(version: version)
             return .dismiss
         case .notDownloaded:
@@ -247,13 +244,11 @@ final class UpdateManager: ObservableObject {
             }
             installRequested = false
             installNowRequested = false
-            retryRequested = false
             phase = .available(version: version)
             return .dismiss
         @unknown default:
             installRequested = false
             installNowRequested = false
-            retryRequested = false
             phase = .available(version: version)
             return .dismiss
         }
@@ -281,14 +276,13 @@ final class UpdateManager: ObservableObject {
     }
 
     func handleReadyToInstall(reply: @escaping (SPUUserUpdateChoice) -> Void) {
+        resumeCheckPending = false
         if installNowRequested {
             installNowRequested = false
-            retryRequested = false
             phase = .installing
             reply(.install)
             return
         }
-        retryRequested = false
         pendingInstallReply = reply
         phase = .readyToInstall(version: pendingVersion ?? "")
     }
@@ -304,7 +298,6 @@ final class UpdateManager: ObservableObject {
         }
         installRequested = false
         installNowRequested = false
-        retryRequested = false
         pendingInstallReply = nil
         pendingVersion = nil
         pendingIsInformationOnly = false
@@ -322,7 +315,6 @@ final class UpdateManager: ObservableObject {
         }
         finishManualCheck(status: .idle)
         installNowRequested = false
-        retryRequested = false
         pendingInstallReply = nil
         if installRequested, let pendingVersion {
             AppLogger.error("Update install failed: \(message)", logger: AppLogger.updates)
@@ -348,7 +340,6 @@ final class UpdateManager: ObservableObject {
         }
         installRequested = false
         installNowRequested = false
-        retryRequested = false
         pendingInstallReply = nil
         switch phase {
         case .installing, .readyToInstall:

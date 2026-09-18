@@ -15,8 +15,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let hotKeyManager = HotKeyManager.shared
     private var menuBarController: MenuBarStatusController?
 
-    /// The unit tests are hosted by the app; XCTest must not get the status
-    /// item, the onboarding window, the hotkeys, or the updater.
+    /// The unit tests are hosted by the app; XCTest must not get the status item, the hotkeys, or the updater.
     static let isRunningTests = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
 
     // MARK: - Lifecycle
@@ -36,6 +35,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidBecomeActive(_ notification: Notification) {
+        guard !Self.isRunningTests else { return }
         hotKeyManager.refreshRegistrationIfNeeded()
     }
 

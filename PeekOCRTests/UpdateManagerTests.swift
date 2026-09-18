@@ -115,11 +115,60 @@ final class UpdateManagerTests: XCTestCase {
         var choices: [SPUUserUpdateChoice] = []
         manager.handleReadyToInstall { choices.append($0) }
         XCTAssertEqual(manager.phase, .readyToInstall(version: "9.9.9"))
+        XCTAssertTrue(choices.isEmpty)
 
         manager.installNow()
 
         XCTAssertEqual(choices, [.install])
         XCTAssertEqual(manager.phase, .installing)
+    }
+
+    func testUpdateButtonOnAPreparedStageStopsAtTheReadyCard() {
+        surfacePendingUpdate()
+
+        manager.installPendingUpdate()
+        let choice = manager.handleUpdateFound(
+            version: "9.9.9",
+            releasePage: nil,
+            informationOnly: false,
+            stage: .downloaded
+        )
+
+        XCTAssertEqual(choice, .dismiss)
+        XCTAssertEqual(manager.phase, .readyToInstall(version: "9.9.9"))
+    }
+
+    func testAReadyCardSurvivesTheArmedResumeWatchdog() {
+        surfacePendingUpdate()
+        spy.isInProgress = true
+        manager.retryPendingUpdate()
+        XCTAssertEqual(manager.phase, .downloading(fraction: nil))
+
+        var choices: [SPUUserUpdateChoice] = []
+        manager.handleReadyToInstall { choices.append($0) }
+        XCTAssertTrue(choices.isEmpty)
+
+        manager.startResumeCheck(attempt: 40)
+
+        XCTAssertEqual(manager.phase, .readyToInstall(version: "9.9.9"))
+
+        manager.installNow()
+
+        XCTAssertEqual(choices, [.install])
+        XCTAssertEqual(manager.phase, .installing)
+    }
+
+    func testRetryWithAHeldReplyKeepsTheReadyCard() {
+        surfacePendingUpdate()
+        manager.installPendingUpdate()
+        var choices: [SPUUserUpdateChoice] = []
+        manager.handleReadyToInstall { choices.append($0) }
+
+        manager.retryPendingUpdate()
+
+        XCTAssertTrue(choices.isEmpty)
+        XCTAssertEqual(manager.phase, .readyToInstall(version: "9.9.9"))
+        XCTAssertEqual(spy.checkCount, 1)
     }
 
     // MARK: - Install now still installs
