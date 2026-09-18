@@ -174,7 +174,9 @@ hdiutil verify "$OUTPUT_DMG"
 echo "==> Notarizing DMG"
 xcrun notarytool submit "$OUTPUT_DMG" --keychain-profile "$NOTARY_PROFILE" --wait
 
-echo "==> Stapling DMG"
+echo "==> Stapling app for Sparkle and DMG for direct installs"
+xcrun stapler staple "$BUILT_APP"
+xcrun stapler validate "$BUILT_APP"
 xcrun stapler staple "$OUTPUT_DMG"
 xcrun stapler validate "$OUTPUT_DMG"
 

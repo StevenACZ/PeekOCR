@@ -36,9 +36,25 @@ ZIP_NAME="PeekOCR-v$VERSION.zip"
 ZIP_PATH="$OUTPUT_DIR/$ZIP_NAME"
 APPCAST_PATH="$OUTPUT_DIR/appcast.xml"
 
+VALIDATION_DIR="$(mktemp -d "${TMPDIR:-/tmp}/peekocr-appcast.XXXXXX")"
+cleanup() {
+  rm -rf "$VALIDATION_DIR"
+}
+trap cleanup EXIT
+
+echo "==> Verifying stapled app"
+xcrun stapler validate "$APP_PATH"
+codesign --verify --deep --strict --verbose=2 "$APP_PATH"
+
 echo "==> Zipping $APP_PATH -> $ZIP_PATH"
 rm -f "$ZIP_PATH"
 ditto -c -k --keepParent "$APP_PATH" "$ZIP_PATH"
+
+echo "==> Verifying archived app"
+ditto -x -k "$ZIP_PATH" "$VALIDATION_DIR"
+ARCHIVED_APP="$VALIDATION_DIR/$(basename "$APP_PATH")"
+xcrun stapler validate "$ARCHIVED_APP"
+codesign --verify --deep --strict --verbose=2 "$ARCHIVED_APP"
 
 echo "==> Signing update (EdDSA key from the login Keychain)"
 SIGNATURE_ATTRS="$("$SPARKLE_BIN/sign_update" "$ZIP_PATH")"
