@@ -96,6 +96,7 @@ final class MenuBarStatusController: NSObject, NSPopoverDelegate, NSWindowDelega
                 popover.contentViewController = NSHostingController(rootView: makePanelHost())
             }
             refreshPopoverSize()
+            UpdateManager.shared.requestBackgroundCheck()
             button.state = .on
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
             NSApp.activate(ignoringOtherApps: true)
@@ -188,6 +189,7 @@ final class MenuBarStatusController: NSObject, NSPopoverDelegate, NSWindowDelega
     }
 
     private func presentAboutWindow(reusing window: NSWindow?) -> NSWindow {
+        UpdateManager.shared.requestBackgroundCheck()
         let hosting = NSHostingController(rootView: AboutView())
         let target: NSWindow
         if let window {
