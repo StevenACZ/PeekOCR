@@ -55,86 +55,166 @@ struct ActionRow: View {
     }
 }
 
-/// Update lifecycle row: pending update → one-click install with inline
-/// download/install progress; a failed install offers a retry.
-struct UpdateMenuRow: View {
+/// Update card shown under the popover header while an update is pending.
+struct UpdateCard: View {
     @ObservedObject var manager: UpdateManager
 
     var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            content
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Theme.accent.opacity(0.12))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(Theme.accent.opacity(0.22), lineWidth: 1)
+        )
+        .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .animation(.easeInOut(duration: 0.25), value: manager.phase)
+    }
+
+    @ViewBuilder
+    private var content: some View {
         switch manager.phase {
         case .idle:
             EmptyView()
 
         case .available(let version):
-            ActionRow(
-                icon: "arrow.down.circle",
-                title: "menu.update_available".localized,
-                subtitle: "menu.update_install_hint".localized(version)
-            ) {
+            headline(
+                icon: "arrow.down.circle.fill",
+                title: "update.card.available_title".localized(version),
+                subtitle: "update.card.available_subtitle".localized
+            )
+
+            cardButton(title: "update.card.update".localized) {
                 manager.installPendingUpdate()
             }
 
         case .downloading(let fraction):
-            UpdateProgressRow(
-                title: "menu.update_downloading".localized,
-                subtitle: fraction.map { "\(Int($0 * 100))%" },
-                fraction: fraction
+            headline(
+                icon: "arrow.down.circle",
+                title: versionText.isEmpty
+                    ? "update.card.downloading_short".localized
+                    : "update.card.downloading_title".localized(versionText),
+                subtitle: nil
             )
 
-        case .installing:
-            UpdateProgressRow(
-                title: "menu.update_installing".localized,
-                subtitle: "menu.update_relaunch".localized,
-                fraction: nil
-            )
-
-        case .failed:
-            ActionRow(
-                icon: "exclamationmark.arrow.circlepath",
-                title: "menu.update_failed".localized,
-                subtitle: "menu.update_retry_hint".localized
-            ) {
-                manager.installPendingUpdate()
-            }
-        }
-    }
-}
-
-/// Non-interactive progress row shown while an update downloads or installs.
-struct UpdateProgressRow: View {
-    let title: String
-    let subtitle: String?
-    let fraction: Double?
-
-    var body: some View {
-        HStack(spacing: 12) {
-            Group {
-                if let fraction {
-                    ProgressView(value: fraction)
-                        .progressViewStyle(.circular)
-                } else {
-                    ProgressView()
+            HStack(spacing: 8) {
+                Group {
+                    if let fraction {
+                        ProgressView(value: fraction)
+                    } else {
+                        ProgressView()
+                    }
                 }
-            }
-            .controlSize(.small)
-            .frame(width: 20)
+                .progressViewStyle(.linear)
+                .tint(Theme.accent)
 
-            VStack(alignment: .leading, spacing: 1) {
-                Text(title)
-                    .font(.subheadline)
-                    .foregroundStyle(Color.primary)
-
-                if let subtitle {
-                    Text(subtitle)
-                        .font(.caption2)
+                if let fraction {
+                    Text("\(Int(fraction * 100)) %")
+                        .font(.caption.monospacedDigit())
                         .foregroundStyle(.secondary)
                 }
             }
 
-            Spacer()
+        case .readyToInstall(let version):
+            headline(
+                icon: "checkmark.circle.fill",
+                title: version.isEmpty
+                    ? "update.card.ready_short".localized
+                    : "update.card.ready_title".localized(version),
+                subtitle: "update.card.ready_subtitle".localized
+            )
+
+            HStack(spacing: 8) {
+                cardButton(title: "update.card.install_now".localized) {
+                    manager.installNow()
+                }
+
+                Button {
+                    manager.installLater()
+                } label: {
+                    Text("update.card.later".localized)
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
+
+        case .installing:
+            headline(
+                icon: "arrow.triangle.2.circlepath",
+                title: versionText.isEmpty
+                    ? "update.card.installing_short".localized
+                    : "update.card.installing_title".localized(versionText),
+                subtitle: "update.card.installing_subtitle".localized
+            )
+
+            ProgressView()
+                .progressViewStyle(.linear)
+                .tint(Theme.accent)
+
+        case .failed:
+            headline(
+                icon: "exclamationmark.arrow.circlepath",
+                title: "update.card.failed_title".localized,
+                subtitle: "update.card.failed_subtitle".localized
+            )
+
+            cardButton(title: "update.card.retry".localized) {
+                manager.installNow()
+            }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
+    }
+
+    private var versionText: String {
+        switch manager.phase {
+        case .available(let version), .readyToInstall(let version), .failed(let version):
+            return version
+        case .idle, .downloading, .installing:
+            return manager.pendingVersion ?? ""
+        }
+    }
+
+    private func headline(icon: String, title: String, subtitle: String?) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: icon)
+                .font(.system(size: 22))
+                .foregroundStyle(Theme.accent)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.primary)
+
+                if let subtitle {
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Spacer(minLength: 0)
+        }
+    }
+
+    private func cardButton(title: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .frame(maxWidth: .infinity)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(Theme.accent)
+        .controlSize(.small)
     }
 }
 

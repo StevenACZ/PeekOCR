@@ -44,6 +44,14 @@ struct MenuBarPopoverView: View {
 
             Divider()
 
+            if updateManager.phase != .idle {
+                UpdateCard(manager: updateManager)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+
+                Divider()
+            }
+
             if !missingPermissions.isEmpty {
                 PermissionSummaryBanner(missingPermissions: missingPermissions) {
                     PermissionRequirementsWindowController.shared.showWindow()
@@ -59,13 +67,6 @@ struct MenuBarPopoverView: View {
 
             Divider()
                 .padding(.horizontal, 16)
-
-            if updateManager.phase != .idle {
-                UpdateMenuRow(manager: updateManager)
-
-                Divider()
-                    .padding(.horizontal, 16)
-            }
 
             ActionRow(
                 icon: "gearshape",

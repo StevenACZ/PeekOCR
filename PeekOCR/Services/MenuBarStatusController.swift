@@ -6,6 +6,7 @@
 //
 
 import AppKit
+import Combine
 import SwiftUI
 
 /// Controller for the menu bar presence: status button, panel popover, and app windows.
@@ -17,6 +18,7 @@ final class MenuBarStatusController: NSObject, NSPopoverDelegate, NSWindowDelega
     private var popover: NSPopover?
     private var settingsWindow: NSWindow?
     private var aboutWindow: NSWindow?
+    private var aboutPhaseObserver: AnyCancellable?
     private var isPopoverTransitioning = false
 
     private enum Metrics {
@@ -210,7 +212,39 @@ final class MenuBarStatusController: NSObject, NSPopoverDelegate, NSWindowDelega
         target.contentViewController = hosting
         target.setContentSize(hosting.view.fittingSize)
         activate(target, centeringIfNeeded: !wasVisible)
+        observeAboutUpdatePhase(window: target, hosting: hosting)
         return target
+    }
+
+    private func observeAboutUpdatePhase(
+        window: NSWindow,
+        hosting: NSHostingController<AboutView>
+    ) {
+        aboutPhaseObserver = UpdateManager.shared.$phase
+            .map(Self.phaseLayoutKey)
+            .removeDuplicates()
+            .dropFirst()
+            .receive(on: RunLoop.main)
+            .sink { [weak window, weak hosting] _ in
+                MainActor.assumeIsolated {
+                    guard let window, let hosting, window.isVisible else { return }
+                    let topLeft = NSPoint(x: window.frame.minX, y: window.frame.maxY)
+                    hosting.view.layoutSubtreeIfNeeded()
+                    window.setContentSize(hosting.view.fittingSize)
+                    window.setFrameTopLeftPoint(topLeft)
+                }
+            }
+    }
+
+    private static func phaseLayoutKey(_ phase: UpdateManager.Phase) -> String {
+        switch phase {
+        case .idle: return "idle"
+        case .available(let version): return "available-\(version)"
+        case .downloading: return "downloading"
+        case .readyToInstall(let version): return "readyToInstall-\(version)"
+        case .installing: return "installing"
+        case .failed(let version): return "failed-\(version)"
+        }
     }
 
     private func activate(_ window: NSWindow, centeringIfNeeded shouldCenter: Bool) {
@@ -225,6 +259,9 @@ final class MenuBarStatusController: NSObject, NSPopoverDelegate, NSWindowDelega
 
     func windowWillClose(_ notification: Notification) {
         guard let window = notification.object as? NSWindow else { return }
+        if window === aboutWindow {
+            aboutPhaseObserver = nil
+        }
         // Drop the SwiftUI content so no state or timers survive a hidden window.
         window.contentViewController = nil
     }

@@ -99,14 +99,39 @@ struct AboutView: View {
         case .downloading(let fraction):
             updateProgressCapsule(
                 text: "about.update_downloading".localized
-                    + (fraction.map { " \(Int($0 * 100))%" } ?? ""))
+                    + (fraction.map { " \(Int($0 * 100)) %" } ?? ""))
+
+        case .readyToInstall(let version):
+            VStack(spacing: 5) {
+                Button {
+                    updateManager.installNow()
+                } label: {
+                    updateCapsule(
+                        icon: "checkmark.circle.fill",
+                        text: version.isEmpty
+                            ? "about.update_install_now_short".localized
+                            : "about.update_install_now".localized(version)
+                    )
+                }
+                .buttonStyle(.plain)
+
+                Button {
+                    updateManager.installLater()
+                } label: {
+                    Text("about.update_later".localized)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .underline()
+                }
+                .buttonStyle(.plain)
+            }
 
         case .installing:
             updateProgressCapsule(text: "about.update_installing".localized)
 
         case .failed:
             Button {
-                updateManager.installPendingUpdate()
+                updateManager.installNow()
             } label: {
                 updateCapsule(
                     icon: "exclamationmark.arrow.circlepath",
@@ -170,7 +195,7 @@ struct AboutView: View {
                 .controlSize(.mini)
 
             Text(text)
-                .font(.caption2.weight(.medium))
+                .font(.caption2.weight(.medium).monospacedDigit())
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 5)
