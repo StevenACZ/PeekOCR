@@ -47,7 +47,7 @@ final class UpdateManager: ObservableObject {
     static let feedURLOverrideDefaultsKey = "updateFeedURLOverride"
     static let backgroundCheckInterval: TimeInterval = 30 * 60
     static let backgroundCheckThrottle: TimeInterval = 5 * 60
-    static let sessionPollAttemptLimit = 40
+    static let sessionPollAttemptLimit = 300
     static let sessionPollInterval: TimeInterval = 0.25
 
     @Published private(set) var phase: Phase = .idle
@@ -144,6 +144,23 @@ final class UpdateManager: ObservableObject {
 
     var backgroundDiscoveryArmed: Bool { backgroundCheckTimer != nil }
 
+    var phaseAllowsQuietCheck: Bool {
+        guard !installRequested, !installNowRequested, !resumeCheckPending,
+            !manualCheckPending, pendingInstallReply == nil
+        else { return false }
+        switch phase {
+        case .idle, .available, .failed:
+            return true
+        case .downloading, .readyToInstall, .installing:
+            return false
+        }
+    }
+
+    private var sessionIsUserDriven: Bool {
+        installRequested || installNowRequested || resumeCheckPending
+            || (manualCheckPending && !manualCheckWaiting)
+    }
+
     func startBackgroundDiscovery() {
         guard backgroundCheckTimer == nil else { return }
         let interval = backgroundCheckIntervalProvider()
@@ -176,7 +193,7 @@ final class UpdateManager: ObservableObject {
     }
 
     func requestBackgroundCheck() {
-        guard let updaterSession, autoCheckEnabled, phase == .idle else { return }
+        guard let updaterSession, autoCheckEnabled, phaseAllowsQuietCheck else { return }
         guard updaterSession.isInProgress() == false else { return }
         let now = monotonicClock()
         if let lastBackgroundCheck, now - lastBackgroundCheck < Self.backgroundCheckThrottle {
@@ -253,22 +270,29 @@ final class UpdateManager: ObservableObject {
     /// Resumes the prepared update once Sparkle releases the dismissed session.
     func startResumeCheck(attempt: Int) {
         guard resumeCheckPending else { return }
-        guard let updaterSession else { return }
+        guard let updaterSession else {
+            handleResumeCheckExhausted()
+            return
+        }
         guard updaterSession.isInProgress() else {
             resumeCheckPending = false
             updaterSession.checkForUpdates()
             return
         }
         guard attempt < Self.sessionPollAttemptLimit else {
-            installRequested = false
-            installNowRequested = false
-            resumeCheckPending = false
-            phase = .failed(version: pendingVersion ?? "")
+            handleResumeCheckExhausted()
             return
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + Self.sessionPollInterval) { [weak self] in
             self?.startResumeCheck(attempt: attempt + 1)
         }
+    }
+
+    private func handleResumeCheckExhausted() {
+        installRequested = false
+        installNowRequested = false
+        resumeCheckPending = false
+        phase = .failed(version: pendingVersion ?? "")
     }
 
     /// Ends the Sparkle session; the card keeps offering the prepared update.
@@ -327,6 +351,11 @@ final class UpdateManager: ObservableObject {
         informationOnly: Bool,
         stage: SPUUserUpdateStage
     ) -> SPUUserUpdateChoice {
+        if !sessionIsUserDriven, phase != .idle, let pendingVersion,
+            !Self.isNewerVersion(version, than: pendingVersion)
+        {
+            return .dismiss
+        }
         resumeCheckPending = false
         pendingVersion = version
         pendingIsInformationOnly = informationOnly
@@ -457,8 +486,12 @@ final class UpdateManager: ObservableObject {
         }
     }
 
+    private static func isNewerVersion(_ version: String, than current: String) -> Bool {
+        SUStandardVersionComparator.default.compareVersion(version, toVersion: current) == .orderedDescending
+    }
+
     private func finishManualCheck(status: ManualCheckStatus) {
-        guard manualCheckPending else { return }
+        guard manualCheckPending, !manualCheckWaiting else { return }
         manualCheckPending = false
         manualCheckStatus = status
         guard status != .idle else { return }
