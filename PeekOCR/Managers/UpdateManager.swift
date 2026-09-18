@@ -47,6 +47,8 @@ final class UpdateManager: ObservableObject {
     static let feedURLOverrideDefaultsKey = "updateFeedURLOverride"
     static let backgroundCheckInterval: TimeInterval = 30 * 60
     static let backgroundCheckThrottle: TimeInterval = 5 * 60
+    static let sessionPollAttemptLimit = 40
+    static let sessionPollInterval: TimeInterval = 0.25
 
     @Published private(set) var phase: Phase = .idle
     /// GitHub release page of the pending update (the appcast item's <link>).
@@ -257,14 +259,14 @@ final class UpdateManager: ObservableObject {
             updaterSession.checkForUpdates()
             return
         }
-        guard attempt < 40 else {
+        guard attempt < Self.sessionPollAttemptLimit else {
             installRequested = false
             installNowRequested = false
             resumeCheckPending = false
             phase = .failed(version: pendingVersion ?? "")
             return
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
+        DispatchQueue.main.asyncAfter(deadline: .now() + Self.sessionPollInterval) { [weak self] in
             self?.startResumeCheck(attempt: attempt + 1)
         }
     }
@@ -297,7 +299,7 @@ final class UpdateManager: ObservableObject {
     /// so the manual check waits for that session to end.
     func startManualCheck(attempt: Int) {
         guard manualCheckWaiting, let updaterSession else { return }
-        guard attempt < 40 else {
+        guard attempt < Self.sessionPollAttemptLimit else {
             manualCheckWaiting = false
             finishManualCheck(status: .idle)
             return
@@ -307,7 +309,7 @@ final class UpdateManager: ObservableObject {
             updaterSession.checkForUpdates()
             return
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
+        DispatchQueue.main.asyncAfter(deadline: .now() + Self.sessionPollInterval) { [weak self] in
             self?.startManualCheck(attempt: attempt + 1)
         }
     }

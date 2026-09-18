@@ -257,10 +257,24 @@ final class UpdateManagerTests: XCTestCase {
             .appendingPathComponent("PeekOCR/Services/MenuBarStatusController.swift")
         let source = try String(contentsOf: controller, encoding: .utf8)
 
-        XCTAssertEqual(
-            source.components(separatedBy: "UpdateManager.shared.requestBackgroundCheck()").count - 1,
-            2
-        )
+        let panelOpenBranch = try XCTUnwrap(source.range(of: "hosting.rootView = makePanelHost()"))
+        let panelShown = try XCTUnwrap(
+            source.range(of: "popover.show(relativeTo:", range: panelOpenBranch.upperBound..<source.endIndex))
+        XCTAssertNotNil(
+            source.range(
+                of: "UpdateManager.shared.requestBackgroundCheck()",
+                range: panelOpenBranch.upperBound..<panelShown.lowerBound))
+
+        let aboutOpenBranch = try XCTUnwrap(
+            source.range(of: "private func presentAboutWindow(reusing window: NSWindow?) -> NSWindow {"))
+        let aboutHosting = try XCTUnwrap(
+            source.range(
+                of: "NSHostingController(rootView: AboutView())",
+                range: aboutOpenBranch.upperBound..<source.endIndex))
+        XCTAssertNotNil(
+            source.range(
+                of: "UpdateManager.shared.requestBackgroundCheck()",
+                range: aboutOpenBranch.upperBound..<aboutHosting.lowerBound))
     }
 
     func testTheDiscoveryTimerRunsOnTheRunLoopAndAsksForACheck() {
