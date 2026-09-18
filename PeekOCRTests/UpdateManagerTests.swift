@@ -333,13 +333,15 @@ final class UpdateManagerTests: XCTestCase {
         XCTAssertEqual(spy.backgroundCheckCount, 0)
     }
 
-    func testBackgroundCheckIsSkippedWhileACardIsShowing() {
+    func testBackgroundCheckIsSkippedWhileADownloadRuns() {
         surfacePendingUpdate()
+        manager.installPendingUpdate()
+        manager.handleDownloadInitiated()
 
         manager.requestBackgroundCheck()
 
         XCTAssertEqual(spy.backgroundCheckCount, 0)
-        XCTAssertEqual(manager.phase, .available(version: "9.9.9"))
+        XCTAssertEqual(manager.phase, .downloading(fraction: nil))
     }
 
     func testSilentCheckThatFindsNothingChangesNoVisibleState() {
@@ -483,5 +485,318 @@ final class UpdateManagerTests: XCTestCase {
 
         XCTAssertEqual(manager.phase, .installing)
         XCTAssertEqual(spy.checkCount, 1)
+    }
+
+    // MARK: - Quiet checks from a resting card
+
+    private func surfacePostponedUpdate() {
+        surfacePendingUpdate()
+        manager.handleReadyToInstall { _ in }
+        manager.installLater()
+    }
+
+    func testIdleAllowsAQuietCheck() {
+        XCTAssertTrue(manager.phaseAllowsQuietCheck)
+    }
+
+    func testAnAvailableCardAllowsAQuietCheck() {
+        surfacePendingUpdate()
+
+        XCTAssertEqual(manager.phase, .available(version: "9.9.9"))
+        XCTAssertTrue(manager.phaseAllowsQuietCheck)
+    }
+
+    func testAFailedCardAllowsAQuietCheck() {
+        surfaceFailedUpdate()
+
+        XCTAssertEqual(manager.phase, .failed(version: "9.9.9"))
+        XCTAssertTrue(manager.phaseAllowsQuietCheck)
+    }
+
+    func testDownloadingAndInstallingBlockAQuietCheck() {
+        manager.handleDownloadInitiated()
+        XCTAssertFalse(manager.phaseAllowsQuietCheck)
+
+        manager.handleExtractionStarted()
+        XCTAssertFalse(manager.phaseAllowsQuietCheck)
+    }
+
+    func testAHeldReadyReplyBlocksAQuietCheck() {
+        surfacePendingUpdate()
+        manager.handleReadyToInstall { _ in }
+
+        XCTAssertEqual(manager.phase, .readyToInstall(version: "9.9.9"))
+        XCTAssertFalse(manager.phaseAllowsQuietCheck)
+    }
+
+    func testThePostponedReadyCardBlocksAQuietCheck() {
+        surfacePostponedUpdate()
+
+        XCTAssertEqual(manager.phase, .readyToInstall(version: "9.9.9"))
+        XCTAssertFalse(manager.phaseAllowsQuietCheck)
+    }
+
+    func testAnUpdateClickBlocksAQuietCheck() {
+        surfacePendingUpdate()
+
+        manager.installPendingUpdate()
+
+        XCTAssertFalse(manager.phaseAllowsQuietCheck)
+    }
+
+    func testInstallNowBlocksAQuietCheck() {
+        surfacePostponedUpdate()
+
+        manager.installNow()
+
+        XCTAssertFalse(manager.phaseAllowsQuietCheck)
+    }
+
+    func testAManualCheckInFlightBlocksAQuietCheck() {
+        spy.isInProgress = true
+
+        manager.checkForUpdatesManually()
+
+        XCTAssertFalse(manager.phaseAllowsQuietCheck)
+    }
+
+    func testAQuietCheckWithoutALiveUpdaterIsSkippedAndKeepsTheThrottleFree() {
+        manager.updaterSession = nil
+
+        manager.requestBackgroundCheck()
+
+        XCTAssertEqual(spy.backgroundCheckCount, 0)
+
+        manager.updaterSession = spy.session
+        manager.requestBackgroundCheck()
+
+        XCTAssertEqual(spy.backgroundCheckCount, 1)
+    }
+
+    func testAQuietCheckRunsFromAFailedCard() {
+        surfaceFailedUpdate()
+
+        manager.requestBackgroundCheck()
+
+        XCTAssertEqual(spy.backgroundCheckCount, 1)
+        XCTAssertEqual(manager.phase, .failed(version: "9.9.9"))
+    }
+
+    func testAnUnattendedCheckThatFindsTheSameVersionKeepsTheFailedCard() {
+        surfaceFailedUpdate()
+
+        let choice = manager.handleUpdateFound(
+            version: "9.9.9",
+            releasePage: nil,
+            informationOnly: false,
+            stage: .notDownloaded
+        )
+
+        XCTAssertEqual(spy.backgroundCheckCount, 0)
+        XCTAssertEqual(choice, .dismiss)
+        XCTAssertEqual(manager.phase, .failed(version: "9.9.9"))
+        XCTAssertEqual(manager.pendingVersion, "9.9.9")
+    }
+
+    func testAnUnattendedCheckThatFindsTheSameVersionKeepsTheAvailableCard() {
+        surfacePendingUpdate()
+
+        let choice = manager.handleUpdateFound(
+            version: "9.9.9",
+            releasePage: nil,
+            informationOnly: false,
+            stage: .notDownloaded
+        )
+
+        XCTAssertEqual(choice, .dismiss)
+        XCTAssertEqual(manager.phase, .available(version: "9.9.9"))
+    }
+
+    func testTheStagedUpdateReofferedUnattendedKeepsThePostponedReadyCard() {
+        surfacePostponedUpdate()
+
+        let choice = manager.handleUpdateFound(
+            version: "9.9.9",
+            releasePage: nil,
+            informationOnly: false,
+            stage: .installing
+        )
+
+        XCTAssertEqual(choice, .dismiss)
+        XCTAssertEqual(manager.phase, .readyToInstall(version: "9.9.9"))
+    }
+
+    func testAnUnattendedOlderVersionLeavesTheCardAlone() {
+        surfacePendingUpdate()
+
+        let choice = manager.handleUpdateFound(
+            version: "9.9.8",
+            releasePage: nil,
+            informationOnly: false,
+            stage: .notDownloaded
+        )
+
+        XCTAssertEqual(choice, .dismiss)
+        XCTAssertEqual(manager.phase, .available(version: "9.9.9"))
+        XCTAssertEqual(manager.pendingVersion, "9.9.9")
+    }
+
+    func testAnUnattendedNewerVersionReplacesTheAvailableCard() {
+        surfacePendingUpdate()
+
+        let choice = manager.handleUpdateFound(
+            version: "9.9.10",
+            releasePage: nil,
+            informationOnly: false,
+            stage: .notDownloaded
+        )
+
+        XCTAssertEqual(choice, .dismiss)
+        XCTAssertEqual(manager.phase, .available(version: "9.9.10"))
+    }
+
+    func testAnUnattendedNewerVersionReplacesTheFailedCard() {
+        surfaceFailedUpdate()
+
+        let choice = manager.handleUpdateFound(
+            version: "9.9.10",
+            releasePage: nil,
+            informationOnly: false,
+            stage: .notDownloaded
+        )
+
+        XCTAssertEqual(choice, .dismiss)
+        XCTAssertEqual(manager.phase, .available(version: "9.9.10"))
+    }
+
+    func testAnUnattendedNotFoundKeepsTheFailedCard() {
+        surfaceFailedUpdate()
+
+        manager.handleNotFound()
+
+        XCTAssertEqual(manager.phase, .failed(version: "9.9.9"))
+        XCTAssertEqual(manager.pendingVersion, "9.9.9")
+        XCTAssertEqual(manager.manualCheckStatus, .idle)
+    }
+
+    func testAnUnattendedErrorKeepsTheAvailableCard() {
+        surfacePendingUpdate()
+
+        manager.handleError("offline")
+
+        XCTAssertEqual(manager.phase, .available(version: "9.9.9"))
+        XCTAssertEqual(manager.pendingVersion, "9.9.9")
+    }
+
+    func testAManualCheckStillReportsAfterAQuietCheckWithoutAnAnswer() {
+        surfaceFailedUpdate()
+        manager.requestBackgroundCheck()
+        XCTAssertEqual(spy.backgroundCheckCount, 1)
+
+        manager.checkForUpdatesManually()
+
+        XCTAssertEqual(manager.manualCheckStatus, .checking)
+        XCTAssertEqual(spy.checkCount, 2)
+
+        manager.handleNotFound()
+
+        XCTAssertEqual(manager.manualCheckStatus, .upToDate)
+        XCTAssertEqual(manager.phase, .idle)
+    }
+
+    func testAnUpdateClickStillDownloadsAfterAQuietCheckWithoutAnAnswer() {
+        surfacePendingUpdate()
+        manager.requestBackgroundCheck()
+        XCTAssertEqual(spy.backgroundCheckCount, 1)
+
+        manager.installPendingUpdate()
+
+        XCTAssertEqual(manager.phase, .downloading(fraction: nil))
+
+        let choice = manager.handleUpdateFound(
+            version: "9.9.9",
+            releasePage: nil,
+            informationOnly: false,
+            stage: .notDownloaded
+        )
+
+        XCTAssertEqual(choice, .install)
+    }
+
+    func testAQueuedManualCheckKeepsItsSpinnerUntilItsOwnSessionAnswers() {
+        surfacePendingUpdate()
+        manager.requestBackgroundCheck()
+        XCTAssertEqual(spy.backgroundCheckCount, 1)
+        spy.isInProgress = true
+
+        manager.checkForUpdatesManually()
+
+        XCTAssertEqual(manager.manualCheckStatus, .checking)
+        XCTAssertEqual(spy.checkCount, 0)
+
+        let quietChoice = manager.handleUpdateFound(
+            version: "9.9.9",
+            releasePage: nil,
+            informationOnly: false,
+            stage: .notDownloaded
+        )
+
+        XCTAssertEqual(quietChoice, .dismiss)
+        XCTAssertEqual(manager.manualCheckStatus, .checking)
+        XCTAssertFalse(manager.phaseAllowsQuietCheck)
+
+        spy.isInProgress = false
+        manager.startManualCheck(attempt: 1)
+        XCTAssertEqual(spy.checkCount, 1)
+
+        let manualChoice = manager.handleUpdateFound(
+            version: "9.9.9",
+            releasePage: nil,
+            informationOnly: false,
+            stage: .notDownloaded
+        )
+
+        XCTAssertEqual(manualChoice, .dismiss)
+        XCTAssertEqual(manager.phase, .available(version: "9.9.9"))
+        XCTAssertEqual(manager.manualCheckStatus, .idle)
+    }
+
+    func testAManualCheckFromAFailedCardCanOfferTheUpdateAgain() {
+        surfaceFailedUpdate()
+
+        manager.checkForUpdatesManually()
+        let choice = manager.handleUpdateFound(
+            version: "9.9.9",
+            releasePage: nil,
+            informationOnly: false,
+            stage: .notDownloaded
+        )
+
+        XCTAssertEqual(choice, .dismiss)
+        XCTAssertEqual(manager.phase, .available(version: "9.9.9"))
+    }
+
+    func testInstallNowStillInstallsAfterAnUnattendedReoffer() {
+        surfacePostponedUpdate()
+        _ = manager.handleUpdateFound(
+            version: "9.9.9",
+            releasePage: nil,
+            informationOnly: false,
+            stage: .installing
+        )
+
+        manager.installNow()
+
+        XCTAssertEqual(manager.phase, .installing)
+
+        let choice = manager.handleUpdateFound(
+            version: "9.9.9",
+            releasePage: nil,
+            informationOnly: false,
+            stage: .downloaded
+        )
+
+        XCTAssertEqual(choice, .install)
+        XCTAssertEqual(manager.phase, .installing)
     }
 }
