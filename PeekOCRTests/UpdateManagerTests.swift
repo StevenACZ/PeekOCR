@@ -163,6 +163,24 @@ final class UpdateManagerTests: XCTestCase {
         XCTAssertEqual(manager.phase, .readyToInstall(version: "9.9.9"))
     }
 
+    func testTheResumeWindowOutlastsASlowAppcastFetch() {
+        let window = Double(UpdateManager.sessionPollAttemptLimit) * UpdateManager.sessionPollInterval
+
+        XCTAssertGreaterThanOrEqual(window, 70)
+    }
+
+    func testAResumePollWithoutALiveUpdaterClearsThePendingFlag() {
+        surfacePendingUpdate()
+        spy.isInProgress = true
+        manager.retryPendingUpdate()
+        manager.updaterSession = nil
+
+        manager.startResumeCheck(attempt: 0)
+
+        XCTAssertEqual(manager.phase, .failed(version: "9.9.9"))
+        XCTAssertTrue(manager.phaseAllowsQuietCheck)
+    }
+
     func testAReadyCardSurvivesTheArmedResumeWatchdog() {
         surfacePendingUpdate()
         spy.isInProgress = true
@@ -413,7 +431,7 @@ final class UpdateManagerTests: XCTestCase {
         manager.checkForUpdatesManually()
         XCTAssertEqual(manager.manualCheckStatus, .checking)
 
-        manager.startManualCheck(attempt: 40)
+        manager.startManualCheck(attempt: UpdateManager.sessionPollAttemptLimit)
 
         XCTAssertEqual(spy.checkCount, 0)
         XCTAssertEqual(manager.manualCheckStatus, .idle)
@@ -491,6 +509,17 @@ final class UpdateManagerTests: XCTestCase {
 
     private func surfacePostponedUpdate() {
         surfacePendingUpdate()
+        manager.installPendingUpdate()
+        _ = manager.handleUpdateFound(
+            version: "9.9.9",
+            releasePage: nil,
+            informationOnly: false,
+            stage: .notDownloaded
+        )
+        manager.handleDownloadInitiated()
+        manager.handleDownloadExpectedLength(1_000)
+        manager.handleDownloadReceived(bytes: 1_000)
+        manager.handleExtractionStarted()
         manager.handleReadyToInstall { _ in }
         manager.installLater()
     }
@@ -626,6 +655,20 @@ final class UpdateManagerTests: XCTestCase {
         XCTAssertEqual(manager.phase, .readyToInstall(version: "9.9.9"))
     }
 
+    func testLaterDropsTheInstallConsent() {
+        surfacePostponedUpdate()
+
+        let choice = manager.handleUpdateFound(
+            version: "9.9.9",
+            releasePage: nil,
+            informationOnly: false,
+            stage: .notDownloaded
+        )
+
+        XCTAssertEqual(choice, .dismiss)
+        XCTAssertEqual(manager.phase, .readyToInstall(version: "9.9.9"))
+    }
+
     func testAnUnattendedOlderVersionLeavesTheCardAlone() {
         surfacePendingUpdate()
 
@@ -667,25 +710,6 @@ final class UpdateManagerTests: XCTestCase {
 
         XCTAssertEqual(choice, .dismiss)
         XCTAssertEqual(manager.phase, .available(version: "9.9.10"))
-    }
-
-    func testAnUnattendedNotFoundKeepsTheFailedCard() {
-        surfaceFailedUpdate()
-
-        manager.handleNotFound()
-
-        XCTAssertEqual(manager.phase, .failed(version: "9.9.9"))
-        XCTAssertEqual(manager.pendingVersion, "9.9.9")
-        XCTAssertEqual(manager.manualCheckStatus, .idle)
-    }
-
-    func testAnUnattendedErrorKeepsTheAvailableCard() {
-        surfacePendingUpdate()
-
-        manager.handleError("offline")
-
-        XCTAssertEqual(manager.phase, .available(version: "9.9.9"))
-        XCTAssertEqual(manager.pendingVersion, "9.9.9")
     }
 
     func testAManualCheckStillReportsAfterAQuietCheckWithoutAnAnswer() {

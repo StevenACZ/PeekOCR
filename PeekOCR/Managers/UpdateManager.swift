@@ -47,7 +47,7 @@ final class UpdateManager: ObservableObject {
     static let feedURLOverrideDefaultsKey = "updateFeedURLOverride"
     static let backgroundCheckInterval: TimeInterval = 30 * 60
     static let backgroundCheckThrottle: TimeInterval = 5 * 60
-    static let sessionPollAttemptLimit = 40
+    static let sessionPollAttemptLimit = 300
     static let sessionPollInterval: TimeInterval = 0.25
 
     @Published private(set) var phase: Phase = .idle
@@ -270,22 +270,29 @@ final class UpdateManager: ObservableObject {
     /// Resumes the prepared update once Sparkle releases the dismissed session.
     func startResumeCheck(attempt: Int) {
         guard resumeCheckPending else { return }
-        guard let updaterSession else { return }
+        guard let updaterSession else {
+            handleResumeCheckExhausted()
+            return
+        }
         guard updaterSession.isInProgress() else {
             resumeCheckPending = false
             updaterSession.checkForUpdates()
             return
         }
         guard attempt < Self.sessionPollAttemptLimit else {
-            installRequested = false
-            installNowRequested = false
-            resumeCheckPending = false
-            phase = .failed(version: pendingVersion ?? "")
+            handleResumeCheckExhausted()
             return
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + Self.sessionPollInterval) { [weak self] in
             self?.startResumeCheck(attempt: attempt + 1)
         }
+    }
+
+    private func handleResumeCheckExhausted() {
+        installRequested = false
+        installNowRequested = false
+        resumeCheckPending = false
+        phase = .failed(version: pendingVersion ?? "")
     }
 
     /// Ends the Sparkle session; the card keeps offering the prepared update.
@@ -424,7 +431,6 @@ final class UpdateManager: ObservableObject {
             pendingInstallReply = nil
             return
         }
-        guard sessionIsUserDriven || phase == .idle else { return }
         installRequested = false
         installNowRequested = false
         pendingInstallReply = nil
@@ -442,7 +448,6 @@ final class UpdateManager: ObservableObject {
             pendingInstallReply = nil
             return
         }
-        guard sessionIsUserDriven || phase == .idle else { return }
         finishManualCheck(status: .idle)
         installNowRequested = false
         pendingInstallReply = nil
