@@ -15,13 +15,15 @@ enum GifExportProfile: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
-    var displayName: String {
+    var localizationKey: String {
         switch self {
-        case .low: return "Baja"
-        case .aiDebug: return "AI Debug"
-        case .high: return "Alta"
+        case .low: return "settings.clips.profile_low"
+        case .aiDebug: return "settings.clips.profile_ai_debug"
+        case .high: return "settings.clips.profile_high"
         }
     }
+
+    var displayName: String { localizationKey.localized }
 }
 
 /// Options that control GIF export size, FPS and looping.

@@ -252,6 +252,9 @@
 "settings.clips.max_duration" = "Duración máxima";
 "settings.clips.max_resolution" = "Resolución (máx)";
 "settings.clips.profile" = "Perfil";
+"settings.clips.profile_ai_debug" = "AI Debug";
+"settings.clips.profile_high" = "Alta";
+"settings.clips.profile_low" = "Baja";
 "settings.clips.recording" = "Grabación";
 "settings.clips.recording_caption" = "Durante la selección, pulsa Espacio para grabar la pantalla completa. El audio del sistema se conserva al exportar MP4 (el GIF no lleva audio); macOS puede pedir el permiso de grabación de audio la primera vez.";
 "settings.clips.recording_fps" = "FPS de grabación";
@@ -288,7 +291,7 @@
 "settings.shortcuts.record_clip" = "Grabar Clip";
 "settings.shortcuts.record_clip_subtitle" = "Exporta como GIF o video MP4";
 "settings.shortcuts.recording_help" = "Presiona la nueva combinación (Esc cancela)";
-"settings.shortcuts.reserved_note" = "⌘⇧5 y ⌘⇧6 pueden estar reservados por macOS; si un atajo no responde, elige otra combinación.";
+"settings.shortcuts.reserved_note" = "⇧⌘5 y ⇧⌘6 pueden estar reservados por macOS; si un atajo no responde, elige otra combinación.";
 "settings.shortcuts.restore_defaults" = "Restaurar valores por defecto";
 "settings.shortcuts.screenshot" = "Captura de Pantalla";
 "settings.shortcuts.screenshot_subtitle" = "Imagen del área seleccionada";
