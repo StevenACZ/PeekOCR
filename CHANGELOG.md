@@ -6,6 +6,14 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2.2.3] - 2026-09-18
+
+### Fixed
+
+- GIF profile names follow the app language in Settings > Clips and in the clip editor ("Low" and "High" in English, "Baja" and "Alta" in Spanish) instead of always showing in Spanish.
+- Escape closes the menu bar panel, the same as clicking the menu bar icon.
+- The Shortcuts note writes the reserved combinations in the same modifier order as the shortcut chips (⇧⌘5 and ⇧⌘6).
+
 ## [2.2.2] - 2026-09-18
 
 ### Fixed

@@ -20,6 +20,11 @@ final class MenuBarStatusController: NSObject, NSPopoverDelegate, NSWindowDelega
     private var aboutWindow: NSWindow?
     private var aboutPhaseObserver: AnyCancellable?
     private var isPopoverTransitioning = false
+    private var escapeMonitor: Any?
+
+    private enum KeyCode {
+        static let escape: UInt16 = 53
+    }
 
     private enum Metrics {
         static let popoverMaxHeight: CGFloat = 680
@@ -100,6 +105,8 @@ final class MenuBarStatusController: NSObject, NSPopoverDelegate, NSWindowDelega
             button.state = .on
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
             NSApp.activate(ignoringOtherApps: true)
+            popover.contentViewController?.view.window?.makeKey()
+            installEscapeMonitor()
             DispatchQueue.main.async { [weak self] in
                 self?.refreshPopoverSize()
             }
@@ -107,12 +114,37 @@ final class MenuBarStatusController: NSObject, NSPopoverDelegate, NSWindowDelega
     }
 
     func closePopover() {
+        removeEscapeMonitor()
         popover?.performClose(nil)
         statusItem?.button?.state = .off
     }
 
     func popoverWillClose(_ notification: Notification) {
         statusItem?.button?.state = .off
+        removeEscapeMonitor()
+    }
+
+    private func installEscapeMonitor() {
+        removeEscapeMonitor()
+        escapeMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            guard event.keyCode == KeyCode.escape else { return event }
+            let handled = MainActor.assumeIsolated { () -> Bool in
+                guard let self, let popover = self.popover, popover.isShown,
+                    let popoverWindow = popover.contentViewController?.view.window,
+                    event.window === popoverWindow
+                else { return false }
+                self.closePopover()
+                return true
+            }
+            return handled ? nil : event
+        }
+    }
+
+    private func removeEscapeMonitor() {
+        if let escapeMonitor {
+            NSEvent.removeMonitor(escapeMonitor)
+            self.escapeMonitor = nil
+        }
     }
 
     private func lockPopoverTransition() {
