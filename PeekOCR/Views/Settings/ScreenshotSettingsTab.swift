@@ -22,14 +22,25 @@ struct ScreenshotSettingsTab: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .top)
 
-                annotationsCard
-                    .frame(maxWidth: .infinity, alignment: .top)
+                VStack(spacing: 12) {
+                    previewCard
+                    annotationsCard
+                }
+                .frame(maxWidth: .infinity, alignment: .top)
             }
             .padding(16)
         }
     }
 
     // MARK: - Cards
+
+    private var previewCard: some View {
+        SettingsCard(icon: "square.stack.3d.up", title: "settings.captures.preview".localized) {
+            SettingsToggleRow(title: "settings.captures.show_preview".localized, isOn: $settings.showPreview)
+            SettingsToggleRow(title: "settings.captures.grouped_copy".localized, isOn: $settings.groupedCopy)
+            SettingsCaption("settings.captures.grouped_copy_caption".localized)
+        }
+    }
 
     private var saveCard: some View {
         SettingsCard(icon: "square.and.arrow.down", title: "settings.captures.saving".localized) {

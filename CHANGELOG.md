@@ -6,6 +6,20 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- A left-side capture preview with a two-second dismissal, slide transitions, hover pause, and individual image removal.
+- Consecutive screenshots, annotated captures, and video-editor frames copy as a group by default. Settings can keep the preview while copying only the latest image, or hide the preview entirely.
+
+### Changed
+
+- Refreshed selection controls, softer capture feedback, and consistent arrow shapes with clean tips and rounded tails. Capture transitions respect Reduce Motion.
+- Preview thumbnails use bounded, independent image buffers and are released after the capture batch expires; full-resolution files remain available for pasting.
+
+### Fixed
+
+- Rapid captures receive unique filenames instead of overwriting another screenshot taken in the same second.
+
 ## [2.2.3] - 2026-09-18
 
 ### Fixed

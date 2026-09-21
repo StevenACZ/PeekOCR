@@ -23,6 +23,8 @@ final class ScreenshotSettings: ObservableObject {
         static let imageScale = "screenshotImageScale"
         static let copyToClipboard = "screenshotCopyToClipboard"
         static let saveToFile = "screenshotSaveToFile"
+        static let groupedCopy = "screenshotGroupedCopy"
+        static let showPreview = "screenshotShowPreview"
         static let screenshotHotKeyModifiers = "screenshotHotKeyModifiers"
         static let screenshotHotKeyCode = "screenshotHotKeyCode"
     }
@@ -36,6 +38,8 @@ final class ScreenshotSettings: ObservableObject {
         static let imageScale: Double = 1.0
         static let copyToClipboard = true
         static let saveToFile = true
+        static let groupedCopy = true
+        static let showPreview = true
     }
 
     // MARK: - Published Properties
@@ -75,9 +79,20 @@ final class ScreenshotSettings: ObservableObject {
         didSet { defaults.set(saveToFile, forKey: Keys.saveToFile) }
     }
 
+    @Published var groupedCopy: Bool {
+        didSet { defaults.set(groupedCopy, forKey: Keys.groupedCopy) }
+    }
+
+    @Published var showPreview: Bool {
+        didSet { defaults.set(showPreview, forKey: Keys.showPreview) }
+    }
+
     // MARK: - Initialization
 
     private init() {
+        groupedCopy = defaults.object(forKey: Keys.groupedCopy) as? Bool ?? Defaults.groupedCopy
+        showPreview = defaults.object(forKey: Keys.showPreview) as? Bool ?? Defaults.showPreview
+
         // Load save location
         if let locationRaw = defaults.string(forKey: Keys.saveLocation),
             let location = SaveLocation(rawValue: locationRaw)

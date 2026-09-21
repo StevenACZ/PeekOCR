@@ -71,7 +71,7 @@ final class LiveAnnotationOverlayWindowController: NSWindowController {
         NSCursor.crosshair.set()
 
         NSAnimationContext.beginGrouping()
-        NSAnimationContext.current.duration = 0.15
+        NSAnimationContext.current.duration = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? 0 : 0.18
         NSAnimationContext.current.timingFunction = CAMediaTimingFunction(name: .easeOut)
         for overlay in overlays.values {
             overlay.window.animator().alphaValue = 1

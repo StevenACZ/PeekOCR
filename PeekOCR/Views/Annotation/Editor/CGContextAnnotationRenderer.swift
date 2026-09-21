@@ -89,29 +89,7 @@ enum CGContextAnnotationRenderer {
         let start = transformPoint(annotation.startPoint, scaleX: scaleX, scaleY: scaleY, height: height, imageRect: imageRect)
         let end = transformPoint(annotation.endPoint, scaleX: scaleX, scaleY: scaleY, height: height, imageRect: imageRect)
 
-        // Draw line
-        context.move(to: start)
-        context.addLine(to: end)
-        context.strokePath()
-
-        // Draw arrowhead
-        let angle = atan2(end.y - start.y, end.x - start.x)
-        let arrowSize = annotation.strokeWidth * 4 * scaleX
-        let arrowAngle: CGFloat = .pi / 6
-
-        let point1 = CGPoint(
-            x: end.x - arrowSize * cos(angle - arrowAngle),
-            y: end.y - arrowSize * sin(angle - arrowAngle)
-        )
-        let point2 = CGPoint(
-            x: end.x - arrowSize * cos(angle + arrowAngle),
-            y: end.y - arrowSize * sin(angle + arrowAngle)
-        )
-
-        context.move(to: end)
-        context.addLine(to: point1)
-        context.addLine(to: point2)
-        context.closePath()
+        context.addPath(ArrowGeometry.path(from: start, to: end, width: annotation.strokeWidth * scaleX))
         context.fillPath()
     }
 
