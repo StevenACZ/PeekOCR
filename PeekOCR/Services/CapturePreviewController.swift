@@ -13,6 +13,7 @@ final class CapturePreviewController: ObservableObject {
 
     private var batch = CaptureBatch()
     private var panel: NSPanel?
+    private var content: CapturePreviewHostingView?
     private var dismissalTask: Task<Void, Never>?
     private var expiryTask: Task<Void, Never>?
     private var deadline: Date?
@@ -125,14 +126,20 @@ final class CapturePreviewController: ObservableObject {
             let content = CapturePreviewHostingView(rootView: CapturePreviewView(controller: self))
             content.sizingOptions = []
             content.onHover = { [weak self] in self?.setHovered($0) }
+            content.frame = CGRect(x: Self.edgeInset, y: 0, width: CapturePreviewLayout.width, height: target.height)
+            content.autoresizingMask = [.height]
+            let container = NSView(frame: CGRect(origin: .zero, size: target.size))
+            container.addSubview(content)
             window.acceptsMouseMovedEvents = true
-            window.contentView = content
+            window.contentView = container
             panel = window
+            self.content = content
         }
-        guard let panel else { return }
+        guard let panel, let content else { return }
         let reducedMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
         if isNew {
-            panel.setFrame(target.offsetBy(dx: reducedMotion ? 0 : -target.width - 20, dy: 0), display: false)
+            panel.setFrame(target, display: false)
+            content.setFrameOrigin(CGPoint(x: reducedMotion ? Self.edgeInset : Self.hiddenX, y: 0))
             panel.alphaValue = 0
             panel.orderFrontRegardless()
         }
@@ -140,6 +147,7 @@ final class CapturePreviewController: ObservableObject {
             context.duration = reducedMotion ? 0.12 : 0.3
             context.timingFunction = CAMediaTimingFunction(controlPoints: 0.2, 0.8, 0.2, 1)
             panel.animator().setFrame(target, display: true)
+            content.animator().setFrameOrigin(CGPoint(x: Self.edgeInset, y: 0))
             panel.animator().alphaValue = 1
         }
         isHovered = target.contains(NSEvent.mouseLocation)
@@ -155,11 +163,15 @@ final class CapturePreviewController: ObservableObject {
 
     var previewViewportHeight: CGFloat { previewLayout.viewportHeight(for: previewImageSizes) }
 
+    private static let edgeInset: CGFloat = 16
+    private static let hiddenX = -CapturePreviewLayout.width
+
+    // The panel stays on its screen and clips the sliding content; moving the window spills onto a neighboring display.
     private func frame(on screen: NSScreen) -> CGRect {
         let layout = CapturePreviewLayout(screenHeight: screen.visibleFrame.height)
         return CGRect(
-            x: screen.visibleFrame.minX + 16, y: screen.visibleFrame.minY + 20,
-            width: CapturePreviewLayout.width, height: layout.panelHeight(for: previewImageSizes))
+            x: screen.visibleFrame.minX, y: screen.visibleFrame.minY + 20,
+            width: CapturePreviewLayout.width + Self.edgeInset, height: layout.panelHeight(for: previewImageSizes))
     }
 
     private func resizePanel() {
@@ -200,8 +212,10 @@ final class CapturePreviewController: ObservableObject {
         guard animated else {
             panel.orderOut(nil)
             self.panel = nil
+            content = nil
             return
         }
+        let content = content
         let reducedMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
         NSAnimationContext.runAnimationGroup(
             { context in
@@ -209,7 +223,7 @@ final class CapturePreviewController: ObservableObject {
                 context.timingFunction = CAMediaTimingFunction(name: .easeIn)
                 panel.animator().alphaValue = 0
                 if !reducedMotion {
-                    panel.animator().setFrame(panel.frame.offsetBy(dx: -panel.frame.width - 20, dy: 0), display: true)
+                    content?.animator().setFrameOrigin(CGPoint(x: Self.hiddenX, y: 0))
                 }
             },
             completionHandler: { [self, panel] in
@@ -217,6 +231,7 @@ final class CapturePreviewController: ObservableObject {
                     guard self.presentationID == token else { return }
                     panel.orderOut(nil)
                     self.panel = nil
+                    self.content = nil
                 }
             })
     }

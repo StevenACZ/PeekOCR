@@ -56,7 +56,7 @@
 "capture.hud_resume" = "Resume";
 "capture.hud_stop" = "Stop";
 "capture.instructions_default" = "Enter captures • Esc cancels • ⌘Z undo • ⇧⌘Z redo • ⌫ deletes";
-"capture.instructions_text_editing" = "↩ new line • ⌘↩ save text • Esc cancels text";
+"capture.instructions_text_editing" = "↩ save text • ⇧↩ new line • Esc cancels text";
 "capture.type_screenshot" = "Screenshot";
 "capture.type_text" = "Text";
 

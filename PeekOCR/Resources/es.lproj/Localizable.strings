@@ -56,7 +56,7 @@
 "capture.hud_resume" = "Reanudar";
 "capture.hud_stop" = "Detener";
 "capture.instructions_default" = "Enter captura • Esc cancela • ⌘Z deshacer • ⇧⌘Z rehacer • ⌫ elimina";
-"capture.instructions_text_editing" = "↩ nueva línea • ⌘↩ guardar texto • Esc cancela texto";
+"capture.instructions_text_editing" = "↩ guardar texto • ⇧↩ nueva línea • Esc cancela texto";
 "capture.type_screenshot" = "Captura";
 "capture.type_text" = "Texto";
 

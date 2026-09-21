@@ -13,11 +13,13 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- While typing an annotation text, Enter saves it and Shift-Enter adds a new line, so the next text or tool is one key away.
 - Refreshed selection controls, softer capture feedback, and consistent arrow shapes with clean tips and rounded tails. Capture transitions respect Reduce Motion.
 - Preview thumbnails use bounded, independent image buffers and are released after the capture batch expires; full-resolution files remain available for pasting.
 
 ### Fixed
 
+- The capture preview slides in and out inside its own display instead of crossing onto a monitor placed to its left.
 - Rapid captures receive unique filenames instead of overwriting another screenshot taken in the same second.
 - Consecutive drawing gestures create new annotations immediately instead of losing the next drag to deselection.
 
