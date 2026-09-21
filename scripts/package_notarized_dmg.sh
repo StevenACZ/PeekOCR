@@ -149,6 +149,14 @@ if grep -q "get-task-allow" <<<"$ENTITLEMENTS"; then
   exit 65
 fi
 
+echo "==> Notarizing and stapling the app before it is copied into the DMG"
+APP_ZIP="$(mktemp -d "${TMPDIR:-/tmp}/peekocr-app-zip.XXXXXX")/$APP_NAME.zip"
+COPYFILE_DISABLE=1 ditto -c -k --norsrc --keepParent "$BUILT_APP" "$APP_ZIP"
+xcrun notarytool submit "$APP_ZIP" --keychain-profile "$NOTARY_PROFILE" --wait
+rm -rf "$(dirname "$APP_ZIP")"
+xcrun stapler staple "$BUILT_APP"
+xcrun stapler validate "$BUILT_APP"
+
 echo "==> Creating $OUTPUT_DMG"
 rm -f "$OUTPUT_DMG"
 create-dmg \
@@ -174,9 +182,7 @@ hdiutil verify "$OUTPUT_DMG"
 echo "==> Notarizing DMG"
 xcrun notarytool submit "$OUTPUT_DMG" --keychain-profile "$NOTARY_PROFILE" --wait
 
-echo "==> Stapling app for Sparkle and DMG for direct installs"
-xcrun stapler staple "$BUILT_APP"
-xcrun stapler validate "$BUILT_APP"
+echo "==> Stapling DMG"
 xcrun stapler staple "$OUTPUT_DMG"
 xcrun stapler validate "$OUTPUT_DMG"
 
@@ -213,6 +219,7 @@ fi
 
 echo "==> Verifying mounted app"
 codesign --verify --deep --strict --verbose=2 "$MOUNTED_APP"
+xcrun stapler validate "$MOUNTED_APP"
 spctl -a -t execute -vv "$MOUNTED_APP"
 
 echo "==> SHA-256"
