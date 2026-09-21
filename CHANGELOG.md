@@ -6,6 +6,24 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2.3.0] - 2026-09-21
+
+### Added
+
+- A floating vertical capture stack at the bottom-left: large individual previews, newest above oldest, up to four recent images visible, and scroll access to earlier captures. Includes two-second dismissal, slide transitions that stay on their own display, hover pause, and individual removal.
+- Consecutive screenshots, annotated captures, and video-editor frames copy as a group by default. Settings can keep the preview while copying only the latest image, or hide the preview entirely.
+
+### Changed
+
+- While typing an annotation text, Enter saves it and Shift-Enter adds a new line, so the next text or tool is one key away.
+- Refreshed selection controls, softer capture feedback, and consistent arrow shapes with clean tips and rounded tails. Capture transitions respect Reduce Motion.
+- Preview thumbnails use bounded, independent image buffers and are released after the capture batch expires; full-resolution files remain available for pasting.
+
+### Fixed
+
+- Rapid captures receive unique filenames instead of overwriting another screenshot taken in the same second.
+- Consecutive drawing gestures create new annotations immediately instead of losing the next drag to deselection.
+
 ## [2.2.3] - 2026-09-18
 
 ### Fixed

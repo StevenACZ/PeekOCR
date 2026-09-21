@@ -12,7 +12,9 @@ enum CaptureFlashEffect {
     /// Shows a short flash over `rectInScreen` (AppKit global coordinates).
     /// Call after the pixels were captured so the flash never lands in the image.
     static func flash(rectInScreen: CGRect) {
-        guard rectInScreen.width > 0, rectInScreen.height > 0 else { return }
+        guard rectInScreen.width > 0, rectInScreen.height > 0,
+            !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+        else { return }
 
         let window = NSWindow(
             contentRect: rectInScreen,
@@ -33,12 +35,12 @@ enum CaptureFlashEffect {
         view.layer?.cornerRadius = 6
         window.contentView = view
 
-        window.alphaValue = 0.8
+        window.alphaValue = 0.38
         window.orderFrontRegardless()
 
         NSAnimationContext.runAnimationGroup(
             { context in
-                context.duration = 0.28
+                context.duration = 0.2
                 context.timingFunction = CAMediaTimingFunction(name: .easeOut)
                 window.animator().alphaValue = 0
             },

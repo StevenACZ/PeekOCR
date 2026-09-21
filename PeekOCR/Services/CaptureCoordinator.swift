@@ -87,6 +87,8 @@ final class CaptureCoordinator: ObservableObject {
         // ScreenCaptureKit grabs the pixels for every mode; the app's own quick-select
         // or annotation overlay handles the region pick.
         Task { @MainActor in
+            CapturePreviewController.shared.beginCapture()
+            defer { CapturePreviewController.shared.endCapture() }
             switch mode {
             case .gifClip:
                 await captureClipWithScreenRecorder()

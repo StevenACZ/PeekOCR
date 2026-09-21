@@ -3,6 +3,33 @@
 import AppKit
 
 extension LiveAnnotationOverlayView {
+    private static let toolbarIcons: [LiveAnnotationTool: NSImage] = {
+        let configuration = NSImage.SymbolConfiguration(pointSize: 15, weight: .medium)
+            .applying(.init(paletteColors: [.white]))
+        return Dictionary(
+            uniqueKeysWithValues: LiveAnnotationTool.allCases.compactMap { tool in
+                guard
+                    let icon = NSImage(systemSymbolName: tool.iconName, accessibilityDescription: nil)?
+                        .withSymbolConfiguration(configuration)
+                else { return nil }
+                return (tool, icon)
+            })
+    }()
+
+    private static let shortcutParagraph: NSParagraphStyle = {
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.alignment = .center
+        return paragraph
+    }()
+
+    private static let controlShadow: NSShadow = {
+        let shadow = NSShadow()
+        shadow.shadowColor = NSColor.black.withAlphaComponent(0.24)
+        shadow.shadowBlurRadius = 14
+        shadow.shadowOffset = CGSize(width: 0, height: -4)
+        return shadow
+    }()
+
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
         guard let window else { return }
@@ -16,12 +43,15 @@ extension LiveAnnotationOverlayView {
             let overlayPath = NSBezierPath(rect: bounds)
             overlayPath.appendRect(selectionRect)
             overlayPath.windingRule = .evenOdd
-            NSColor.black.withAlphaComponent(0.35).setFill()
+            NSColor.black.withAlphaComponent(0.32).setFill()
             overlayPath.fill()
 
-            let border = NSBezierPath(roundedRect: selectionRect, xRadius: 8, yRadius: 8)
-            accentColor.setStroke()
-            border.lineWidth = 2
+            let border = NSBezierPath(rect: selectionRect)
+            NSColor.black.withAlphaComponent(0.32).setStroke()
+            border.lineWidth = 3
+            border.stroke()
+            NSColor.white.withAlphaComponent(0.95).setStroke()
+            border.lineWidth = 1
             border.stroke()
 
             if mode == .quickSelect {
@@ -46,9 +76,7 @@ extension LiveAnnotationOverlayView {
     }
 
     func drawFrozenBackgroundIfNeeded() {
-        guard let frozenBackgroundImage else { return }
-
-        let image = NSImage(cgImage: frozenBackgroundImage, size: bounds.size)
+        guard let image = frozenBackgroundPreview else { return }
         image.draw(
             in: bounds,
             from: CGRect(origin: .zero, size: image.size),
@@ -68,13 +96,12 @@ extension LiveAnnotationOverlayView {
         ]
         let size = (text as NSString).size(withAttributes: attributes)
         let rect = CGRect(
-            x: selectionRect.maxX - size.width - 18,
+            x: min(max(selectionRect.maxX - size.width - 18, 8), max(8, bounds.maxX - size.width - 22)),
             y: max(selectionRect.minY - 26, 8),
             width: size.width + 14,
             height: size.height + 6
         )
-        NSColor.black.withAlphaComponent(0.7).setFill()
-        NSBezierPath(roundedRect: rect, xRadius: rect.height / 2, yRadius: rect.height / 2).fill()
+        drawControlSurface(in: rect, radius: 10)
         (text as NSString).draw(at: CGPoint(x: rect.minX + 7, y: rect.minY + 3), withAttributes: attributes)
     }
 
@@ -107,21 +134,16 @@ extension LiveAnnotationOverlayView {
         }.insetBy(dx: -8, dy: -8).standardized
         guard !background.isNull else { return }
 
-        NSColor.black.withAlphaComponent(0.72).setFill()
-        NSBezierPath(roundedRect: background, xRadius: 14, yRadius: 14).fill()
+        drawControlSurface(in: background, radius: 18)
 
         for tool in LiveAnnotationTool.allCases {
             guard let frame = buttons[tool] else { continue }
             let selected = tool == selectedTool
-            let fill = selected ? accentColor.withAlphaComponent(0.9) : NSColor.white.withAlphaComponent(0.08)
+            let fill = selected ? accentColor : NSColor.white.withAlphaComponent(0.045)
             fill.setFill()
             NSBezierPath(roundedRect: frame, xRadius: 9, yRadius: 9).fill()
 
-            let symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 15, weight: .semibold)
-                .applying(.init(paletteColors: [.white]))
-            if let icon = NSImage(systemSymbolName: tool.iconName, accessibilityDescription: tool.displayName)?
-                .withSymbolConfiguration(symbolConfiguration)
-            {
+            if let icon = Self.toolbarIcons[tool] {
                 let iconRect = CGRect(
                     x: frame.midX - icon.size.width / 2,
                     y: frame.maxY - icon.size.height - 7,
@@ -131,12 +153,10 @@ extension LiveAnnotationOverlayView {
                 icon.draw(in: iconRect)
             }
 
-            let paragraph = NSMutableParagraphStyle()
-            paragraph.alignment = .center
             let attributes: [NSAttributedString.Key: Any] = [
                 .font: NSFont.systemFont(ofSize: 9, weight: .bold),
-                .foregroundColor: NSColor.white.withAlphaComponent(selected ? 0.95 : 0.55),
-                .paragraphStyle: paragraph,
+                .foregroundColor: NSColor.white.withAlphaComponent(selected ? 0.95 : 0.7),
+                .paragraphStyle: Self.shortcutParagraph,
             ]
             (tool.shortcutKey as NSString).draw(
                 in: CGRect(x: frame.minX, y: frame.minY + 4, width: frame.width, height: 12),
@@ -156,13 +176,12 @@ extension LiveAnnotationOverlayView {
         ]
         let size = (text as NSString).size(withAttributes: attributes)
         let rect = CGRect(
-            x: selectionRect.minX + 12,
+            x: min(max(selectionRect.minX + 12, 8), max(8, bounds.maxX - size.width - 28)),
             y: max(selectionRect.minY - 34, 16),
             width: size.width + 20,
             height: size.height + 10
         )
-        NSColor.black.withAlphaComponent(0.7).setFill()
-        NSBezierPath(roundedRect: rect, xRadius: rect.height / 2, yRadius: rect.height / 2).fill()
+        drawControlSurface(in: rect, radius: 10)
         (text as NSString).draw(at: CGPoint(x: rect.minX + 10, y: rect.minY + 5), withAttributes: attributes)
     }
 
@@ -178,9 +197,20 @@ extension LiveAnnotationOverlayView {
             width: size.width + 28,
             height: size.height + 16
         )
-        NSColor.black.withAlphaComponent(0.7).setFill()
-        NSBezierPath(roundedRect: rect, xRadius: 16, yRadius: 16).fill()
+        drawControlSurface(in: rect, radius: 14)
         (text as NSString).draw(at: CGPoint(x: rect.minX + 14, y: rect.minY + 8), withAttributes: attributes)
+    }
+
+    private func drawControlSurface(in rect: CGRect, radius: CGFloat) {
+        let path = NSBezierPath(roundedRect: rect, xRadius: radius, yRadius: radius)
+        NSGraphicsContext.saveGraphicsState()
+        Self.controlShadow.set()
+        NSColor(calibratedWhite: 0.12, alpha: 0.96).setFill()
+        path.fill()
+        NSGraphicsContext.restoreGraphicsState()
+        NSColor.white.withAlphaComponent(0.18).setStroke()
+        path.lineWidth = 1
+        path.stroke()
     }
 
     func drawSelectedAnnotationIfNeeded(in view: NSView, window: NSWindow) {

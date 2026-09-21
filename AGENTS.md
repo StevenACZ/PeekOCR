@@ -85,7 +85,7 @@ Still pixels come from `NativeScreenCaptureService.captureRegion` through
 rounded contour and then fill. The floating editor uses AppKit text editing and
 only approximates that final rendered look with fill plus a strong shadow.
 
-Text behavior: Enter inserts a newline, Command-Enter commits, Escape cancels.
+Text behavior: Enter commits, Shift-Enter inserts a newline, Escape cancels.
 Text anchors at its top-left `startPoint` and is measured with `LiveAnnotation.textSize`.
 
 Undo is transactional for drags through `beginAnnotationTransaction` and

@@ -17,8 +17,8 @@ enum ImageScalingService {
     nonisolated static func scaleImage(_ image: CGImage, scale: Double) -> CGImage {
         guard scale < 1.0, scale > 0 else { return image }
 
-        let newWidth = Int(Double(image.width) * scale)
-        let newHeight = Int(Double(image.height) * scale)
+        let newWidth = max(1, Int(Double(image.width) * scale))
+        let newHeight = max(1, Int(Double(image.height) * scale))
 
         guard newWidth > 0, newHeight > 0 else { return image }
 

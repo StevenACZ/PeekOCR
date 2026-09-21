@@ -109,6 +109,11 @@ private final class OverlayTextView: NSTextView {
             onCancel?()
             return
         }
+        let isReturn = event.keyCode == 36 || event.keyCode == 76
+        if isReturn, !event.modifierFlags.contains(.shift), !hasMarkedText() {  // ⇧enter keeps the newline
+            onCommit?()
+            return
+        }
         super.keyDown(with: event)
     }
 

@@ -40,6 +40,7 @@ final class ScreenshotService {
     private struct SettingsSnapshot: Sendable {
         let imageScale: Double
         let copyToClipboard: Bool
+        let showPreview: Bool
         let saveToFile: Bool
         let saveDirectoryURL: URL
         let imageFormat: ImageFormat
@@ -49,6 +50,7 @@ final class ScreenshotService {
     private struct ProcessedScreenshot: @unchecked Sendable {
         let image: CGImage
         let savedURL: URL?
+        let asset: CaptureClipboardAsset?
     }
 
     // MARK: - Initialization
@@ -69,10 +71,10 @@ final class ScreenshotService {
         let snapshot = makeSettingsSnapshot()
         let processed = await Self.processImage(image, using: snapshot)
 
-        if snapshot.copyToClipboard {
-            AppLogger.capture.debug("Copying image to clipboard")
+        if let asset = processed.asset {
+            CapturePreviewController.shared.receive(asset, copyToClipboard: snapshot.copyToClipboard, showPreview: snapshot.showPreview)
+        } else if snapshot.copyToClipboard {
             copyImageToClipboard(processed.image)
-            AppLogger.capture.info("Image copied to clipboard successfully")
         }
 
         if let url = processed.savedURL {
@@ -114,6 +116,7 @@ final class ScreenshotService {
         SettingsSnapshot(
             imageScale: settings.imageScale,
             copyToClipboard: settings.copyToClipboard,
+            showPreview: settings.showPreview,
             saveToFile: settings.saveToFile,
             saveDirectoryURL: settings.saveDirectoryURL,
             imageFormat: settings.imageFormat,
@@ -129,7 +132,10 @@ final class ScreenshotService {
                 : image
 
             let savedURL = snapshot.saveToFile ? Self.saveImageToFile(processedImage, using: snapshot) : nil
-            return ProcessedScreenshot(image: processedImage, savedURL: savedURL)
+            let asset =
+                (snapshot.copyToClipboard || snapshot.showPreview)
+                ? CaptureClipboardAsset.prepare(processedImage, savedURL: savedURL) : nil
+            return ProcessedScreenshot(image: processedImage, savedURL: savedURL, asset: asset)
         }.value
     }
 
@@ -178,7 +184,7 @@ final class ScreenshotService {
     }
 
     nonisolated private static func generateFilename(for format: ImageFormat) -> String {
-        let timestamp = AppDateFormatters.filenameTimestamp()
-        return "PeekOCR_\(timestamp).\(format.fileExtension)"
+        let timestamp = AppDateFormatters.highPrecisionFilenameTimestamp()
+        return "PeekOCR_\(timestamp)_\(UUID().uuidString.prefix(8)).\(format.fileExtension)"
     }
 }

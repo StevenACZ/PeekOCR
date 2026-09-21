@@ -27,7 +27,7 @@ enum AnnotationRenderer {
         case .select:
             break  // Select tool doesn't create annotations
         case .arrow:
-            drawArrow(annotation, context: context, strokeStyle: strokeStyle, color: shading)
+            drawArrow(annotation, context: context, color: shading)
         case .text:
             drawText(annotation, context: context)
         case .freehand:
@@ -44,44 +44,10 @@ enum AnnotationRenderer {
     private static func drawArrow(
         _ annotation: Annotation,
         context: GraphicsContext,
-        strokeStyle: StrokeStyle,
         color: GraphicsContext.Shading
     ) {
-        let start = annotation.startPoint
-        let end = annotation.endPoint
-
-        // Draw the line
-        var path = Path()
-        path.move(to: start)
-        path.addLine(to: end)
-        context.stroke(path, with: color, style: strokeStyle)
-
-        // Draw the arrowhead
-        let arrowPath = createArrowhead(from: start, to: end, size: annotation.strokeWidth * 4)
-        context.fill(arrowPath, with: color)
-    }
-
-    private static func createArrowhead(from start: CGPoint, to end: CGPoint, size: CGFloat) -> Path {
-        let angle = atan2(end.y - start.y, end.x - start.x)
-        let arrowAngle: CGFloat = .pi / 6  // 30 degrees
-
-        let point1 = CGPoint(
-            x: end.x - size * cos(angle - arrowAngle),
-            y: end.y - size * sin(angle - arrowAngle)
-        )
-
-        let point2 = CGPoint(
-            x: end.x - size * cos(angle + arrowAngle),
-            y: end.y - size * sin(angle + arrowAngle)
-        )
-
-        var path = Path()
-        path.move(to: end)
-        path.addLine(to: point1)
-        path.addLine(to: point2)
-        path.closeSubpath()
-
-        return path
+        let path = ArrowGeometry.path(from: annotation.startPoint, to: annotation.endPoint, width: annotation.strokeWidth)
+        context.fill(Path(path), with: color)
     }
 
     // MARK: - Text

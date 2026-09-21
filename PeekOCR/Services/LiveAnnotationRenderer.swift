@@ -90,17 +90,12 @@ enum LiveAnnotationRenderer {
         let start = pointInView(annotation.startPoint, view: view, window: window)
         let end = pointInView(annotation.endPoint, view: view, window: window)
 
-        let path = NSBezierPath()
-        path.move(to: start)
-        path.line(to: end)
-        path.lineWidth = annotation.strokeWidth
-        path.lineCapStyle = .round
-        annotation.color.setStroke()
-        path.stroke()
-
-        let arrowhead = createArrowhead(from: start, to: end, size: max(annotation.strokeWidth * 4, 10))
-        annotation.color.setFill()
-        arrowhead.fill()
+        guard let context = NSGraphicsContext.current?.cgContext else { return }
+        context.saveGState()
+        context.setFillColor(annotation.color.cgColor)
+        context.addPath(ArrowGeometry.path(from: start, to: end, width: annotation.strokeWidth))
+        context.fillPath()
+        context.restoreGState()
     }
 
     private static func drawOverlayHighlight(_ annotation: LiveAnnotation, in view: NSView, window: NSWindow) {
@@ -183,23 +178,8 @@ enum LiveAnnotationRenderer {
         let end = localPoint(annotation.endPoint, selectionRectInScreen: selectionRectInScreen, scaleFactor: scaleFactor)
 
         context.saveGState()
-        context.setStrokeColor(annotation.color.cgColor)
         context.setFillColor(annotation.color.cgColor)
-        context.setLineWidth(annotation.strokeWidth * scaleFactor)
-        context.setLineCap(.round)
-        context.move(to: start)
-        context.addLine(to: end)
-        context.strokePath()
-
-        let angle = atan2(end.y - start.y, end.x - start.x)
-        let size: CGFloat = max(annotation.strokeWidth * 4, 10) * scaleFactor
-        let arrowAngle: CGFloat = .pi / 6
-        let point1 = CGPoint(x: end.x - size * cos(angle - arrowAngle), y: end.y - size * sin(angle - arrowAngle))
-        let point2 = CGPoint(x: end.x - size * cos(angle + arrowAngle), y: end.y - size * sin(angle + arrowAngle))
-        context.move(to: end)
-        context.addLine(to: point1)
-        context.addLine(to: point2)
-        context.closePath()
+        context.addPath(ArrowGeometry.path(from: start, to: end, width: annotation.strokeWidth * scaleFactor))
         context.fillPath()
         context.restoreGState()
     }
@@ -258,17 +238,4 @@ enum LiveAnnotationRenderer {
         )
     }
 
-    private static func createArrowhead(from start: CGPoint, to end: CGPoint, size: CGFloat) -> NSBezierPath {
-        let angle = atan2(end.y - start.y, end.x - start.x)
-        let arrowAngle: CGFloat = .pi / 6
-        let point1 = CGPoint(x: end.x - size * cos(angle - arrowAngle), y: end.y - size * sin(angle - arrowAngle))
-        let point2 = CGPoint(x: end.x - size * cos(angle + arrowAngle), y: end.y - size * sin(angle + arrowAngle))
-
-        let path = NSBezierPath()
-        path.move(to: end)
-        path.line(to: point1)
-        path.line(to: point2)
-        path.close()
-        return path
-    }
 }

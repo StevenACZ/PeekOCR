@@ -56,7 +56,7 @@
 "capture.hud_resume" = "Resume";
 "capture.hud_stop" = "Stop";
 "capture.instructions_default" = "Enter captures • Esc cancels • ⌘Z undo • ⇧⌘Z redo • ⌫ deletes";
-"capture.instructions_text_editing" = "↩ new line • ⌘↩ save text • Esc cancels text";
+"capture.instructions_text_editing" = "↩ save text • ⇧↩ new line • Esc cancels text";
 "capture.type_screenshot" = "Screenshot";
 "capture.type_text" = "Text";
 
@@ -337,3 +337,21 @@
 "permissions.welcome.done" = "Done";
 "permissions.guide.granted" = "macOS reports this permission as granted. You can close this guide.";
 "permissions.screen_recording.restart_hint" = "macOS reports screen access as granted. If it asks you to quit and reopen PeekOCR, do that before your next capture.";
+
+"settings.captures.preview" = "Capture preview";
+"settings.captures.show_preview" = "Show preview on the left";
+"settings.captures.grouped_copy" = "Copy consecutive captures together";
+"settings.captures.grouped_copy_caption" = "Captures taken within 15 seconds form a group. Paste all with ⌘V, or turn this off to paste only the latest. Hover over the preview to pause it and remove unwanted images.";
+"preview.capture" = "Capture";
+"preview.captures" = "%d captures";
+"preview.hide" = "Hide preview";
+"preview.remove" = "Remove from group";
+"preview.remove_number" = "Remove capture %d from group";
+"preview.copy" = "Copy";
+"preview.ready" = "Ready to copy";
+"preview.group_copied" = "Group copied · paste together";
+"preview.latest_copied" = "Only the latest is copied";
+"preview.copied" = "Copied · ready to paste";
+"preview.older" = "%d earlier captures";
+"preview.latest" = "Back to latest";
+"preview.latest_only" = "Latest only";

@@ -3,11 +3,8 @@
 import AppKit
 
 final class LiveAnnotationOverlayView: NSView {
-    /// How the overlay behaves once a region is selected.
     enum OverlayMode {
-        /// Full annotation session: adjust the selection, draw, capture on Enter.
         case annotate
-        /// One-shot region pick: capture immediately on mouse-up (⌘⇧4-style).
         case quickSelect
     }
 
@@ -86,20 +83,20 @@ final class LiveAnnotationOverlayView: NSView {
 
     var frozenBackgroundImage: CGImage? {
         didSet {
+            frozenBackgroundPreview = frozenBackgroundImage.map { NSImage(cgImage: $0, size: overlayScreen.frame.size) }
             needsDisplay = true
         }
     }
 
+    private(set) var frozenBackgroundPreview: NSImage?
+
     var onCancel: (() -> Void)?
     var onComplete: ((CGRect, NSScreen, [LiveAnnotation]) -> Void)?
 
-    /// The screen this overlay is rendering on. Set at construction.
     let overlayScreen: NSScreen
 
-    /// Behavior of this overlay session. Set at construction.
     let mode: OverlayMode
 
-    /// Fires the first time the user mousedowns on this overlay, so the window controller can dismiss sibling overlays.
     var onActivate: (() -> Void)?
 
     var didActivate = false
@@ -132,7 +129,6 @@ final class LiveAnnotationOverlayView: NSView {
     let appSettings = AppSettings.shared
     let accentColor = NSColor.systemBlue
     let annotationColor = NSColor.systemYellow
-    /// Thumbnail-style lettering reads best as white fill over the black outline.
     let textColor = NSColor.white
     let minimumSelectionSize = CGSize(width: 40, height: 40)
     let minimumHighlightSize = CGSize(width: 12, height: 12)

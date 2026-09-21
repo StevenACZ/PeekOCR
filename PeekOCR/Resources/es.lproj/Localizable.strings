@@ -56,7 +56,7 @@
 "capture.hud_resume" = "Reanudar";
 "capture.hud_stop" = "Detener";
 "capture.instructions_default" = "Enter captura • Esc cancela • ⌘Z deshacer • ⇧⌘Z rehacer • ⌫ elimina";
-"capture.instructions_text_editing" = "↩ nueva línea • ⌘↩ guardar texto • Esc cancela texto";
+"capture.instructions_text_editing" = "↩ guardar texto • ⇧↩ nueva línea • Esc cancela texto";
 "capture.type_screenshot" = "Captura";
 "capture.type_text" = "Texto";
 
@@ -337,3 +337,21 @@
 "permissions.welcome.done" = "Listo";
 "permissions.guide.granted" = "macOS indica que este permiso está concedido. Ya puedes cerrar esta guía.";
 "permissions.screen_recording.restart_hint" = "macOS indica que el acceso a la pantalla está concedido. Si te pide cerrar y volver a abrir PeekOCR, hazlo antes de tu próxima captura.";
+
+"settings.captures.preview" = "Vista previa";
+"settings.captures.show_preview" = "Mostrar vista previa a la izquierda";
+"settings.captures.grouped_copy" = "Copiar capturas consecutivas juntas";
+"settings.captures.grouped_copy_caption" = "Las capturas tomadas en 15 segundos forman un grupo. Pega todas con ⌘V o desactívalo para pegar solo la última. Pasa el mouse por la vista previa para pausarla y quitar imágenes.";
+"preview.capture" = "Captura";
+"preview.captures" = "%d capturas";
+"preview.hide" = "Ocultar vista previa";
+"preview.remove" = "Quitar del grupo";
+"preview.remove_number" = "Quitar captura %d del grupo";
+"preview.copy" = "Copiar";
+"preview.ready" = "Lista para copiar";
+"preview.group_copied" = "Grupo copiado · pega todas";
+"preview.latest_copied" = "Solo la última está copiada";
+"preview.copied" = "Copiada · lista para pegar";
+"preview.older" = "%d capturas anteriores";
+"preview.latest" = "Volver a recientes";
+"preview.latest_only" = "Solo la última";
