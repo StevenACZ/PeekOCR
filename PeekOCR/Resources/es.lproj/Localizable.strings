@@ -352,3 +352,6 @@
 "preview.group_copied" = "Grupo copiado · pega todas";
 "preview.latest_copied" = "Solo la última está copiada";
 "preview.copied" = "Copiada · lista para pegar";
+"preview.older" = "%d capturas anteriores";
+"preview.latest" = "Volver a recientes";
+"preview.latest_only" = "Solo la última";

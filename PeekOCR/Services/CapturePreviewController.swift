@@ -17,7 +17,8 @@ final class CapturePreviewController: ObservableObject {
     private var expiryTask: Task<Void, Never>?
     private var deadline: Date?
     private var remaining: TimeInterval = 2
-    private var hovered = false
+    @Published private(set) var isHovered = false
+    @Published private(set) var previewScreenHeight: CGFloat = 1000
     private var suspended = false
     private var presentationID = UUID()
     private var globalMonitor: Any?
@@ -77,8 +78,8 @@ final class CapturePreviewController: ObservableObject {
     }
 
     func setHovered(_ value: Bool) {
-        guard panel?.isVisible == true, hovered != value else { return }
-        hovered = value
+        guard panel?.isVisible == true, isHovered != value else { return }
+        isHovered = value
         if value {
             remaining = max(0, deadline?.timeIntervalSinceNow ?? remaining)
             dismissalTask?.cancel()
@@ -108,6 +109,7 @@ final class CapturePreviewController: ObservableObject {
         guard !assets.isEmpty else { return }
         let screen = NSScreen.screens.first { $0.frame.contains(NSEvent.mouseLocation) } ?? NSScreen.main
         guard let screen else { return }
+        previewScreenHeight = screen.visibleFrame.height
         let target = frame(on: screen)
         let isNew = panel == nil || panel?.isVisible == false
         presentationID = UUID()
@@ -140,19 +142,33 @@ final class CapturePreviewController: ObservableObject {
             panel.animator().setFrame(target, display: true)
             panel.animator().alphaValue = 1
         }
-        hovered = target.contains(NSEvent.mouseLocation)
+        isHovered = target.contains(NSEvent.mouseLocation)
         remaining = 2
-        if !hovered { startCountdown(seconds: 2) }
+        if !isHovered { startCountdown(seconds: 2) }
     }
 
+    var previewLayout: CapturePreviewLayout { CapturePreviewLayout(screenHeight: previewScreenHeight) }
+
+    private var previewImageSizes: [CGSize] {
+        assets.map { CGSize(width: $0.thumbnail.width, height: $0.thumbnail.height) }
+    }
+
+    var previewViewportHeight: CGFloat { previewLayout.viewportHeight(for: previewImageSizes) }
+
     private func frame(on screen: NSScreen) -> CGRect {
-        let height: CGFloat = assets.count == 1 ? 312 : min(398, 124 + CGFloat((assets.count + 1) / 2) * 106)
-        return CGRect(x: screen.visibleFrame.minX + 14, y: screen.visibleFrame.midY - height / 2, width: 332, height: height)
+        let layout = CapturePreviewLayout(screenHeight: screen.visibleFrame.height)
+        return CGRect(
+            x: screen.visibleFrame.minX + 16, y: screen.visibleFrame.minY + 20,
+            width: CapturePreviewLayout.width, height: layout.panelHeight(for: previewImageSizes))
     }
 
     private func resizePanel() {
         guard let panel, let screen = panel.screen else { return }
-        panel.setFrame(frame(on: screen), display: true)
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? 0 : 0.22
+            context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+            panel.animator().setFrame(frame(on: screen), display: true)
+        }
     }
 
     private func startCountdown(seconds: TimeInterval) {
@@ -175,7 +191,7 @@ final class CapturePreviewController: ObservableObject {
     private func hide(animated: Bool) {
         dismissalTask?.cancel()
         dismissalTask = nil
-        hovered = false
+        isHovered = false
         deadline = nil
         scheduleExpiry()
         guard let panel else { return }
@@ -207,7 +223,7 @@ final class CapturePreviewController: ObservableObject {
 
     private func scheduleExpiry() {
         expiryTask?.cancel()
-        guard !suspended, !hovered else { return }
+        guard !suspended, !isHovered else { return }
         expiryTask = Task { @MainActor [weak self] in
             try? await Task.sleep(for: .seconds(CaptureBatch.groupingInterval))
             guard let self, !Task.isCancelled else { return }

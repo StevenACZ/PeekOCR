@@ -352,3 +352,6 @@
 "preview.group_copied" = "Group copied · paste together";
 "preview.latest_copied" = "Only the latest is copied";
 "preview.copied" = "Copied · ready to paste";
+"preview.older" = "%d earlier captures";
+"preview.latest" = "Back to latest";
+"preview.latest_only" = "Latest only";

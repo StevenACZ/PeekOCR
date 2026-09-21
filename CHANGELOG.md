@@ -8,7 +8,7 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
-- A left-side capture preview with a two-second dismissal, slide transitions, hover pause, and individual image removal.
+- A floating vertical capture stack at the bottom-left: large individual previews, newest above oldest, up to four recent images visible, and scroll access to earlier captures. Includes two-second dismissal, slide transitions, hover pause, and individual removal.
 - Consecutive screenshots, annotated captures, and video-editor frames copy as a group by default. Settings can keep the preview while copying only the latest image, or hide the preview entirely.
 
 ### Changed
@@ -19,6 +19,7 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Fixed
 
 - Rapid captures receive unique filenames instead of overwriting another screenshot taken in the same second.
+- Consecutive drawing gestures create new annotations immediately instead of losing the next drag to deselection.
 
 ## [2.2.3] - 2026-09-18
 

@@ -69,9 +69,11 @@ extension LiveAnnotationOverlayView {
             } else {
                 if selectedAnnotationID != nil {
                     selectedAnnotationID = nil
-                    interaction = .none
-                    needsDisplay = true
-                    return
+                    if selectedTool == .select {
+                        interaction = .none
+                        needsDisplay = true
+                        return
+                    }
                 }
                 selectedAnnotationID = nil
             }
