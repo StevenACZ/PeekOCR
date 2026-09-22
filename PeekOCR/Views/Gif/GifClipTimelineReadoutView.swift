@@ -32,6 +32,8 @@ struct GifClipTimelineReadoutView: View {
                 .font(.system(size: 12, weight: .semibold, design: .monospaced))
                 .monospacedDigit()
                 .foregroundStyle(.primary)
+                .contentTransition(.numericText(value: value))
+                .animation(.snappy(duration: 0.2), value: value)
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 5)
@@ -57,6 +59,8 @@ struct GifClipTimelineReadoutView: View {
                 .font(.system(size: 12, weight: .semibold, design: .monospaced))
                 .monospacedDigit()
                 .foregroundStyle(.primary)
+                .contentTransition(.numericText(value: endSeconds - startSeconds))
+                .animation(.snappy(duration: 0.2), value: endSeconds - startSeconds)
         }
     }
 

@@ -6,9 +6,17 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2.4.0] - 2026-09-21
+
 ### Added
 
 - Exported clips join the capture preview stack and the clipboard: after saving a GIF or MP4 from the clip editor, the file is ready to paste with ⌘V and shows a thumbnail with a format badge, like screenshots.
+- Clip editor timeline shows a filmstrip of the recording, dims the trimmed-out range, and shows the time under the cursor or the dragged handle in a strip below the track, out of the pointer's way. Handles use a resize cursor and the playhead glides during playback.
+
+### Changed
+
+- Clip export feedback animates: the card springs in, the spinner morphs into a bouncing checkmark, and the editor fades out while the exported clip is already in the preview stack and clipboard, with no delay between the two.
+- Clip editor sidebar cards cross-fade when switching GIF/Video, estimate values and In/Out readouts tick with numeric transitions, and the play button morphs between play and pause. All new motion respects Reduce Motion.
 
 ## [2.3.0] - 2026-09-21
 

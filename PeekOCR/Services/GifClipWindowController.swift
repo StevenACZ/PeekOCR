@@ -88,7 +88,23 @@ final class GifClipWindowController: NSWindowController {
     private func handleExport(_ result: ClipExportResult) {
         continuation?.resume(returning: result)
         continuation = nil
-        closeEditor()
+        let exportedWindow = window
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(900))
+            guard let exportedWindow, exportedWindow === window else { return }
+            NSAnimationContext.runAnimationGroup(
+                { context in
+                    context.duration = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? 0.1 : 0.22
+                    context.timingFunction = CAMediaTimingFunction(name: .easeIn)
+                    exportedWindow.animator().alphaValue = 0
+                },
+                completionHandler: { [weak self] in
+                    Task { @MainActor in
+                        guard let self, exportedWindow === self.window else { return }
+                        self.closeEditor()
+                    }
+                })
+        }
     }
 
     @MainActor

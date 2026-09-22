@@ -71,10 +71,12 @@ struct GifClipPlaybackControlsView: View {
         Button(action: onTogglePlay) {
             Image(systemName: isPlaying ? "pause.fill" : "play.fill")
                 .font(.system(size: 13, weight: .bold))
+                .contentTransition(.symbolEffect(.replace))
                 .frame(width: 30, height: 30)
                 .background(
-                    Circle().fill(Color.white.opacity(0.12))
+                    Circle().fill(Color.white.opacity(isPlaying ? 0.2 : 0.12))
                 )
+                .animation(.easeOut(duration: 0.18), value: isPlaying)
         }
         .buttonStyle(.plain)
         .help(isPlaying ? "clip_editor.pause_help".localized : "clip_editor.play_help".localized)

@@ -19,6 +19,8 @@ struct GifClipTimelineView: View {
 
     let durationSeconds: Double
     let currentSeconds: Double
+    let isPlaying: Bool
+    let frames: [CGImage?]
 
     let stepSeconds: Double
     let minimumSelectionSeconds: Double
@@ -26,173 +28,227 @@ struct GifClipTimelineView: View {
     var onScrub: (Double) -> Void
     var onBeginEditing: () -> Void
 
-    private let trackHeight: CGFloat = 40
-    private let cornerRadius: CGFloat = 8
-    private let handleWidth: CGFloat = 14
-    private let selectionInset: CGFloat = 2
+    static let trackHeight: CGFloat = 64
+    private static let labelStripHeight: CGFloat = 20
+    private static let labelWidth: CGFloat = 58
+    private let cornerRadius: CGFloat = 10
+    private let handleWidth: CGFloat = 12
 
     private struct DragState {
+        let handle: DragHandle
         let initialStartSeconds: Double
         let initialEndSeconds: Double
     }
 
     @State private var dragState: DragState?
+    @State private var isScrubbing = false
+    @State private var hoverX: CGFloat?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         GeometryReader { geo in
             let width = max(1, geo.size.width)
-            let clampedStart = clamp(startSeconds, 0, durationSeconds)
-            let clampedEnd = clamp(endSeconds, 0, durationSeconds)
-
-            let startX = x(for: clampedStart, width: width)
-            let endX = x(for: clampedEnd, width: width)
+            let startX = x(for: clamp(startSeconds, 0, durationSeconds), width: width)
+            let endX = x(for: clamp(endSeconds, 0, durationSeconds), width: width)
             let playheadX = x(for: clamp(currentSeconds, 0, durationSeconds), width: width)
 
-            ZStack(alignment: .leading) {
-                trackBackground
-
-                tickMarks(width: width)
-
-                selectionHighlight(startX: startX, endX: endX)
-
-                playhead(x: playheadX)
-
-                handle(isLeading: true, x: startX, width: width)
-                    .highPriorityGesture(
-                        DragGesture(minimumDistance: 0)
-                            .onChanged { gesture in
-                                onBeginEditing()
-                                beginDragIfNeeded()
-                                updateHandle(.start, translationX: gesture.translation.width, width: width)
-                            }
-                            .onEnded { _ in
-                                dragState = nil
-                            }
-                    )
-
-                handle(isLeading: false, x: endX, width: width)
-                    .highPriorityGesture(
-                        DragGesture(minimumDistance: 0)
-                            .onChanged { gesture in
-                                onBeginEditing()
-                                beginDragIfNeeded()
-                                updateHandle(.end, translationX: gesture.translation.width, width: width)
-                            }
-                            .onEnded { _ in
-                                dragState = nil
-                            }
-                    )
-            }
-            .frame(height: trackHeight)
-            .contentShape(Rectangle())
-            .gesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { gesture in
-                        guard dragState == nil else { return }
-                        onBeginEditing()
-                        let seconds = seconds(for: gesture.location.x, width: width)
-                        onScrub(snap(seconds))
+            VStack(alignment: .leading, spacing: 4) {
+                ZStack(alignment: .leading) {
+                    filmstrip(width: width)
+                    dimming(startX: startX, endX: endX, width: width)
+                    tickMarks(width: width)
+                    selectionFrame(startX: startX, endX: endX)
+                    handle(.start, x: startX, width: width)
+                    handle(.end, x: endX, width: width)
+                    playhead(x: playheadX)
+                        .animation(isPlaying && !reduceMotion ? .linear(duration: 0.05) : nil, value: playheadX)
+                }
+                .frame(height: Self.trackHeight)
+                .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .strokeBorder(Color.primary.opacity(0.10), lineWidth: 1)
+                )
+                .contentShape(Rectangle())
+                .onContinuousHover { phase in
+                    switch phase {
+                    case .active(let point): hoverX = point.x
+                    case .ended: hoverX = nil
                     }
-            )
+                }
+                .gesture(
+                    DragGesture(minimumDistance: 0)
+                        .onChanged { gesture in
+                            guard dragState == nil else { return }
+                            onBeginEditing()
+                            isScrubbing = true
+                            hoverX = gesture.location.x
+                            onScrub(snap(seconds(for: gesture.location.x, width: width)))
+                        }
+                        .onEnded { _ in
+                            isScrubbing = false
+                            hoverX = nil
+                        }
+                )
+
+                ZStack(alignment: .leading) {
+                    if let label = floatingLabel(startX: startX, endX: endX, width: width) {
+                        timeLabel(label.text)
+                            .offset(x: label.x)
+                            .transition(.opacity.combined(with: .move(edge: .top)))
+                    }
+                }
+                .frame(width: width, height: Self.labelStripHeight, alignment: .leading)
+            }
+            .animation(reduceMotion ? nil : .easeOut(duration: 0.16), value: dragState?.handle == nil)
+            .animation(reduceMotion ? nil : .easeOut(duration: 0.16), value: hoverX == nil)
         }
-        .frame(height: trackHeight)
+        .frame(height: Self.trackHeight + 4 + Self.labelStripHeight)
     }
 
-    private var trackBackground: some View {
-        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-            .fill(Color.primary.opacity(0.08))
-            .overlay(
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .stroke(Color.primary.opacity(0.10), lineWidth: 1)
-            )
+    private func filmstrip(width: CGFloat) -> some View {
+        let count = max(1, frames.count)
+        let cell = width / CGFloat(count)
+        return HStack(spacing: 0) {
+            ForEach(0..<count, id: \.self) { index in
+                ZStack {
+                    Color.primary.opacity(0.06)
+                    if let frame = frames.indices.contains(index) ? frames[index] : nil {
+                        Image(decorative: frame, scale: 1)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .transition(.opacity)
+                    }
+                }
+                .frame(width: cell, height: Self.trackHeight)
+                .clipped()
+            }
+        }
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.3), value: frames.compactMap { $0 }.count)
+        .allowsHitTesting(false)
+    }
+
+    private func dimming(startX: CGFloat, endX: CGFloat, width: CGFloat) -> some View {
+        let left = min(startX, endX)
+        let right = max(startX, endX)
+        return ZStack(alignment: .leading) {
+            Rectangle().fill(.black.opacity(0.55))
+                .frame(width: max(0, left))
+            Rectangle().fill(.black.opacity(0.55))
+                .frame(width: max(0, width - right))
+                .offset(x: right)
+        }
+        .allowsHitTesting(false)
     }
 
     private func tickMarks(width: CGFloat) -> some View {
-        let seconds = max(0, durationSeconds)
-        guard seconds > 0 else { return AnyView(EmptyView()) }
-        let count = max(0, Int(seconds))
-        return AnyView(
-            ZStack(alignment: .leading) {
-                ForEach(1..<count + 1, id: \.self) { i in
-                    Rectangle()
-                        .fill(Color.primary.opacity(0.10))
-                        .frame(width: 1, height: 6)
-                        .offset(x: x(for: Double(i), width: width) - 0.5, y: trackHeight / 2 - 3)
-                }
+        let count = max(0, Int(durationSeconds))
+        return ZStack(alignment: .leading) {
+            ForEach(1..<max(1, count + 1), id: \.self) { second in
+                Rectangle()
+                    .fill(.white.opacity(second % 5 == 0 ? 0.55 : 0.3))
+                    .frame(width: 1, height: second % 5 == 0 ? 8 : 5)
+                    .offset(x: x(for: Double(second), width: width) - 0.5, y: Self.trackHeight / 2 - (second % 5 == 0 ? 4 : 2.5))
             }
-            .allowsHitTesting(false)
-        )
+        }
+        .allowsHitTesting(false)
     }
 
-    private func selectionHighlight(startX: CGFloat, endX: CGFloat) -> some View {
+    private func selectionFrame(startX: CGFloat, endX: CGFloat) -> some View {
         let left = min(startX, endX)
         let right = max(startX, endX)
-        return RoundedRectangle(cornerRadius: cornerRadius - 2, style: .continuous)
-            .fill(Color.accentColor.opacity(0.42))
-            .overlay(
-                RoundedRectangle(cornerRadius: cornerRadius - 2, style: .continuous)
-                    .stroke(Color.accentColor, lineWidth: 1.5)
-            )
-            .frame(width: max(0, right - left), height: trackHeight - selectionInset * 2)
-            .padding(.vertical, selectionInset)
+        return RoundedRectangle(cornerRadius: 6, style: .continuous)
+            .strokeBorder(Color.accentColor, lineWidth: 2.5)
+            .frame(width: max(0, right - left), height: Self.trackHeight)
             .offset(x: left)
             .allowsHitTesting(false)
     }
 
     private func playhead(x: CGFloat) -> some View {
-        ZStack {
-            Capsule(style: .continuous)
-                .fill(Color.white)
-                .frame(width: 3, height: trackHeight - 6)
-                .padding(.vertical, 3)
-                .shadow(color: .black.opacity(0.45), radius: 3, x: 0, y: 1)
-
-            Circle()
-                .fill(Color.white)
-                .frame(width: 8, height: 8)
-                .shadow(color: .black.opacity(0.4), radius: 2, x: 0, y: 1)
-                .offset(y: -(trackHeight / 2))
+        VStack(spacing: 0) {
+            RoundedRectangle(cornerRadius: 2, style: .continuous)
+                .fill(.white)
+                .frame(width: 10, height: 6)
+            Rectangle()
+                .fill(.white)
+                .frame(width: 2)
         }
-        .offset(x: x - 1.5)
+        .frame(height: Self.trackHeight)
+        .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 0)
+        .offset(x: x - 5)
+        .zIndex(11)
         .allowsHitTesting(false)
     }
 
-    private func handle(isLeading: Bool, x: CGFloat, width: CGFloat) -> some View {
-        let offsetX = x - handleWidth / 2
-        let maxOffsetX = max(0, width - handleWidth)
-        let clampedOffsetX = min(max(0, offsetX), maxOffsetX)
+    private func handle(_ kind: DragHandle, x: CGFloat, width: CGFloat) -> some View {
+        let isActive = dragState?.handle == kind
+        let offsetX = kind == .start ? x : x - handleWidth
+        let clampedOffsetX = min(max(0, offsetX), max(0, width - handleWidth))
         return ZStack {
-            RoundedRectangle(cornerRadius: 4, style: .continuous)
-                .fill(Color.accentColor)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 4, style: .continuous)
-                        .stroke(Color.white.opacity(0.35), lineWidth: 0.5)
-                )
-                .shadow(color: .black.opacity(0.25), radius: 2, x: 0, y: 1)
-
-            Rectangle()
-                .fill(Color.white.opacity(0.75))
-                .frame(width: 2, height: 12)
+            UnevenRoundedRectangle(
+                topLeadingRadius: kind == .start ? 6 : 0, bottomLeadingRadius: kind == .start ? 6 : 0,
+                bottomTrailingRadius: kind == .end ? 6 : 0, topTrailingRadius: kind == .end ? 6 : 0, style: .continuous
+            )
+            .fill(Color.accentColor)
+            Capsule()
+                .fill(.white.opacity(isActive ? 1 : 0.8))
+                .frame(width: 2, height: 16)
         }
-        .frame(width: handleWidth, height: trackHeight - 2)
-        .padding(.vertical, 1)
-        .contentShape(Rectangle())
+        .frame(width: handleWidth, height: Self.trackHeight)
+        .scaleEffect(isActive && !reduceMotion ? 1.06 : 1, anchor: kind == .start ? .leading : .trailing)
+        .contentShape(Rectangle().inset(by: -6))
         .offset(x: clampedOffsetX)
         .zIndex(10)
-        .accessibilityLabel(isLeading ? "clip_editor.start".localized : "clip_editor.end".localized)
+        .onHover { inside in
+            if inside { NSCursor.resizeLeftRight.push() } else { NSCursor.pop() }
+        }
+        .highPriorityGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { gesture in
+                    onBeginEditing()
+                    if dragState == nil {
+                        dragState = DragState(handle: kind, initialStartSeconds: startSeconds, initialEndSeconds: endSeconds)
+                    }
+                    updateHandle(kind, translationX: gesture.translation.width, width: width)
+                }
+                .onEnded { _ in
+                    dragState = nil
+                    hoverX = nil
+                }
+        )
+        .accessibilityLabel(kind == .start ? "clip_editor.start".localized : "clip_editor.end".localized)
     }
 
-    private func beginDragIfNeeded() {
-        guard dragState == nil else { return }
-        dragState = DragState(initialStartSeconds: startSeconds, initialEndSeconds: endSeconds)
+    private func floatingLabel(startX: CGFloat, endX: CGFloat, width: CGFloat) -> (text: String, x: CGFloat)? {
+        let anchorX: CGFloat
+        let seconds: Double
+        if let dragState {
+            anchorX = dragState.handle == .start ? startX : endX
+            seconds = dragState.handle == .start ? startSeconds : endSeconds
+        } else if let hoverX, hoverX >= 0, hoverX <= width {
+            anchorX = hoverX
+            seconds = isScrubbing ? currentSeconds : self.seconds(for: hoverX, width: width)
+        } else {
+            return nil
+        }
+        return (formatSeconds(seconds), min(max(0, anchorX - Self.labelWidth / 2), width - Self.labelWidth))
+    }
+
+    private func timeLabel(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: 10, weight: .semibold, design: .monospaced))
+            .monospacedDigit()
+            .foregroundStyle(.primary)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 3)
+            .background(Color.primary.opacity(0.1), in: Capsule())
+            .frame(width: Self.labelWidth)
+            .allowsHitTesting(false)
     }
 
     private func updateHandle(_ handle: DragHandle, translationX: CGFloat, width: CGFloat) {
-        guard durationSeconds > 0, width > 0 else { return }
-        guard let dragState else { return }
-
+        guard durationSeconds > 0, width > 0, let dragState else { return }
         let deltaSeconds = Double(translationX / width) * durationSeconds
-
         switch handle {
         case .start:
             let proposed = snap(dragState.initialStartSeconds + deltaSeconds)
@@ -214,8 +270,7 @@ struct GifClipTimelineView: View {
 
     private func seconds(for x: CGFloat, width: CGFloat) -> Double {
         guard durationSeconds > 0 else { return 0 }
-        let clampedX = min(max(0, x), width)
-        return (Double(clampedX / width) * durationSeconds)
+        return Double(min(max(0, x), width) / width) * durationSeconds
     }
 
     private func x(for seconds: Double, width: CGFloat) -> CGFloat {
@@ -225,6 +280,13 @@ struct GifClipTimelineView: View {
 
     private func clamp(_ value: Double, _ minValue: Double, _ maxValue: Double) -> Double {
         min(max(value, minValue), maxValue)
+    }
+
+    private func formatSeconds(_ seconds: Double) -> String {
+        guard seconds.isFinite else { return "00:00.0" }
+        let clamped = max(0, seconds)
+        let minutes = Int(clamped / 60)
+        return String(format: "%02d:%04.1f", minutes, clamped - Double(minutes * 60))
     }
 }
 
@@ -246,6 +308,8 @@ private struct GifClipTimelinePreviewWrapper: View {
             endSeconds: $end,
             durationSeconds: 9.2,
             currentSeconds: current,
+            isPlaying: false,
+            frames: Array(repeating: nil, count: GifClipFilmstrip.frameCount),
             stepSeconds: 0.1,
             minimumSelectionSeconds: 3,
             onScrub: { current = $0 },

@@ -26,6 +26,8 @@ struct GifClipEditorView: View {
     @State var isSavingFrame = false
     @State var frameCaptureFeedback: GifClipActionFeedback?
     @State var keyboardHandler = GifClipKeyboardHandler()
+    @State private var filmstripFrames: [CGImage?] = Array(repeating: nil, count: GifClipFilmstrip.frameCount)
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     init(
         videoURL: URL,
@@ -54,15 +56,25 @@ struct GifClipEditorView: View {
                 bottomBar
             }
             .disabled(isBlockingUI || !state.isReady)
+            .scaleEffect(exportOverlay != nil && !reduceMotion ? 0.985 : 1)
 
             if let overlay = exportOverlay {
                 ClipExportOverlay(state: overlay)
+                    .transition(.opacity)
             }
         }
+        .animation(reduceMotion ? .easeOut(duration: 0.12) : .smooth(duration: 0.32), value: exportOverlay)
         .frame(minWidth: 1120, minHeight: 680)
         .background(Color(NSColor.windowBackgroundColor))
         .task {
             await state.prepare()
+        }
+        .task(id: state.durationSeconds > 0 ? state.videoURL : nil) {
+            filmstripFrames = Array(repeating: nil, count: GifClipFilmstrip.frameCount)
+            guard state.durationSeconds > 0 else { return }
+            await GifClipFilmstrip.load(videoURL: state.videoURL, durationSeconds: state.durationSeconds) { index, frame in
+                if filmstripFrames.indices.contains(index) { filmstripFrames[index] = frame }
+            }
         }
         .onAppear {
             configureKeyboardShortcuts()
@@ -118,6 +130,8 @@ struct GifClipEditorView: View {
         }
         .padding(20)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .opacity(state.isReady ? 1 : 0.35)
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.4), value: state.isReady)
     }
 
     private var timelineSection: some View {
@@ -135,6 +149,8 @@ struct GifClipEditorView: View {
                     endSeconds: $state.endSeconds,
                     durationSeconds: state.durationSeconds,
                     currentSeconds: state.currentSeconds,
+                    isPlaying: state.isPreviewPlaying,
+                    frames: filmstripFrames,
                     stepSeconds: Constants.Gif.trimStepSeconds,
                     minimumSelectionSeconds: Constants.Gif.minimumClipDurationSeconds,
                     onScrub: { seconds in
@@ -189,9 +205,12 @@ struct GifClipEditorView: View {
                 Button {
                     Task { await exportSelectedFormat() }
                 } label: {
-                    Text(primaryExportButtonTitle())
+                    Label(primaryExportButtonTitle(), systemImage: exportFormat == .gif ? "photo.stack" : "film")
+                        .labelStyle(.titleAndIcon)
                         .frame(minWidth: 130)
+                        .contentTransition(.opacity)
                 }
+                .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: primaryExportButtonTitle())
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
                 .disabled(isBlockingUI || isSavingFrame || !canExport)
