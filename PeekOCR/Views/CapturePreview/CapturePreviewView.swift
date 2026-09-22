@@ -86,15 +86,24 @@ struct CapturePreviewView: View {
             }
             .shadow(color: .black.opacity(0.22), radius: 5, x: 0, y: 2)
             .overlay(alignment: .bottomLeading) {
-                if controller.assets.count > 1 {
-                    Text("\((controller.assets.firstIndex { $0.id == asset.id } ?? 0) + 1)")
-                        .font(.system(size: 10, weight: .semibold, design: .rounded).monospacedDigit())
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 7)
-                        .padding(.vertical, 4)
-                        .background(.black.opacity(0.45), in: Capsule())
-                        .padding(10)
+                HStack(spacing: 6) {
+                    if controller.assets.count > 1 {
+                        Text("\((controller.assets.firstIndex { $0.id == asset.id } ?? 0) + 1)")
+                            .font(.system(size: 10, weight: .semibold, design: .rounded).monospacedDigit())
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 4)
+                            .background(.black.opacity(0.45), in: Capsule())
+                    }
+                    if asset.isClip {
+                        Label(asset.formatLabel, systemImage: "play.fill")
+                            .font(.system(size: 10, weight: .semibold, design: .rounded))
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 4)
+                            .background(.black.opacity(0.45), in: Capsule())
+                    }
                 }
+                .foregroundStyle(.white)
+                .padding(10)
             }
             .overlay(alignment: .topTrailing) {
                 Button {
@@ -118,7 +127,7 @@ struct CapturePreviewView: View {
     private var footer: some View {
         HStack(spacing: 10) {
             HStack(spacing: 6) {
-                Image(systemName: controller.assets.count > 1 ? "square.stack" : "photo")
+                Image(systemName: controller.assets.count > 1 ? "square.stack" : controller.assets.first?.isClip == true ? "film" : "photo")
                     .font(.system(size: 11, weight: .medium))
                 Text(controller.assets.count == 1 ? "preview.capture".localized : "preview.captures".localized(controller.assets.count))
                     .font(.system(size: 11, weight: .medium))

@@ -1,3 +1,4 @@
+import AVFoundation
 import AppKit
 import ImageIO
 
@@ -5,6 +6,11 @@ struct CaptureClipboardAsset: @unchecked Sendable, Identifiable {
     let id: UUID
     let url: URL
     let thumbnail: CGImage
+
+    var isClip: Bool { Self.clipExtensions.contains(url.pathExtension.lowercased()) }
+    var formatLabel: String { url.pathExtension.uppercased() }
+
+    private static let clipExtensions: Set<String> = ["gif", "mp4", "mov"]
 
     nonisolated static func prepare(_ image: CGImage, savedURL: URL?) -> CaptureClipboardAsset? {
         let id = UUID()
@@ -26,6 +32,29 @@ struct CaptureClipboardAsset: @unchecked Sendable, Identifiable {
                 return nil
             }
         }
+        guard let thumbnail = makeThumbnail(image) else { return nil }
+        return CaptureClipboardAsset(id: id, url: url, thumbnail: thumbnail)
+    }
+
+    nonisolated static func prepare(clipURL: URL) async -> CaptureClipboardAsset? {
+        guard FileManager.default.isReadableFile(atPath: clipURL.path), let frame = await firstFrame(of: clipURL),
+            let thumbnail = makeThumbnail(frame)
+        else { return nil }
+        return CaptureClipboardAsset(id: UUID(), url: clipURL, thumbnail: thumbnail)
+    }
+
+    nonisolated private static func firstFrame(of url: URL) async -> CGImage? {
+        if url.pathExtension.lowercased() == "gif" {
+            guard let source = CGImageSourceCreateWithURL(url as CFURL, nil) else { return nil }
+            return CGImageSourceCreateImageAtIndex(source, 0, nil)
+        }
+        let generator = AVAssetImageGenerator(asset: AVURLAsset(url: url))
+        generator.appliesPreferredTrackTransform = true
+        generator.maximumSize = CGSize(width: 1200, height: 1200)
+        return try? await generator.image(at: .zero).image
+    }
+
+    nonisolated private static func makeThumbnail(_ image: CGImage) -> CGImage? {
         let scale = min(1, 600 / Double(max(image.width, image.height)))
         let width = max(1, Int(Double(image.width) * scale))
         let height = max(1, Int(Double(image.height) * scale))
@@ -36,8 +65,7 @@ struct CaptureClipboardAsset: @unchecked Sendable, Identifiable {
         else { return nil }
         context.interpolationQuality = .high
         context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
-        guard let thumbnail = context.makeImage() else { return nil }
-        return CaptureClipboardAsset(id: id, url: url, thumbnail: thumbnail)
+        return context.makeImage()
     }
 
     nonisolated static func removeExpiredFiles(excluding urls: Set<URL>, now: Date = Date()) {
@@ -69,8 +97,10 @@ enum CaptureClipboardWriter {
             return item
         }
         if assets.count == 1 {
-            guard let png = try? Data(contentsOf: assets[0].url) else { return false }
-            items[0].setData(png, forType: .png)
+            if assets[0].url.pathExtension.lowercased() == "png" {
+                guard let png = try? Data(contentsOf: assets[0].url) else { return false }
+                items[0].setData(png, forType: .png)
+            }
         } else {
             let paths = assets.map { "'" + $0.url.path.replacingOccurrences(of: "'", with: "'\\''") + "'" }.joined(separator: " ")
             items[0].setString(paths, forType: .string)

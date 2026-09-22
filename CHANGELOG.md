@@ -6,6 +6,10 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- Exported clips join the capture preview stack and the clipboard: after saving a GIF or MP4 from the clip editor, the file is ready to paste with ⌘V and shows a thumbnail with a format badge, like screenshots.
+
 ## [2.3.0] - 2026-09-21
 
 ### Added

@@ -354,6 +354,12 @@ final class CaptureCoordinator: ObservableObject {
                 text: exportResult.url.lastPathComponent,
                 captureType: exportResult.format == .gif ? .gif : .video
             ))
+
+        let settings = ScreenshotSettings.shared
+        guard settings.copyToClipboard || settings.showPreview,
+            let asset = await CaptureClipboardAsset.prepare(clipURL: exportResult.url)
+        else { return }
+        CapturePreviewController.shared.receive(asset, copyToClipboard: settings.copyToClipboard, showPreview: settings.showPreview)
     }
 
     // MARK: - Result Handlers
