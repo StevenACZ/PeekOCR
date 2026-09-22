@@ -16,19 +16,25 @@ enum ClipExportOverlayState: Equatable {
 /// Full-screen overlay displayed during clip export.
 struct ClipExportOverlay: View {
     let state: ClipExportOverlayState
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var isPresented = false
 
     var body: some View {
         ZStack {
-            Color.black.opacity(0.28)
+            Color.black.opacity(0.32)
                 .ignoresSafeArea()
 
             GifClipActionFeedbackView(
                 feedback: feedback,
                 layout: .prominent
             )
-            .frame(maxWidth: 340)
+            .frame(maxWidth: 360)
             .padding(24)
+            .scaleEffect(isPresented || reduceMotion ? 1 : 0.9)
+            .opacity(isPresented ? 1 : 0)
+            .animation(reduceMotion ? .easeOut(duration: 0.12) : .spring(response: 0.38, dampingFraction: 0.78), value: isPresented)
         }
+        .onAppear { isPresented = true }
     }
 
     private var feedback: GifClipActionFeedback {

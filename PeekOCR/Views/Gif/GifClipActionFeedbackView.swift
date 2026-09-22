@@ -78,7 +78,12 @@ struct GifClipActionFeedbackView: View {
 
     private var prominentBody: some View {
         HStack(alignment: .center, spacing: contentSpacing) {
-            leadingIndicator
+            ZStack {
+                leadingIndicator
+                    .id(feedback.tone)
+                    .transition(.scale(scale: 0.5).combined(with: .opacity))
+            }
+            .frame(width: indicatorSize, height: indicatorSize)
 
             VStack(alignment: .leading, spacing: textSpacing) {
                 HStack(alignment: .firstTextBaseline, spacing: 10) {
@@ -86,6 +91,7 @@ struct GifClipActionFeedbackView: View {
                         .font(titleFont)
                         .foregroundStyle(.primary)
                         .frame(maxWidth: .infinity, alignment: .leading)
+                        .contentTransition(.opacity)
 
                     if let badgeText = feedback.badgeText {
                         badge(text: badgeText)
@@ -97,6 +103,7 @@ struct GifClipActionFeedbackView: View {
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.leading)
                     .fixedSize(horizontal: false, vertical: true)
+                    .contentTransition(.opacity)
             }
         }
         .padding(.horizontal, horizontalPadding)
@@ -104,9 +111,10 @@ struct GifClipActionFeedbackView: View {
         .background(backgroundMaterial, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .stroke(accentColor.opacity(0.22), lineWidth: 1)
+                .stroke(accentColor.opacity(0.35), lineWidth: 1)
         )
-        .shadow(color: .black.opacity(0.18), radius: 18, x: 0, y: 10)
+        .shadow(color: accentColor.opacity(0.25), radius: 24, x: 0, y: 12)
+        .animation(.spring(response: 0.42, dampingFraction: 0.7), value: feedback)
     }
 
     @ViewBuilder
@@ -139,6 +147,7 @@ struct GifClipActionFeedbackView: View {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: indicatorFontSize, weight: .semibold))
                 .foregroundStyle(accentColor)
+                .symbolEffect(.bounce, options: .nonRepeating, value: feedback.tone)
                 .frame(width: indicatorSize, height: indicatorSize)
         case .info:
             Image(systemName: "photo.on.rectangle.angled")

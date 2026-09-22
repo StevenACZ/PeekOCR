@@ -17,14 +17,18 @@ struct GifClipSidebarView: View {
     let outputDirectory: URL
     let selectionDurationSeconds: Double
     let exportDisabledMessage: String?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: 20) {
                 header
                 qualityCard
+                    .id(exportFormat)
+                    .transition(cardTransition)
                 if exportFormat == .gif {
                     loopCard
+                        .transition(cardTransition)
                 }
                 outputCard
                 estimationCard
@@ -32,9 +36,14 @@ struct GifClipSidebarView: View {
             .padding(.horizontal, 20)
             .padding(.top, 20)
             .padding(.bottom, 24)
+            .animation(reduceMotion ? nil : .smooth(duration: 0.3), value: exportFormat)
         }
         .frame(width: 320)
         .background(Color(NSColor.underPageBackgroundColor).opacity(0.6))
+    }
+
+    private var cardTransition: AnyTransition {
+        reduceMotion ? .opacity : .opacity.combined(with: .move(edge: .top)).combined(with: .scale(scale: 0.98, anchor: .top))
     }
 
     private var header: some View {
@@ -249,6 +258,8 @@ struct GifClipSidebarView: View {
             Text(value)
                 .font(.system(size: 12, weight: .semibold))
                 .monospacedDigit()
+                .contentTransition(.numericText())
+                .animation(reduceMotion ? nil : .snappy(duration: 0.2), value: value)
         }
     }
 }

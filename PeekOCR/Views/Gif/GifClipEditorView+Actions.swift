@@ -69,7 +69,6 @@ extension GifClipEditorView {
             state.stopPlayback()
             try? FileManager.default.removeItem(at: finalVideoURL)
             exportOverlay = .success(format: exportFormat, destinationName: destinationName)
-            try? await Task.sleep(nanoseconds: 900_000_000)
             onExport(ClipExportResult(url: url, format: exportFormat))
         } catch {
             AppLogger.capture.error("Clip export failed: \(error.localizedDescription)")
