@@ -29,6 +29,8 @@ struct GifClipTimelineView: View {
     var onBeginEditing: () -> Void
 
     static let trackHeight: CGFloat = 64
+    private static let labelStripHeight: CGFloat = 20
+    private static let labelWidth: CGFloat = 58
     private let cornerRadius: CGFloat = 10
     private let handleWidth: CGFloat = 12
 
@@ -50,52 +52,58 @@ struct GifClipTimelineView: View {
             let endX = x(for: clamp(endSeconds, 0, durationSeconds), width: width)
             let playheadX = x(for: clamp(currentSeconds, 0, durationSeconds), width: width)
 
-            ZStack(alignment: .leading) {
-                filmstrip(width: width)
-                dimming(startX: startX, endX: endX, width: width)
-                tickMarks(width: width)
-                selectionFrame(startX: startX, endX: endX)
-                handle(.start, x: startX, width: width)
-                handle(.end, x: endX, width: width)
-                playhead(x: playheadX)
-                    .animation(isPlaying && !reduceMotion ? .linear(duration: 0.05) : nil, value: playheadX)
-                if let label = floatingLabel(startX: startX, endX: endX, width: width) {
-                    timeLabel(label.text)
-                        .offset(x: label.x, y: 6)
-                        .transition(.opacity)
+            VStack(alignment: .leading, spacing: 4) {
+                ZStack(alignment: .leading) {
+                    filmstrip(width: width)
+                    dimming(startX: startX, endX: endX, width: width)
+                    tickMarks(width: width)
+                    selectionFrame(startX: startX, endX: endX)
+                    handle(.start, x: startX, width: width)
+                    handle(.end, x: endX, width: width)
+                    playhead(x: playheadX)
+                        .animation(isPlaying && !reduceMotion ? .linear(duration: 0.05) : nil, value: playheadX)
                 }
-            }
-            .frame(height: Self.trackHeight)
-            .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .strokeBorder(Color.primary.opacity(0.10), lineWidth: 1)
-            )
-            .contentShape(Rectangle())
-            .onContinuousHover { phase in
-                switch phase {
-                case .active(let point): hoverX = point.x
-                case .ended: hoverX = nil
+                .frame(height: Self.trackHeight)
+                .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .strokeBorder(Color.primary.opacity(0.10), lineWidth: 1)
+                )
+                .contentShape(Rectangle())
+                .onContinuousHover { phase in
+                    switch phase {
+                    case .active(let point): hoverX = point.x
+                    case .ended: hoverX = nil
+                    }
                 }
+                .gesture(
+                    DragGesture(minimumDistance: 0)
+                        .onChanged { gesture in
+                            guard dragState == nil else { return }
+                            onBeginEditing()
+                            isScrubbing = true
+                            hoverX = gesture.location.x
+                            onScrub(snap(seconds(for: gesture.location.x, width: width)))
+                        }
+                        .onEnded { _ in
+                            isScrubbing = false
+                            hoverX = nil
+                        }
+                )
+
+                ZStack(alignment: .leading) {
+                    if let label = floatingLabel(startX: startX, endX: endX, width: width) {
+                        timeLabel(label.text)
+                            .offset(x: label.x)
+                            .transition(.opacity.combined(with: .move(edge: .top)))
+                    }
+                }
+                .frame(width: width, height: Self.labelStripHeight, alignment: .leading)
             }
-            .gesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { gesture in
-                        guard dragState == nil else { return }
-                        onBeginEditing()
-                        isScrubbing = true
-                        hoverX = gesture.location.x
-                        onScrub(snap(seconds(for: gesture.location.x, width: width)))
-                    }
-                    .onEnded { _ in
-                        isScrubbing = false
-                        hoverX = nil
-                    }
-            )
             .animation(reduceMotion ? nil : .easeOut(duration: 0.16), value: dragState?.handle == nil)
             .animation(reduceMotion ? nil : .easeOut(duration: 0.16), value: hoverX == nil)
         }
-        .frame(height: Self.trackHeight)
+        .frame(height: Self.trackHeight + 4 + Self.labelStripHeight)
     }
 
     private func filmstrip(width: CGFloat) -> some View {
@@ -223,21 +231,19 @@ struct GifClipTimelineView: View {
         } else {
             return nil
         }
-        let labelWidth: CGFloat = 58
-        return (formatSeconds(seconds), min(max(4, anchorX - labelWidth / 2), width - labelWidth - 4))
+        return (formatSeconds(seconds), min(max(0, anchorX - Self.labelWidth / 2), width - Self.labelWidth))
     }
 
     private func timeLabel(_ text: String) -> some View {
         Text(text)
             .font(.system(size: 10, weight: .semibold, design: .monospaced))
             .monospacedDigit()
-            .foregroundStyle(.white)
+            .foregroundStyle(.primary)
             .padding(.horizontal, 6)
             .padding(.vertical, 3)
-            .background(.black.opacity(0.65), in: Capsule())
-            .frame(width: 58)
+            .background(Color.primary.opacity(0.1), in: Capsule())
+            .frame(width: Self.labelWidth)
             .allowsHitTesting(false)
-            .zIndex(20)
     }
 
     private func updateHandle(_ handle: DragHandle, translationX: CGFloat, width: CGFloat) {

@@ -9,7 +9,7 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 
 - Exported clips join the capture preview stack and the clipboard: after saving a GIF or MP4 from the clip editor, the file is ready to paste with ⌘V and shows a thumbnail with a format badge, like screenshots.
-- Clip editor timeline shows a filmstrip of the recording, dims the trimmed-out range, and labels the time under the cursor or the dragged handle. Handles use a resize cursor and the playhead glides during playback.
+- Clip editor timeline shows a filmstrip of the recording, dims the trimmed-out range, and shows the time under the cursor or the dragged handle in a strip below the track, out of the pointer's way. Handles use a resize cursor and the playhead glides during playback.
 
 ### Changed
 
