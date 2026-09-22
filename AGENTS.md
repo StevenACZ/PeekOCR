@@ -1,8 +1,7 @@
 # PeekOCR Agent Guide
 
-This file is public project guidance for contributors and coding agents. Keep
-machine-specific notes, personal workflows, signing material, and release-only
-local details in ignored local files such as `AGENTS.local.md`.
+Public guidance for contributors and coding agents; machine-specific notes,
+signing material and release-only details live in ignored `AGENTS.local.md`.
 
 ## Project Basics
 
@@ -137,12 +136,10 @@ misleading nominal or estimated FPS for static content. When source FPS
 estimation fails, trust the requested export FPS and let the constant-frame-rate
 composition fill gaps.
 
-The timeline draws a filmstrip (`GifClipFilmstrip`, loaded progressively by
-`.task(id:)` on the video URL) and shows the time label in a strip below the
-track, never over it. On export, `onExport` fires as soon as the file exists so
-the coordinator can hand the clip to `CapturePreviewController` and the
-clipboard while `GifClipWindowController` fades the editor out; keep that order
-so the preview never lags the success card.
+The timeline draws a `GifClipFilmstrip` (progressive `.task(id:)` on the video
+URL) with the time label below the track, never over it. `onExport` fires as
+soon as the file exists so the coordinator hands the clip to the preview stack
+and clipboard while `GifClipWindowController` fades the editor; keep that order.
 
 ### OCR And Sounds
 
@@ -153,5 +150,4 @@ clip.
 
 ## Known Legacy Code
 
-The older post-capture editor and legacy capture helpers remain for compatibility.
-Do not remove them unless the task explicitly asks for that cleanup.
+The older post-capture editor and legacy capture helpers stay unless a task asks for that cleanup.
