@@ -137,6 +137,13 @@ misleading nominal or estimated FPS for static content. When source FPS
 estimation fails, trust the requested export FPS and let the constant-frame-rate
 composition fill gaps.
 
+The timeline draws a filmstrip (`GifClipFilmstrip`, loaded progressively by
+`.task(id:)` on the video URL) and shows the time label in a strip below the
+track, never over it. On export, `onExport` fires as soon as the file exists so
+the coordinator can hand the clip to `CapturePreviewController` and the
+clipboard while `GifClipWindowController` fades the editor out; keep that order
+so the preview never lags the success card.
+
 ### OCR And Sounds
 
 `OCRService` uses Swift Vision text and barcode requests in parallel. Capture
