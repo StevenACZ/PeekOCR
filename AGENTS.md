@@ -97,28 +97,25 @@ distance, and pen/highlight annotations scale their rect.
 
 ### Video Clips
 
-Clip recording lives under `Services/Recording/`.
-`ClipRecordingController` orchestrates quick-select picking, the recording
-frame, HUD, and `ScreenRecordingEngine`. The engine records to temporary
-`.mov` files with ScreenCaptureKit and `SCRecordingOutput`.
+Clip recording lives under `Services/Recording/`: `ClipRecordingController`
+orchestrates quick-select picking, frame, HUD and `ScreenRecordingEngine`, which
+records temporary `.mov` files with ScreenCaptureKit and `SCRecordingOutput`.
 
 Capture exclusion order:
 - Fetch `SCShareableContent` inside `ScreenRecordingEngine.start()`, after the frame and HUD are visible.
 - Exclude by application first, with an excluding-windows fallback.
 - Keep the recording outline outside the captured rect as a second layer of protection.
 
-Pause/resume swaps `SCRecordingOutput` instances on the live stream. Each
-resume creates a new segment; stop either moves the single segment or
-concatenates multiple segments with `AVMutableComposition` and passthrough
-export.
+Pause/resume swaps `SCRecordingOutput` instances on the live stream; each resume
+starts a segment and stop moves one segment or concatenates several with
+`AVMutableComposition` and passthrough export.
 
 `record(maxDurationSeconds:)` accepts `nil` for unlimited recording. The HUD
 counts up for unlimited recordings and shows pause/stop state plus a quality
 readout based on the selected rect and backing scale.
 
-System audio uses `capturesAudio` and `excludesCurrentProcessAudio`. If audio
-permission or platform behavior prevents stream startup, retry once without
-audio.
+System audio uses `capturesAudio` and `excludesCurrentProcessAudio`; if audio
+prevents stream startup, retry once without it.
 
 `GifClipSettings` stores recording and export defaults in `UserDefaults`,
 including duration-limit state, recording FPS, cursor visibility, audio
