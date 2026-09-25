@@ -70,9 +70,11 @@ public final class PermissionFlowModel: NSObject, ObservableObject {
       || configuration.legacyCompletionKeys.contains { configuration.defaults.bool(forKey: $0) }
   }
 
+  public var isResuming: Bool { configuration.defaults.bool(forKey: Self.resumeKey) }
+
   public var shouldPresentAtLaunch: Bool {
     refresh()
-    return !isCompleted || !ready || configuration.defaults.bool(forKey: Self.resumeKey)
+    return !isCompleted || !ready || isResuming
   }
 
   public func markCompleted() {
