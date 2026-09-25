@@ -20,20 +20,17 @@ struct PermissionStatusRow: View {
                         .accessibilityLabel("permissions.card.status.granted".localized)
                 } else {
                     Button("permissions.enable".localized) {
-                        PermissionService.shared.requestInteractively(permission)
+                        PermissionService.shared.flow?.present()
                     }
                     .buttonStyle(.borderedProminent)
                     .controlSize(.small)
                     .tint(accent)
                 }
             }
-            Text(
-                isGranted && permission == .screenRecording
-                    ? "permissions.screen_recording.restart_hint".localized : permission.summary
-            )
-            .font(.caption)
-            .foregroundStyle(.secondary)
-            .fixedSize(horizontal: false, vertical: true)
+            Text(permission.summary)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.vertical, 8)
         .onAppear { refreshPermissionStatus() }

@@ -51,6 +51,11 @@ final class MenuBarStatusController: NSObject, NSPopoverDelegate, NSWindowDelega
         button.sendAction(on: [.leftMouseUp, .rightMouseUp])
     }
 
+    var statusButtonScreenFrame: CGRect? {
+        guard let button = statusItem?.button, let window = button.window else { return nil }
+        return window.convertToScreen(button.convert(button.bounds, to: nil))
+    }
+
     private func statusImage() -> NSImage? {
         let configuration = NSImage.SymbolConfiguration(pointSize: 16, weight: .medium)
         let image = NSImage(systemSymbolName: "eye", accessibilityDescription: "PeekOCR")?

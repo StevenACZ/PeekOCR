@@ -54,7 +54,7 @@ struct MenuBarPopoverView: View {
 
             if !missingPermissions.isEmpty {
                 PermissionSummaryBanner(missingPermissions: missingPermissions) {
-                    PermissionRequirementsWindowController.shared.showWindow()
+                    PermissionService.shared.flow?.present()
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
