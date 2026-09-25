@@ -61,7 +61,7 @@ final class CaptureCoordinator: ObservableObject {
         guard PermissionService.shared.isGranted(.screenRecording) else {
             AppLogger.capture.info("Blocked capture start because screen recording permission is missing")
             Task { @MainActor in
-                PermissionRequirementsWindowController.shared.showWindow()
+                PermissionService.shared.flow?.present()
             }
             return
         }

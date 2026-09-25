@@ -50,54 +50,6 @@ enum AppPermission: CaseIterable, Hashable {
         }
     }
 
-    var overlayTitle: String {
-        switch self {
-        case .screenRecording:
-            return "permissions.screen_recording.overlay_title".localized
-        case .accessibility:
-            return "permissions.accessibility.overlay_title".localized
-        }
-    }
-
-    var overlayMessage: String {
-        switch self {
-        case .screenRecording:
-            return "permissions.screen_recording.overlay_message".localized
-        case .accessibility:
-            return "permissions.accessibility.overlay_message".localized
-        }
-    }
-
-    var overlayFootnote: String {
-        "permissions.overlay.footnote".localized
-    }
-
-    private var extensionAnchor: String {
-        switch self {
-        case .screenRecording:
-            return "Privacy_ScreenCapture"
-        case .accessibility:
-            return "Privacy_Accessibility"
-        }
-    }
-
-    private var legacyAnchor: String {
-        switch self {
-        case .screenRecording:
-            return "Privacy_ScreenCapture"
-        case .accessibility:
-            return "Privacy_Accessibility"
-        }
-    }
-
-    var settingsURLs: [URL] {
-        [
-            URL(string: "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?\(extensionAnchor)"),
-            URL(string: "x-apple.systempreferences:com.apple.preference.security?\(legacyAnchor)"),
-        ]
-        .compactMap { $0 }
-    }
-
     func isGranted() -> Bool {
         switch self {
         case .screenRecording:
@@ -106,5 +58,4 @@ enum AppPermission: CaseIterable, Hashable {
             return AXIsProcessTrusted()
         }
     }
-
 }

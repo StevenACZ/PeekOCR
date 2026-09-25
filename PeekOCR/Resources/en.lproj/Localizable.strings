@@ -159,13 +159,10 @@
 "menu.status.ready" = "Ready to capture";
 
 /* permissions */
-"permissions.accessibility.overlay_message" = "If PeekOCR already appears in the list, just enable it. If it isn't visible yet, drag it from the card below.";
-"permissions.accessibility.overlay_title" = "Enable Accessibility";
 "permissions.accessibility.summary" = "Required for global shortcuts.";
 "permissions.accessibility.title" = "Accessibility";
 "permissions.all_granted_subtitle" = "macOS reports screen and accessibility access as granted.";
 "permissions.all_granted_title" = "All permissions granted";
-"permissions.card.activate" = "Enable";
 "permissions.card.detail.accessibility.granted" = "PeekOCR's global shortcuts are now enabled.";
 "permissions.card.detail.accessibility.pending" = "Required for PeekOCR's global shortcuts to work.";
 "permissions.card.detail.screen_recording.granted" = "PeekOCR can now use the screen for OCR, captures, and clips.";
@@ -173,7 +170,6 @@
 "permissions.card.granted_label" = "Done";
 "permissions.card.status.granted" = "Enabled";
 "permissions.card.status.pending" = "Pending";
-"permissions.drag_card.subtitle" = "Drag me into the list";
 "permissions.enable" = "Enable";
 "permissions.granted_count" = "%d granted";
 "permissions.guided_hint" = "PeekOCR takes you to the right setting and refreshes the status when you return.";
@@ -188,21 +184,16 @@
 "permissions.intro.title.ready" = "All set to capture";
 "permissions.list_fallback" = "the permissions";
 "permissions.list_two" = "%@ and %@";
-"permissions.overlay.footnote" = "When you return to PeekOCR, we'll update this status automatically.";
 "permissions.pending_message" = "Enable %@ to use PeekOCR fully.";
 "permissions.pending_title" = "Pending permissions";
 "permissions.review" = "Review";
-"permissions.screen_recording.overlay_message" = "If PeekOCR already appears in the list, just turn on the switch. If it isn't listed yet, drag it from the card below.";
-"permissions.screen_recording.overlay_title" = "Enable Screen Recording";
 "permissions.screen_recording.summary" = "Required for OCR, captures, and clips.";
 "permissions.screen_recording.title" = "Screen Recording";
 "permissions.settings_caption" = "PeekOCR can guide you within System Settings and will update the status when you return to the app.";
 "permissions.status_active" = "Granted";
 "permissions.status_pending" = "Pending";
-"permissions.window.close" = "Close";
 "permissions.window.footer.all_granted" = "You can now close this window and continue with PeekOCR.";
 "permissions.window.footer.pending" = "You can close this window and come back later.";
-"permissions.window.not_now" = "Not Now";
 "permissions.window.section_title" = "System permissions";
 
 /* recording */
@@ -331,12 +322,6 @@
 "settings.general.auto_updates" = "Check for updates automatically";
 "settings.general.auto_updates_caption" = "Checks GitHub Releases once a day. Nothing is sent.";
 
-"permissions.welcome.title" = "Welcome to PeekOCR";
-"permissions.welcome.subtitle" = "A quick setup before your first capture.";
-"permissions.welcome.granted" = "Permission access detected";
-"permissions.welcome.done" = "Done";
-"permissions.guide.granted" = "macOS reports this permission as granted. You can close this guide.";
-"permissions.screen_recording.restart_hint" = "macOS reports screen access as granted. If it asks you to quit and reopen PeekOCR, do that before your next capture.";
 
 "settings.captures.preview" = "Capture preview";
 "settings.captures.show_preview" = "Show preview on the left";

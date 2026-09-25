@@ -29,9 +29,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         controller.start()
         menuBarController = controller
 
+        let flow = makePermissionFlow()
+        PermissionService.shared.flow = flow
+
         UpdateManager.shared.start()
         hotKeyManager.registerHotKeys()
         CaptureSoundService.shared.prewarm()
+        flow.presentIfNeeded()
     }
 
     func applicationDidBecomeActive(_ notification: Notification) {
@@ -45,5 +49,37 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         false
+    }
+
+    // MARK: - Permissions
+
+    private func makePermissionFlow() -> PermissionFlow {
+        let flow = PermissionFlow(
+            configuration: PermissionFlowConfiguration(
+                appName: "PeekOCR",
+                accent: Theme.accent,
+                items: [
+                    PermissionFlowItem(
+                        .screenRecording,
+                        reason: PermissionFlowText(
+                            "Capture text, screenshots, and clips from your screen.",
+                            "Capturar texto, capturas y clips de tu pantalla."
+                        )
+                    ),
+                    PermissionFlowItem(
+                        .accessibility,
+                        reason: PermissionFlowText(
+                            "Use PeekOCR's global shortcuts from any app.",
+                            "Usar los atajos globales de PeekOCR desde cualquier app."
+                        )
+                    ),
+                ],
+                language: { LocalizationManager.shared.language == "es" ? .spanish : .english },
+                legacyCompletionKeys: ["SUHasLaunchedBefore"],
+                menuBarAnchor: { [weak self] in self?.menuBarController?.statusButtonScreenFrame }
+            )
+        )
+        flow.model.onGranted = { [weak self] _ in self?.hotKeyManager.refreshRegistrationIfNeeded() }
+        return flow
     }
 }
