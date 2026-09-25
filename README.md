@@ -151,4 +151,4 @@ See [SECURITY.md](SECURITY.md).
 
 ## License
 
-MIT
+[MIT](LICENSE)
