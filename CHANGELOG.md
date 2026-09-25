@@ -6,6 +6,8 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2.5.0] - 2026-09-25
+
 ### Changed
 
 - First launch asks for Accessibility and Screen Recording in one setup window, with Screen Recording last so its "Quit & Reopen" prompt never interrupts the rest. A guide inside System Settings follows its window and lets you drag PeekOCR's icon into the list, and a short welcome closes by itself once everything is on. Macs where PeekOCR is already set up skip it.
