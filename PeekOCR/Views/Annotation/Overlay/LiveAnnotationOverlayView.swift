@@ -118,6 +118,11 @@ final class LiveAnnotationOverlayView: NSView {
             refreshCursorAppearance()
         }
     }
+    var hoveredToolbarItem: ToolbarItem? {
+        didSet {
+            if oldValue != hoveredToolbarItem { needsDisplay = true }
+        }
+    }
     var pendingTextPoint: CGPoint?
     var editingAnnotationID: UUID?
     var textEditor: OverlayTextEditorView?
@@ -152,6 +157,7 @@ final class LiveAnnotationOverlayView: NSView {
         pendingTextPoint = nil
         editingAnnotationID = nil
         selectedAnnotationID = nil
+        hoveredToolbarItem = nil
         didActivate = false
         dismissTextEditor(commit: false)
         needsDisplay = true
@@ -225,6 +231,9 @@ final class LiveAnnotationOverlayView: NSView {
 
     override func mouseMoved(with event: NSEvent) {
         updateCursor(for: event)
+        if let window {
+            updateToolbarHover(at: screenPoint(from: event.locationInWindow, window: window))
+        }
     }
 
     override func cursorUpdate(with event: NSEvent) {

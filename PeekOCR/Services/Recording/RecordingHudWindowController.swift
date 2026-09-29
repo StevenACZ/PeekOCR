@@ -65,7 +65,7 @@ final class RecordingHudWindowController: NSWindowController {
 
     private func createHudPanel() -> NSPanel {
         let panel = NSPanel(
-            contentRect: CGRect(x: 0, y: 0, width: 300, height: 68),
+            contentRect: CGRect(x: 0, y: 0, width: 300, height: 38),
             styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: false
@@ -83,76 +83,31 @@ final class RecordingHudWindowController: NSWindowController {
         ]
         panel.hidesOnDeactivate = false
         panel.ignoresMouseEvents = false
-        panel.isMovableByWindowBackground = false
+        panel.isMovableByWindowBackground = true
         panel.titleVisibility = .hidden
         panel.titlebarAppearsTransparent = true
 
         return panel
     }
 
+    /// Keeps the HUD attached to the region: centered below it, else above
+    /// it, else floating inside its bottom edge. The recording excludes this
+    /// app's windows, so the inside position never shows up in the clip.
     private func hudOrigin(for size: CGSize, on screen: NSScreen, avoiding selectionRectInScreen: CGRect) -> CGPoint {
-        let inset: CGFloat = 16
-        let gap: CGFloat = 12
-        let safeFrame = screen.visibleFrame.insetBy(dx: inset, dy: inset)
-        let avoidanceRect = selectionRectInScreen.insetBy(dx: -12, dy: -12)
+        let gap: CGFloat = 14
+        let safeFrame = screen.visibleFrame.insetBy(dx: 12, dy: 12)
+        let x = min(max(selectionRectInScreen.midX - size.width / 2, safeFrame.minX), safeFrame.maxX - size.width)
 
-        func clampToSafeFrame(_ origin: CGPoint) -> CGPoint {
-            let x = min(max(safeFrame.minX, origin.x), safeFrame.maxX - size.width)
-            let y = min(max(safeFrame.minY, origin.y), safeFrame.maxY - size.height)
-            return CGPoint(x: x, y: y)
+        let below = selectionRectInScreen.minY - gap - size.height
+        if below >= safeFrame.minY {
+            return CGPoint(x: x, y: below)
         }
 
-        func isValid(_ origin: CGPoint) -> Bool {
-            let rect = CGRect(origin: origin, size: size)
-            return safeFrame.contains(rect) && !rect.intersects(avoidanceRect)
+        let above = selectionRectInScreen.maxY + gap
+        if above + size.height <= safeFrame.maxY {
+            return CGPoint(x: x, y: above)
         }
 
-        let bottomCenter = clampToSafeFrame(
-            CGPoint(
-                x: safeFrame.midX - size.width / 2,
-                y: safeFrame.minY
-            ))
-
-        // Full-screen recordings leave no room outside the region: pin the HUD
-        // bottom-center (the capture filter keeps it out of the video anyway).
-        if selectionRectInScreen.contains(screen.visibleFrame.insetBy(dx: 1, dy: 1)) {
-            return bottomCenter
-        }
-
-        let centeredAbove = clampToSafeFrame(
-            CGPoint(
-                x: selectionRectInScreen.midX - size.width / 2,
-                y: selectionRectInScreen.maxY + gap
-            ))
-        if isValid(centeredAbove) {
-            return centeredAbove
-        }
-
-        let centeredBelow = clampToSafeFrame(
-            CGPoint(
-                x: selectionRectInScreen.midX - size.width / 2,
-                y: selectionRectInScreen.minY - gap - size.height
-            ))
-        if isValid(centeredBelow) {
-            return centeredBelow
-        }
-
-        let candidates: [CGPoint] = [
-            clampToSafeFrame(CGPoint(x: selectionRectInScreen.minX, y: selectionRectInScreen.maxY + gap)),
-            clampToSafeFrame(CGPoint(x: selectionRectInScreen.maxX - size.width, y: selectionRectInScreen.maxY + gap)),
-            clampToSafeFrame(CGPoint(x: selectionRectInScreen.minX, y: selectionRectInScreen.minY - gap - size.height)),
-            clampToSafeFrame(CGPoint(x: selectionRectInScreen.maxX - size.width, y: selectionRectInScreen.minY - gap - size.height)),
-            clampToSafeFrame(CGPoint(x: safeFrame.maxX - size.width, y: safeFrame.maxY - size.height)),  // top-right
-            clampToSafeFrame(CGPoint(x: safeFrame.minX, y: safeFrame.maxY - size.height)),  // top-left
-            clampToSafeFrame(CGPoint(x: safeFrame.maxX - size.width, y: safeFrame.minY)),  // bottom-right
-            clampToSafeFrame(CGPoint(x: safeFrame.minX, y: safeFrame.minY)),  // bottom-left
-        ]
-
-        for origin in candidates where isValid(origin) {
-            return origin
-        }
-
-        // Fallback if the selection covers most of the screen.
-        return bottomCenter
+        return CGPoint(x: x, y: max(selectionRectInScreen.minY, safeFrame.minY) + 16)
     }
 }

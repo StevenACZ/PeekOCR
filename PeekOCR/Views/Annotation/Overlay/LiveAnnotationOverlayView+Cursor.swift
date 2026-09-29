@@ -99,9 +99,6 @@ extension LiveAnnotationOverlayView {
     }
 
     func isPointInToolbar(_ pointInScreen: CGPoint) -> Bool {
-        guard let selectionRectInScreen else { return false }
-        let selectionRect = convert(window?.convertFromScreen(selectionRectInScreen) ?? .zero, from: nil)
-        let pointInView = viewPoint(from: pointInScreen)
-        return toolbarButtonFrames(in: selectionRect).values.contains { $0.contains(pointInView) }
+        currentToolbarLayout()?.background.contains(viewPoint(from: pointInScreen)) ?? false
     }
 }

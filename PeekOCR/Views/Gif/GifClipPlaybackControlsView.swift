@@ -2,12 +2,12 @@
 //  GifClipPlaybackControlsView.swift
 //  PeekOCR
 //
-//  Playback controls overlay for the GIF clip editor video preview.
+//  Playback controls row for the GIF clip editor video preview.
 //
 
 import SwiftUI
 
-/// Playback controls shown over the video (play/pause, time, frame stepping).
+/// Playback controls shown under the video (play/pause, time, frame stepping).
 struct GifClipPlaybackControlsView: View {
     let isPlaying: Bool
     let currentSeconds: Double
@@ -25,7 +25,7 @@ struct GifClipPlaybackControlsView: View {
 
             Text("\(format(currentSeconds)) / \(format(durationSeconds))")
                 .font(.system(size: 12, weight: .semibold, design: .monospaced))
-                .foregroundStyle(.primary)
+                .foregroundStyle(.white.opacity(0.85))
                 .fixedSize()
 
             Spacer(minLength: 8)
@@ -56,15 +56,13 @@ struct GifClipPlaybackControlsView: View {
             .disabled(isCaptureDisabled)
             .help("clip_editor.capture_frame_help".localized)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(.ultraThinMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(Color.white.opacity(0.10), lineWidth: 1)
-        )
-        .shadow(color: .black.opacity(0.22), radius: 10, x: 0, y: 4)
+        .padding(.leading, 6)
+        .padding(.trailing, 10)
+        .padding(.vertical, 5)
+        .background(Capsule(style: .continuous).fill(Color.white.opacity(0.07)))
+        .overlay(Capsule(style: .continuous).stroke(Color.white.opacity(0.08), lineWidth: 1))
+        .foregroundStyle(.white)
+        .environment(\.colorScheme, .dark)
     }
 
     private var playButton: some View {

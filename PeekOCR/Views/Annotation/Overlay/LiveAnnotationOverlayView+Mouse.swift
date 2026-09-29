@@ -16,12 +16,8 @@ extension LiveAnnotationOverlayView {
         }
 
         if isEditingText {
-            if handleToolbarClick(at: pointInScreen) {
-                dismissTextEditor(commit: true)
-                return
-            }
-
             dismissTextEditor(commit: true)
+            _ = handleToolbarClick(at: pointInScreen)
             return
         }
 
