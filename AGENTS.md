@@ -84,8 +84,8 @@ Still pixels come from `NativeScreenCaptureService.captureRegion` through
 rounded contour and then fill. The floating editor uses AppKit text editing and
 only approximates that final rendered look with fill plus a strong shadow.
 
-Text behavior: Enter commits, Shift-Enter inserts a newline, Escape cancels.
-Text anchors at its top-left `startPoint` and is measured with `LiveAnnotation.textSize`.
+Text: double-click on empty space in the selection starts it with any tool; Enter
+commits, Shift-Enter inserts a newline, Escape cancels. Text anchors at its top-left `startPoint` and is measured with `LiveAnnotation.textSize`.
 
 Undo is transactional for drags through `beginAnnotationTransaction` and
 `commitAnnotationTransaction`; no-op drags should not create undo steps. Atomic
@@ -128,10 +128,10 @@ The editor flow receives the temporary `.mov` and supports trim, GIF/MP4
 export, frame capture, and re-record. `VideoExportService` carries recorded
 audio into MP4 exports with a composition audio track and AAC re-encode.
 
-ScreenCaptureKit recordings can be variable frame rate and may report
-misleading nominal or estimated FPS for static content. When source FPS
-estimation fails, trust the requested export FPS and let the constant-frame-rate
-composition fill gaps.
+ScreenCaptureKit recordings are variable frame rate. MP4 export always honors
+the requested FPS, never a source estimate. The composition reader never fills
+gaps, so the pump resamples: each slot shows the latest source frame at or
+before it, keeping real duration (`VideoExportFrameRateTests`).
 
 The timeline draws a `GifClipFilmstrip` (progressive `.task(id:)` on the video
 URL) with the time label below the track, never over it. `onExport` fires as
