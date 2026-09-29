@@ -3,30 +3,25 @@
 import AppKit
 
 extension LiveAnnotationOverlayView {
-    private static let toolbarIcons: [LiveAnnotationTool: NSImage] = {
-        let configuration = NSImage.SymbolConfiguration(pointSize: 15, weight: .medium)
-            .applying(.init(paletteColors: [.white]))
-        return Dictionary(
-            uniqueKeysWithValues: LiveAnnotationTool.allCases.compactMap { tool in
-                guard
-                    let icon = NSImage(systemSymbolName: tool.iconName, accessibilityDescription: nil)?
-                        .withSymbolConfiguration(configuration)
-                else { return nil }
-                return (tool, icon)
-            })
-    }()
+    private static func symbol(_ name: String, color: NSColor, weight: NSFont.Weight = .medium) -> NSImage? {
+        let configuration = NSImage.SymbolConfiguration(pointSize: 13, weight: weight)
+            .applying(.init(paletteColors: [color]))
+        return NSImage(systemSymbolName: name, accessibilityDescription: nil)?.withSymbolConfiguration(configuration)
+    }
 
-    private static let shortcutParagraph: NSParagraphStyle = {
-        let paragraph = NSMutableParagraphStyle()
-        paragraph.alignment = .center
-        return paragraph
-    }()
+    private static let toolbarIcons: [LiveAnnotationTool: NSImage] = Dictionary(
+        uniqueKeysWithValues: LiveAnnotationTool.allCases.compactMap { tool in
+            symbol(tool.iconName, color: .white).map { (tool, $0) }
+        })
+
+    private static let cancelIcon = symbol("xmark", color: .white, weight: .semibold)
+    private static let captureIcon = symbol("checkmark", color: .black, weight: .bold)
 
     private static let controlShadow: NSShadow = {
         let shadow = NSShadow()
-        shadow.shadowColor = NSColor.black.withAlphaComponent(0.24)
-        shadow.shadowBlurRadius = 14
-        shadow.shadowOffset = CGSize(width: 0, height: -4)
+        shadow.shadowColor = NSColor.black.withAlphaComponent(0.28)
+        shadow.shadowBlurRadius = 12
+        shadow.shadowOffset = CGSize(width: 0, height: -3)
         return shadow
     }()
 
@@ -61,8 +56,9 @@ extension LiveAnnotationOverlayView {
                 LiveAnnotationRenderer.drawOverlayAnnotations(
                     annotationsForDrawing, in: self, window: window, selectionRectInScreen: selectionRectInScreen)
                 drawSelectedAnnotationIfNeeded(in: self, window: window)
-                drawToolbar(in: selectionRect)
-                drawInstructions(in: selectionRect)
+                let layout = toolbarLayout(in: selectionRect)
+                drawToolbar(layout)
+                drawToolbarCaption(for: layout)
             }
         } else {
             NSColor.black.withAlphaComponent(0.25).setFill()
@@ -127,62 +123,114 @@ extension LiveAnnotationOverlayView {
         }
     }
 
-    func drawToolbar(in selectionRect: CGRect) {
-        let buttons = toolbarButtonFrames(in: selectionRect)
-        let background = buttons.values.reduce(into: CGRect.null) { partialResult, rect in
-            partialResult = partialResult.union(rect)
-        }.insetBy(dx: -8, dy: -8).standardized
-        guard !background.isNull else { return }
+    func drawToolbar(_ layout: ToolbarLayout) {
+        drawControlSurface(in: layout.background, radius: 12)
+        NSColor.white.withAlphaComponent(0.16).setFill()
+        layout.separator.fill()
 
-        drawControlSurface(in: background, radius: 18)
-
-        for tool in LiveAnnotationTool.allCases {
-            guard let frame = buttons[tool] else { continue }
-            let selected = tool == selectedTool
-            let fill = selected ? accentColor : NSColor.white.withAlphaComponent(0.045)
-            fill.setFill()
-            NSBezierPath(roundedRect: frame, xRadius: 9, yRadius: 9).fill()
-
-            if let icon = Self.toolbarIcons[tool] {
-                let iconRect = CGRect(
-                    x: frame.midX - icon.size.width / 2,
-                    y: frame.maxY - icon.size.height - 7,
-                    width: icon.size.width,
-                    height: icon.size.height
-                )
-                icon.draw(in: iconRect)
+        for (item, frame) in layout.items {
+            let hovered = item == hoveredToolbarItem
+            let icon: NSImage?
+            switch item {
+            case .tool(let tool):
+                let selected = tool == selectedTool
+                if selected {
+                    fillButton(frame, color: accentColor)
+                } else if hovered {
+                    fillButton(frame, color: NSColor.white.withAlphaComponent(0.1))
+                }
+                icon = Self.toolbarIcons[tool]
+                drawShortcutKey(tool.shortcutKey, in: frame, emphasized: selected)
+            case .cancel:
+                if hovered {
+                    fillButton(frame, color: NSColor.white.withAlphaComponent(0.1))
+                }
+                icon = Self.cancelIcon
+            case .capture:
+                fillButton(frame, color: NSColor.white.withAlphaComponent(hovered ? 1 : 0.9))
+                icon = Self.captureIcon
             }
 
-            let attributes: [NSAttributedString.Key: Any] = [
-                .font: NSFont.systemFont(ofSize: 9, weight: .bold),
-                .foregroundColor: NSColor.white.withAlphaComponent(selected ? 0.95 : 0.7),
-                .paragraphStyle: Self.shortcutParagraph,
-            ]
-            (tool.shortcutKey as NSString).draw(
-                in: CGRect(x: frame.minX, y: frame.minY + 4, width: frame.width, height: 12),
-                withAttributes: attributes
-            )
+            if let icon {
+                icon.draw(
+                    in: CGRect(
+                        x: (frame.midX - icon.size.width / 2).rounded(),
+                        y: (frame.midY - icon.size.height / 2).rounded(),
+                        width: icon.size.width,
+                        height: icon.size.height
+                    ))
+            }
         }
     }
 
-    func drawInstructions(in selectionRect: CGRect) {
-        let text =
-            isEditingText
-            ? "capture.instructions_text_editing".localized
-            : "capture.instructions_default".localized
+    private func fillButton(_ frame: CGRect, color: NSColor) {
+        color.setFill()
+        NSBezierPath(roundedRect: frame, xRadius: 8, yRadius: 8).fill()
+    }
+
+    private func drawShortcutKey(_ key: String, in frame: CGRect, emphasized: Bool) {
         let attributes: [NSAttributedString.Key: Any] = [
-            .font: NSFont.systemFont(ofSize: 12, weight: .semibold),
-            .foregroundColor: NSColor.white,
+            .font: NSFont.systemFont(ofSize: 7.5, weight: .bold),
+            .foregroundColor: NSColor.white.withAlphaComponent(emphasized ? 0.85 : 0.4),
         ]
-        let size = (text as NSString).size(withAttributes: attributes)
-        let rect = CGRect(
-            x: min(max(selectionRect.minX + 12, 8), max(8, bounds.maxX - size.width - 28)),
-            y: max(selectionRect.minY - 34, 16),
-            width: size.width + 20,
-            height: size.height + 10
-        )
-        drawControlSurface(in: rect, radius: 10)
-        (text as NSString).draw(at: CGPoint(x: rect.minX + 10, y: rect.minY + 5), withAttributes: attributes)
+        let size = (key as NSString).size(withAttributes: attributes)
+        (key as NSString).draw(
+            at: CGPoint(x: frame.maxX - size.width - 3, y: frame.minY + 1.5), withAttributes: attributes)
+    }
+
+    /// One small chip on the outer side of the toolbar: the text-editing keys
+    /// while typing, otherwise the name and shortcut of the hovered button.
+    func drawToolbarCaption(for layout: ToolbarLayout) {
+        let caption: (title: String, key: String?, anchorX: CGFloat)
+        if isEditingText {
+            caption = ("capture.instructions_text_editing".localized, nil, layout.background.midX)
+        } else if let item = hoveredToolbarItem, let frame = layout.frame(for: item) {
+            switch item {
+            case .tool(let tool):
+                caption = (tool.displayName, tool.shortcutKey, frame.midX)
+            case .cancel:
+                caption = ("common.cancel".localized, "esc", frame.midX)
+            case .capture:
+                caption = ("capture.toolbar_capture".localized, "↩", frame.midX)
+            }
+        } else {
+            return
+        }
+
+        let text = NSMutableAttributedString(
+            string: caption.title,
+            attributes: [
+                .font: NSFont.systemFont(ofSize: 11, weight: .medium),
+                .foregroundColor: NSColor.white,
+            ])
+        if let key = caption.key {
+            text.append(
+                NSAttributedString(
+                    string: "  \(key)",
+                    attributes: [
+                        .font: NSFont.systemFont(ofSize: 11, weight: .semibold),
+                        .foregroundColor: NSColor.white.withAlphaComponent(0.5),
+                    ]))
+        }
+
+        let textSize = text.size()
+        let size = CGSize(width: ceil(textSize.width) + 16, height: ceil(textSize.height) + 8)
+        let safe = controlSafeRect
+        let gap: CGFloat = 6
+        let belowY = layout.background.minY - gap - size.height
+        let aboveY = layout.background.maxY + gap
+        let prefersBelow = layout.placement == .below
+        let y: CGFloat
+        if prefersBelow {
+            y = belowY >= safe.minY ? belowY : aboveY
+        } else {
+            y = aboveY + size.height <= safe.maxY ? aboveY : belowY
+        }
+        let x = min(max(caption.anchorX - size.width / 2, safe.minX), safe.maxX - size.width)
+        let rect = CGRect(origin: CGPoint(x: x.rounded(), y: y.rounded()), size: size)
+
+        drawControlSurface(in: rect, radius: 7)
+        text.draw(at: CGPoint(x: rect.minX + 8, y: rect.minY + 4))
     }
 
     func drawCenteredHint(text: String) {
@@ -205,10 +253,10 @@ extension LiveAnnotationOverlayView {
         let path = NSBezierPath(roundedRect: rect, xRadius: radius, yRadius: radius)
         NSGraphicsContext.saveGraphicsState()
         Self.controlShadow.set()
-        NSColor(calibratedWhite: 0.12, alpha: 0.96).setFill()
+        NSColor(calibratedWhite: 0.1, alpha: 0.94).setFill()
         path.fill()
         NSGraphicsContext.restoreGraphicsState()
-        NSColor.white.withAlphaComponent(0.18).setStroke()
+        NSColor.white.withAlphaComponent(0.12).setStroke()
         path.lineWidth = 1
         path.stroke()
     }

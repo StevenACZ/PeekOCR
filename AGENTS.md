@@ -70,7 +70,7 @@ must not convey identity or status. Verify these mappings in permission UI chang
 
 All captures share `LiveAnnotationOverlayView` and its focused extensions,
 presented by `LiveAnnotationOverlayWindowController`.
-- `.annotate`: adjustable selection with annotation tools; Enter captures.
+- `.annotate`: adjustable selection; the `toolbarLayout` bar (tools, cancel, capture) sits below, else above, else inside it; Enter captures.
 - `.quickSelect`: mouse-up captures the drag selection; Space selects the screen under the cursor.
 
 Still pixels come from `NativeScreenCaptureService.captureRegion` through
@@ -110,8 +110,8 @@ Pause/resume swaps `SCRecordingOutput` instances on the live stream; each resume
 starts a segment and stop moves one segment or concatenates several with
 `AVMutableComposition` and passthrough export.
 
-`record(maxDurationSeconds:)` accepts `nil` for unlimited recording. The HUD
-counts up for unlimited recordings and shows pause/stop state plus a quality
+`record(maxDurationSeconds:)` accepts `nil` for unlimited recording. The HUD pill
+sits below the region, else above, else inside it (excluded from capture); it counts up for unlimited recordings and shows pause/stop state plus a quality
 readout based on the selected rect and backing scale.
 
 System audio uses `capturesAudio` and `excludesCurrentProcessAudio`; if audio

@@ -6,6 +6,11 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- The annotation toolbar is smaller and always sits outside the selection (below it, or above when there is no room), so tiny selections near the top of the screen stay readable. It now has cancel and capture buttons, and hovering a button shows its name and shortcut instead of a permanent line of keyboard hints.
+- The recording controls are a compact pill that stays right next to the recorded area instead of jumping to a far corner. When the area fills the screen the pill floats inside it and still never appears in the video.
+
 ## [2.6.0] - 2026-09-28
 
 ### Added

@@ -3,41 +3,124 @@
 import AppKit
 
 extension LiveAnnotationOverlayView {
-    func handleToolbarClick(at pointInScreen: CGPoint) -> Bool {
-        guard let selectionRectInScreen else { return false }
-        let selectionRect = convert(window?.convertFromScreen(selectionRectInScreen) ?? .zero, from: nil)
-        let pointInView = viewPoint(from: pointInScreen)
-
-        for (tool, frame) in toolbarButtonFrames(in: selectionRect) where frame.contains(pointInView) {
-            selectedTool = tool
-            needsDisplay = true
-            return true
-        }
-
-        return false
+    enum ToolbarItem: Equatable {
+        case tool(LiveAnnotationTool)
+        case cancel
+        case capture
     }
 
-    func toolbarButtonFrames(in selectionRect: CGRect) -> [LiveAnnotationTool: CGRect] {
-        let buttonSize = CGSize(width: 64, height: 46)
-        let spacing: CGFloat = 8
-        let totalWidth =
-            CGFloat(LiveAnnotationTool.allCases.count) * buttonSize.width + CGFloat(LiveAnnotationTool.allCases.count - 1) * spacing
-        let unclampedX = selectionRect.midX - totalWidth / 2
-        let origin = CGPoint(
-            x: min(max(unclampedX, 16), bounds.maxX - totalWidth - 16),
-            y: min(selectionRect.maxY + 14, bounds.maxY - buttonSize.height - 20)
+    enum ToolbarPlacement {
+        case below
+        case above
+        case inside
+    }
+
+    struct ToolbarLayout {
+        let background: CGRect
+        let separator: CGRect
+        let items: [(item: ToolbarItem, frame: CGRect)]
+        let placement: ToolbarPlacement
+
+        func item(at point: CGPoint) -> ToolbarItem? {
+            items.first { $0.frame.contains(point) }?.item
+        }
+
+        func frame(for item: ToolbarItem) -> CGRect? {
+            items.first { $0.item == item }?.frame
+        }
+    }
+
+    func handleToolbarClick(at pointInScreen: CGPoint) -> Bool {
+        guard let layout = currentToolbarLayout() else { return false }
+        let pointInView = viewPoint(from: pointInScreen)
+        guard layout.background.contains(pointInView) else { return false }
+
+        switch layout.item(at: pointInView) {
+        case .tool(let tool):
+            selectedTool = tool
+        case .cancel:
+            onCancel?()
+        case .capture:
+            if let selectionRectInScreen {
+                onComplete?(selectionRectInScreen, overlayScreen, annotations)
+            }
+        case nil:
+            break
+        }
+        needsDisplay = true
+        return true
+    }
+
+    func currentToolbarLayout() -> ToolbarLayout? {
+        guard mode == .annotate, let selectionRectInScreen else { return nil }
+        return toolbarLayout(in: rectInView(from: selectionRectInScreen))
+    }
+
+    /// Area where floating controls may sit: the visible screen (no menu bar,
+    /// notch or Dock) with a small margin.
+    var controlSafeRect: CGRect {
+        rectInView(from: overlayScreen.visibleFrame).intersection(bounds).insetBy(dx: 8, dy: 8)
+    }
+
+    /// Compact bar centered on the selection. It prefers the outside of the
+    /// selection (below, then above) and only falls back inside it when the
+    /// selection leaves no room on the screen.
+    func toolbarLayout(in selectionRect: CGRect) -> ToolbarLayout {
+        let buttonSide: CGFloat = 32
+        let spacing: CGFloat = 2
+        let padding: CGFloat = 5
+        let separatorWidth: CGFloat = 13
+        let gap: CGFloat = 10
+
+        let tools = LiveAnnotationTool.allCases.map(ToolbarItem.tool)
+        let actions: [ToolbarItem] = [.cancel, .capture]
+        let buttonCount = CGFloat(tools.count + actions.count)
+        let size = CGSize(
+            width: padding * 2 + buttonCount * buttonSide + (buttonCount - 2) * spacing + separatorWidth,
+            height: buttonSide + padding * 2
         )
 
-        var frames: [LiveAnnotationTool: CGRect] = [:]
-        for (index, tool) in LiveAnnotationTool.allCases.enumerated() {
-            frames[tool] = CGRect(
-                x: origin.x + CGFloat(index) * (buttonSize.width + spacing),
-                y: origin.y,
-                width: buttonSize.width,
-                height: buttonSize.height
-            )
+        let safe = controlSafeRect
+        let placement: ToolbarPlacement
+        let y: CGFloat
+        if selectionRect.minY - gap - size.height >= safe.minY {
+            placement = .below
+            y = selectionRect.minY - gap - size.height
+        } else if selectionRect.maxY + gap + size.height <= safe.maxY {
+            placement = .above
+            y = selectionRect.maxY + gap
+        } else {
+            placement = .inside
+            y = max(selectionRect.minY, safe.minY) + 12
         }
-        return frames
+        let x = min(max(selectionRect.midX - size.width / 2, safe.minX), safe.maxX - size.width)
+        let background = CGRect(origin: CGPoint(x: x.rounded(), y: y.rounded()), size: size)
+
+        var items: [(item: ToolbarItem, frame: CGRect)] = []
+        var cursor = background.minX + padding
+        for (index, item) in tools.enumerated() {
+            if index > 0 { cursor += spacing }
+            items.append((item, CGRect(x: cursor, y: background.minY + padding, width: buttonSide, height: buttonSide)))
+            cursor += buttonSide
+        }
+        let separator = CGRect(
+            x: cursor + (separatorWidth - 1) / 2, y: background.minY + padding + 8, width: 1, height: buttonSide - 16)
+        cursor += separatorWidth
+        for (index, item) in actions.enumerated() {
+            if index > 0 { cursor += spacing }
+            items.append((item, CGRect(x: cursor, y: background.minY + padding, width: buttonSide, height: buttonSide)))
+            cursor += buttonSide
+        }
+
+        return ToolbarLayout(background: background, separator: separator, items: items, placement: placement)
+    }
+
+    func updateToolbarHover(at pointInScreen: CGPoint) {
+        guard let layout = currentToolbarLayout() else {
+            hoveredToolbarItem = nil
+            return
+        }
+        hoveredToolbarItem = layout.item(at: viewPoint(from: pointInScreen))
     }
 
     func hitTestHandle(at point: CGPoint, selectionRectInScreen: CGRect) -> SelectionHandle? {

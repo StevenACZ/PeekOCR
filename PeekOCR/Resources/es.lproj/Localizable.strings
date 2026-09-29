@@ -50,13 +50,13 @@
 "capture.hint_quick_select" = "Arrastra para seleccionar • Espacio = pantalla completa • Esc cancela";
 "capture.hint_select_area" = "Arrastra para seleccionar la zona a capturar • Esc cancela";
 "capture.hud_pause" = "Pausar";
-"capture.hud_paused_badge" = "PAUSA";
+"capture.hud_paused_badge" = "En pausa";
 "capture.hud_recording" = "Grabando";
 "capture.hud_remaining" = "Restante";
 "capture.hud_resume" = "Reanudar";
 "capture.hud_stop" = "Detener";
-"capture.instructions_default" = "Enter captura • Esc cancela • ⌘Z deshacer • ⇧⌘Z rehacer • ⌫ elimina";
 "capture.instructions_text_editing" = "↩ guardar texto • ⇧↩ nueva línea • Esc cancela texto";
+"capture.toolbar_capture" = "Capturar";
 "capture.type_screenshot" = "Captura";
 "capture.type_text" = "Texto";
 
