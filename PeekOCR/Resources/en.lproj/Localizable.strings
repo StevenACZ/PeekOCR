@@ -83,7 +83,7 @@
 "clip_editor.exporting" = "Exporting…";
 "clip_editor.exporting_gif" = "Exporting GIF…";
 "clip_editor.exporting_mp4" = "Exporting MP4…";
-"clip_editor.fps_source_help" = "If the source has fewer FPS, the export matches the source frame rate.";
+"clip_editor.fps_source_help" = "The MP4 is exported at exactly this frame rate.";
 "clip_editor.frame_copied" = "Frame copied";
 "clip_editor.frame_copy_message" = "It will be copied to the clipboard.";
 "clip_editor.frame_process_message" = "It will be processed with the current settings.";
