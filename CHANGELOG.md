@@ -6,6 +6,8 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2.6.0] - 2026-09-28
+
 ### Added
 
 - Double-click anywhere inside the selection while annotating to start typing text there, whatever tool is active.
