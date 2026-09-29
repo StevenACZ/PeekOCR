@@ -2,7 +2,7 @@
 //  GifClipVideoPreviewView.swift
 //  PeekOCR
 //
-//  Video preview container with playback controls overlay.
+//  Video preview container with a playback controls row under the video.
 //
 
 import AVKit
@@ -34,12 +34,10 @@ struct GifClipVideoPreviewView: View {
                         .stroke(Color.white.opacity(0.06), lineWidth: 1)
                 )
 
-            NonInteractiveVideoPlayer(player: player)
-                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                .padding(14)
+            VStack(spacing: 10) {
+                NonInteractiveVideoPlayer(player: player)
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
 
-            VStack {
-                Spacer()
                 GifClipPlaybackControlsView(
                     isPlaying: isPlaying,
                     currentSeconds: currentSeconds,
@@ -51,8 +49,9 @@ struct GifClipVideoPreviewView: View {
                     onCaptureFrame: onCaptureFrame
                 )
                 .frame(maxWidth: 460)
-                .padding(.bottom, 14)
             }
+            .padding([.top, .horizontal], 14)
+            .padding(.bottom, 10)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

@@ -77,10 +77,8 @@ final class RecordingHudView: NSView {
         progressView.progressTintColor = NSColor.white.withAlphaComponent(0.85)
         progressView.trackTintColor = NSColor.white.withAlphaComponent(0.12)
 
-        pauseButton.target = self
-        pauseButton.action = #selector(pausePressed)
-        stopButton.target = self
-        stopButton.action = #selector(stopPressed)
+        pauseButton.onPress = { [weak self] in self?.onTogglePause?() }
+        stopButton.onPress = { [weak self] in self?.onStop?() }
         stopButton.toolTip = "capture.hud_stop".localized
         stopButton.setAccessibilityLabel("capture.hud_stop".localized)
 
@@ -90,8 +88,8 @@ final class RecordingHudView: NSView {
         root.distribution = .fill
         root.spacing = 8
         root.setCustomSpacing(12, after: subtitleLabel)
-        root.setCustomSpacing(6, after: pauseButton)
-        root.edgeInsets = NSEdgeInsets(top: 0, left: 14, bottom: 0, right: 6)
+        root.setCustomSpacing(5, after: pauseButton)
+        root.edgeInsets = NSEdgeInsets(top: 0, left: 14, bottom: 0, right: (Self.height - HudButton.side) / 2)
 
         for view in [backgroundView, root, progressView] as [NSView] {
             addSubview(view)
@@ -115,7 +113,7 @@ final class RecordingHudView: NSView {
             dotView.heightAnchor.constraint(equalToConstant: 8),
 
             progressView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Self.height / 2),
-            progressView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Self.height / 2),
+            progressView.trailingAnchor.constraint(equalTo: pauseButton.leadingAnchor, constant: -12),
             progressView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -3),
             progressView.heightAnchor.constraint(equalToConstant: 2),
         ])
@@ -160,37 +158,38 @@ final class RecordingHudView: NSView {
         let secs = clamped % 60
         return String(format: "%02d:%02d", minutes, secs)
     }
-
-    @objc
-    private func stopPressed() {
-        onStop?()
-    }
-
-    @objc
-    private func pausePressed() {
-        onTogglePause?()
-    }
 }
 
-/// Round icon button with a hover state, sized for the HUD pill.
-private final class HudButton: NSButton {
-    private static let side: CGFloat = 26
+/// Round icon button with hover and pressed states, sized for the HUD pill.
+private final class HudButton: NSView {
+    static let side: CGFloat = 28
+
+    var onPress: (() -> Void)?
 
     private let baseColor: NSColor
+    private let iconView = NSImageView()
     private var isHovered = false { didSet { refreshBackground() } }
+    private var isPressed = false { didSet { refreshBackground() } }
 
     init(symbolName: String, baseColor: NSColor) {
         self.baseColor = baseColor
         super.init(frame: CGRect(x: 0, y: 0, width: Self.side, height: Self.side))
-        isBordered = false
-        imagePosition = .imageOnly
-        contentTintColor = .white
         wantsLayer = true
         layer?.cornerRadius = Self.side / 2
+        layer?.masksToBounds = true
+        setAccessibilityElement(true)
+        setAccessibilityRole(.button)
+
+        iconView.contentTintColor = .white
+        iconView.imageScaling = .scaleNone
+        addSubview(iconView)
+        iconView.translatesAutoresizingMaskIntoConstraints = false
         translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
             widthAnchor.constraint(equalToConstant: Self.side),
             heightAnchor.constraint(equalToConstant: Self.side),
+            iconView.centerXAnchor.constraint(equalTo: centerXAnchor),
+            iconView.centerYAnchor.constraint(equalTo: centerYAnchor),
         ])
         setSymbol(symbolName)
         refreshBackground()
@@ -201,8 +200,12 @@ private final class HudButton: NSButton {
         fatalError("init(coder:) has not been implemented")
     }
 
+    override var mouseDownCanMoveWindow: Bool { false }
+
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+
     func setSymbol(_ name: String) {
-        image = NSImage(systemSymbolName: name, accessibilityDescription: nil)?
+        iconView.image = NSImage(systemSymbolName: name, accessibilityDescription: nil)?
             .withSymbolConfiguration(.init(pointSize: 10, weight: .bold))
     }
 
@@ -222,9 +225,25 @@ private final class HudButton: NSButton {
         isHovered = false
     }
 
+    override func mouseDown(with event: NSEvent) {
+        isPressed = true
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        isPressed = false
+        if bounds.contains(convert(event.locationInWindow, from: nil)) {
+            onPress?()
+        }
+    }
+
+    override func accessibilityPerformPress() -> Bool {
+        onPress?()
+        return true
+    }
+
     private func refreshBackground() {
-        let color = isHovered ? baseColor.blended(withFraction: 0.18, of: .white) ?? baseColor : baseColor
-        layer?.backgroundColor = color.cgColor
+        let fraction: CGFloat = isPressed ? 0.3 : (isHovered ? 0.18 : 0)
+        layer?.backgroundColor = (baseColor.blended(withFraction: fraction, of: .white) ?? baseColor).cgColor
     }
 }
 
