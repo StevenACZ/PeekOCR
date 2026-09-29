@@ -201,15 +201,9 @@ final class VideoExportService {
         }
 
         // ScreenCaptureKit recordings are variable-frame-rate (frames only when
-        // the screen changes), so a failed estimate means "trust the requested
-        // fps" — the video composition fills the gaps at a constant rate.
-        let requestedFps = max(1, options.fps)
-        let effectiveFps: Int
-        if let sourceFps = await estimateSourceFrameRate(asset: asset, track: sourceVideoTrack, timeRange: clampedRange) {
-            effectiveFps = Int(min(Double(requestedFps), sourceFps.rounded(.down)))
-        } else {
-            effectiveFps = requestedFps
-        }
+        // the screen changes), so the source's apparent rate says nothing about
+        // the recording rate: always honor the requested fps.
+        let effectiveFps = max(1, options.fps)
 
         let (renderSize, transform) = try await computeRenderSizeAndTransform(
             track: sourceVideoTrack,
@@ -371,10 +365,18 @@ final class VideoExportService {
                 continuation: continuation
             )
 
-            let targetFrameDuration = CMTime(value: 1, timescale: Int32(max(1, effectiveFps)))
-            var nextAllowed = CMTime.zero
+            // The composition output only carries the source frames, at their
+            // real (variable) times. Resample to a constant rate: each output
+            // slot shows the latest source frame at or before it, so the clip
+            // keeps its real duration at exactly the requested fps.
+            let targetFrameDuration = CMTime(value: 1, timescale: Int32(effectiveFps))
+            let outputDuration = clampedRange.duration
             var frameIndex: Int64 = 0
             var skippedFrames: Int64 = 0
+            var current: CMSampleBuffer?
+            var currentWasAppended = false
+            var upcoming: CMSampleBuffer?
+            var sourceExhausted = false
 
             writerInputBox.value.requestMediaDataWhenReady(on: coordinator.queue) {
                 let writerInput = writerInputBox.value
@@ -386,47 +388,60 @@ final class VideoExportService {
                 }
 
                 while writerInput.isReadyForMoreMediaData {
-                    if let sampleBuffer = readerOutput.copyNextSampleBuffer() {
-                        let pts = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
-                        if pts < nextAllowed {
+                    let slotTime = CMTimeMultiply(targetFrameDuration, multiplier: Int32(frameIndex))
+
+                    while slotTime < outputDuration, !sourceExhausted {
+                        if upcoming == nil {
+                            upcoming = readerOutput.copyNextSampleBuffer()
+                            sourceExhausted = upcoming == nil
+                        }
+                        guard let next = upcoming,
+                            current == nil || CMSampleBufferGetPresentationTimeStamp(next) <= slotTime
+                        else { break }
+                        if current != nil, !currentWasAppended {
                             skippedFrames += 1
-                            continue
                         }
+                        current = next
+                        currentWasAppended = false
+                        upcoming = nil
+                    }
 
-                        var timing = CMSampleTimingInfo(
-                            duration: targetFrameDuration,
-                            presentationTimeStamp: CMTimeMultiply(targetFrameDuration, multiplier: Int32(frameIndex)),
-                            decodeTimeStamp: .invalid
-                        )
-
-                        var retimed: CMSampleBuffer?
-                        let status = CMSampleBufferCreateCopyWithNewTiming(
-                            allocator: kCFAllocatorDefault,
-                            sampleBuffer: sampleBuffer,
-                            sampleTimingEntryCount: 1,
-                            sampleTimingArray: &timing,
-                            sampleBufferOut: &retimed
-                        )
-
-                        guard status == noErr, let outputBuffer = retimed else {
-                            writerInput.markAsFinished()
-                            coordinator.abort(VideoExportError.exportFailed(underlying: nil))
-                            return
-                        }
-
-                        if !writerInput.append(outputBuffer) {
-                            writerInput.markAsFinished()
-                            coordinator.abort(VideoExportError.exportFailed(underlying: writerBox.value.error))
-                            return
-                        }
-
-                        frameIndex += 1
-                        nextAllowed = pts + targetFrameDuration
-                    } else {
+                    guard slotTime < outputDuration, let frame = current else {
+                        while !sourceExhausted, readerOutput.copyNextSampleBuffer() != nil {}
                         writerInput.markAsFinished()
                         coordinator.finishVideoInput(appendedFrames: frameIndex, skippedFrames: skippedFrames)
                         return
                     }
+
+                    var timing = CMSampleTimingInfo(
+                        duration: targetFrameDuration,
+                        presentationTimeStamp: slotTime,
+                        decodeTimeStamp: .invalid
+                    )
+
+                    var retimed: CMSampleBuffer?
+                    let status = CMSampleBufferCreateCopyWithNewTiming(
+                        allocator: kCFAllocatorDefault,
+                        sampleBuffer: frame,
+                        sampleTimingEntryCount: 1,
+                        sampleTimingArray: &timing,
+                        sampleBufferOut: &retimed
+                    )
+
+                    guard status == noErr, let outputBuffer = retimed else {
+                        writerInput.markAsFinished()
+                        coordinator.abort(VideoExportError.exportFailed(underlying: nil))
+                        return
+                    }
+
+                    if !writerInput.append(outputBuffer) {
+                        writerInput.markAsFinished()
+                        coordinator.abort(VideoExportError.exportFailed(underlying: writerBox.value.error))
+                        return
+                    }
+
+                    currentWasAppended = true
+                    frameIndex += 1
                 }
             }
 
@@ -515,60 +530,6 @@ final class VideoExportService {
         }
 
         return candidateURL
-    }
-
-    private static func estimateSourceFrameRate(asset: AVAsset, track: AVAssetTrack, timeRange: CMTimeRange) async -> Double? {
-        do {
-            let reader = try AVAssetReader(asset: asset)
-            reader.timeRange = timeRange
-
-            let output = AVAssetReaderTrackOutput(track: track, outputSettings: nil)
-            output.alwaysCopiesSampleData = false
-
-            guard reader.canAdd(output) else { return nil }
-            reader.add(output)
-
-            guard reader.startReading() else { return nil }
-
-            var lastTimestamp: Double?
-            var deltas: [Double] = []
-
-            while deltas.count < 90, let sample = output.copyNextSampleBuffer() {
-                let timestamp = CMSampleBufferGetPresentationTimeStamp(sample).seconds
-                guard timestamp.isFinite else { continue }
-
-                if let last = lastTimestamp {
-                    let delta = timestamp - last
-                    if delta > 0.001, delta < 0.1 {
-                        deltas.append(delta)
-                    }
-                }
-                lastTimestamp = timestamp
-            }
-
-            guard deltas.count >= 12 else { return nil }
-
-            let sorted = deltas.sorted()
-            let median = sorted[sorted.count / 2]
-            guard median > 0 else { return nil }
-
-            let fps = 1.0 / median
-            return normalizeEstimatedFps(fps)
-        } catch {
-            return nil
-        }
-    }
-
-    private static func normalizeEstimatedFps(_ fps: Double) -> Double? {
-        guard fps.isFinite, fps >= 10, fps <= 120 else { return nil }
-
-        let candidates: [Double] = [60.0, 59.94, 30.0, 29.97, 24.0]
-        guard let best = candidates.min(by: { abs($0 - fps) < abs($1 - fps) }) else { return nil }
-
-        if abs(best - fps) <= 2.0 {
-            return best.rounded()
-        }
-        return nil
     }
 
     private static func fileSize(at url: URL) -> Int64 {

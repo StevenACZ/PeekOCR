@@ -78,6 +78,12 @@ extension LiveAnnotationOverlayView {
                 selectedAnnotationID = nil
             }
 
+            if event.clickCount >= 2 {
+                notifyActivationIfNeeded()
+                beginTextInput(at: pointInScreen)
+                return
+            }
+
             switch selectedTool {
             case .select:
                 notifyActivationIfNeeded()

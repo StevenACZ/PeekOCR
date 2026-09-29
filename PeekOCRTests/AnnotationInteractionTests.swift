@@ -1,7 +1,6 @@
 import AppKit
-import XCTest
-
 @testable import PeekOCR
+import XCTest
 
 @MainActor
 final class AnnotationInteractionTests: XCTestCase {
@@ -43,6 +42,23 @@ final class AnnotationInteractionTests: XCTestCase {
         XCTAssertNil(view.selectedAnnotationID)
     }
 
+    func testDoubleClickInsideSelectionStartsTextWithAnyTool() throws {
+        for tool in [LiveAnnotationTool.select, .arrow, .pen, .highlight] {
+            let (window, view) = try makeOverlay()
+            defer { window.close() }
+            view.selectedTool = tool
+            let originalRect = view.selectionRectInScreen
+            let point = CGPoint(x: 300, y: 250)
+            view.mouseDown(with: try event(.leftMouseDown, window: window, point: point))
+            view.mouseUp(with: try event(.leftMouseUp, window: window, point: point))
+            view.mouseDown(with: try event(.leftMouseDown, window: window, point: point, clickCount: 2))
+            XCTAssertTrue(view.isEditingText, "Double-click with \(tool) should start text")
+            XCTAssertEqual(view.selectionRectInScreen, originalRect)
+            view.dismissTextEditor(commit: false)
+            XCTAssertTrue(view.annotations.isEmpty)
+        }
+    }
+
     private func makeOverlay() throws -> (NSWindow, LiveAnnotationOverlayView) {
         let screen = try XCTUnwrap(NSScreen.main)
         let window = NSWindow(
@@ -62,10 +78,10 @@ final class AnnotationInteractionTests: XCTestCase {
         view.mouseUp(with: try event(.leftMouseUp, window: window, point: end))
     }
 
-    private func event(_ type: NSEvent.EventType, window: NSWindow, point: CGPoint) throws -> NSEvent {
+    private func event(_ type: NSEvent.EventType, window: NSWindow, point: CGPoint, clickCount: Int = 1) throws -> NSEvent {
         try XCTUnwrap(
             NSEvent.mouseEvent(
                 with: type, location: point, modifierFlags: [], timestamp: 0,
-                windowNumber: window.windowNumber, context: nil, eventNumber: 0, clickCount: 1, pressure: 1))
+                windowNumber: window.windowNumber, context: nil, eventNumber: 0, clickCount: clickCount, pressure: 1))
     }
 }

@@ -6,6 +6,14 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- Double-click anywhere inside the selection while annotating to start typing text there, whatever tool is active.
+
+### Fixed
+
+- MP4 exports now come out at exactly the FPS you pick (60 FPS no longer drops to 24) and keep the clip's real length.
+
 ## [2.5.1] - 2026-09-25
 
 ### Fixed

@@ -83,7 +83,7 @@
 "clip_editor.exporting" = "Exportando…";
 "clip_editor.exporting_gif" = "Exportando GIF…";
 "clip_editor.exporting_mp4" = "Exportando MP4…";
-"clip_editor.fps_source_help" = "Si la fuente tiene menos FPS, se exporta al ritmo de la fuente.";
+"clip_editor.fps_source_help" = "El MP4 se exporta exactamente a estos FPS.";
 "clip_editor.frame_copied" = "Frame copiado";
 "clip_editor.frame_copy_message" = "Se copiará al portapapeles.";
 "clip_editor.frame_process_message" = "Se procesará con la configuración actual.";
