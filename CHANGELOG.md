@@ -6,6 +6,8 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2.7.0] - 2026-09-28
+
 ### Changed
 
 - The annotation toolbar is smaller and always sits outside the selection (below it, or above when there is no room), so tiny selections near the top of the screen stay readable. It now has cancel and capture buttons, and hovering a button shows its name and shortcut instead of a permanent line of keyboard hints.
