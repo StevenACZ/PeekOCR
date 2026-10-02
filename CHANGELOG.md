@@ -6,6 +6,8 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2.8.0] - 2026-10-01
+
 ### Added
 
 - Click a screenshot in the preview stack to edit it: drag the corners to crop, add arrows, text, highlights or pen strokes with the usual tools, then press Enter (or ⌘S) to save. The file is updated and the edited image is copied, ready to paste. While cropping, the image has its own frame on a dark backdrop, bracket corners, a thirds grid and the size the saved image will have.
