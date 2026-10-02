@@ -10,35 +10,44 @@ final class OverlayTextEditorView: NSView {
     var onTextChange: (() -> Void)?
 
     /// Inner padding between the rounded background and the text itself.
-    let padding = CGSize(width: 8, height: 6)
+    private let padding: CGSize
     /// Extra horizontal room inside the text view so the black outline of the
     /// first/last glyphs doesn't get clipped by the view bounds.
     private let textInset: CGSize
 
     private let textView: OverlayTextView
     private let fontSize: CGFloat
+    private let color: NSColor
+    private let placeholder = "annotation.text_placeholder".localized
 
     var text: String { textView.string }
 
+    private var displayedText: String { textView.string.isEmpty ? placeholder : textView.string }
+
     init(initialText: String, fontSize: CGFloat, color: NSColor) {
         self.fontSize = fontSize
+        self.color = color
+        self.padding = CGSize(width: 8, height: max(6, ceil(fontSize * LiveAnnotation.textOutlineFraction / 2)))
         self.textInset = CGSize(width: max(3, ceil(fontSize * 0.15)), height: 0)
         self.textView = OverlayTextView()
 
         super.init(frame: .zero)
 
         wantsLayer = true
-        layer?.backgroundColor = NSColor.black.withAlphaComponent(0.65).cgColor
-        layer?.cornerRadius = 8
-        layer?.borderWidth = 1.5
-        layer?.borderColor = color.withAlphaComponent(0.6).cgColor
 
+        // The text view only edits: its glyphs are clear and `draw` paints the real lettering underneath.
         textView.string = initialText
-        let attributes = LiveAnnotation.editorTextAttributes(fontSize: fontSize, color: color)
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: LiveAnnotation.textFont(ofSize: fontSize),
+            .foregroundColor: NSColor.clear,
+        ]
         textView.typingAttributes = attributes
         textView.textStorage?.setAttributes(
             attributes, range: NSRange(location: 0, length: (initialText as NSString).length))
         textView.insertionPointColor = color
+        textView.selectedTextAttributes = [
+            .backgroundColor: NSColor.selectedTextBackgroundColor.withAlphaComponent(0.45)
+        ]
         textView.drawsBackground = false
         textView.isRichText = false
         textView.allowsUndo = true
@@ -62,11 +71,33 @@ final class OverlayTextEditorView: NSView {
 
     /// Size the editor needs for its current text (content plus padding).
     var desiredSize: CGSize {
-        let textSize = LiveAnnotation.textSize(for: textView.string, fontSize: fontSize)
+        let textSize = LiveAnnotation.textSize(for: displayedText, fontSize: fontSize)
         return CGSize(
-            width: max(140, textSize.width) + (padding.width + textInset.width) * 2,
+            width: textSize.width + (padding.width + textInset.width) * 2,
             height: textSize.height + padding.height * 2
         )
+    }
+
+    override func draw(_ dirtyRect: NSRect) {
+        let frame = NSBezierPath(roundedRect: bounds.insetBy(dx: 0.75, dy: 0.75), xRadius: 8, yRadius: 8)
+        NSColor.black.withAlphaComponent(0.3).setFill()
+        frame.fill()
+        NSColor.white.withAlphaComponent(0.9).setStroke()
+        frame.lineWidth = 1.5
+        frame.setLineDash([6, 4], count: 2, phase: 0)
+        frame.stroke()
+
+        guard let context = NSGraphicsContext.current?.cgContext else { return }
+        let size = LiveAnnotation.textSize(for: displayedText, fontSize: fontSize)
+        let rect = CGRect(
+            x: padding.width + textInset.width, y: bounds.maxY - padding.height - size.height,
+            width: size.width, height: size.height)
+        context.saveGState()
+        context.setAlpha(textView.string.isEmpty ? 0.4 : 1)
+        context.beginTransparencyLayer(auxiliaryInfo: nil)
+        LiveAnnotationRenderer.drawThumbnailText(displayedText, in: rect, fontSize: fontSize, color: color)
+        context.endTransparencyLayer()
+        context.restoreGState()
     }
 
     /// Frame so the first typed glyph lands exactly at `topLeft` (the point
@@ -93,6 +124,7 @@ final class OverlayTextEditorView: NSView {
 
 extension OverlayTextEditorView: NSTextViewDelegate {
     func textDidChange(_ notification: Notification) {
+        needsDisplay = true
         onTextChange?()
     }
 }

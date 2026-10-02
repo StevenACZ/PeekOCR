@@ -59,6 +59,19 @@ final class AnnotationInteractionTests: XCTestCase {
         }
     }
 
+    func testRetypedTextIsDrawnOnlyByItsEditor() throws {
+        let (window, view) = try makeOverlay()
+        defer { window.close() }
+        let text = LiveAnnotation(
+            tool: .text, color: .white, startPoint: CGPoint(x: 300, y: 250), endPoint: CGPoint(x: 300, y: 250), text: "Hola")
+        view.annotations = [text]
+        view.beginTextInput(for: text)
+        XCTAssertTrue(view.annotationsForDrawing.isEmpty)
+        XCTAssertGreaterThan(try XCTUnwrap(view.textEditor).desiredSize.width, 44)
+        view.dismissTextEditor(commit: false)
+        XCTAssertEqual(view.annotationsForDrawing, [text])
+    }
+
     private func makeOverlay() throws -> (NSWindow, LiveAnnotationOverlayView) {
         let screen = try XCTUnwrap(NSScreen.main)
         let window = NSWindow(

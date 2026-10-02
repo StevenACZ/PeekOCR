@@ -1,6 +1,7 @@
 import AppKit
 import Combine
 import SwiftUI
+import os
 
 @MainActor
 final class CapturePreviewController: ObservableObject {
@@ -25,6 +26,7 @@ final class CapturePreviewController: ObservableObject {
     private var globalMonitor: Any?
     private var localMonitor: Any?
     private var settingsObserver: AnyCancellable?
+    private var editSession: LiveAnnotationOverlayWindowController?
     private let pasteboard = NSPasteboard.general
 
     private init() {
@@ -36,6 +38,8 @@ final class CapturePreviewController: ObservableObject {
     }
 
     func beginCapture() {
+        editSession?.cancelSession()
+        editSession = nil
         batch.beginCapture(at: Date(), clipboardChangeCount: pasteboard.changeCount)
         suspended = true
         expiryTask?.cancel()
@@ -72,6 +76,43 @@ final class CapturePreviewController: ObservableObject {
             }
         }
         if assets.isEmpty { hide(animated: true) } else { resizePanel() }
+    }
+
+    func edit(_ id: UUID) {
+        guard editSession == nil, let asset = assets.first(where: { $0.id == id }), !asset.isClip,
+            let screen = panel?.screen ?? NSScreen.main,
+            let source = CGImageSourceCreateWithURL(asset.url as CFURL, nil),
+            let image = CGImageSourceCreateImageAtIndex(source, 0, nil)
+        else { return }
+        let session = LiveAnnotationOverlayWindowController()
+        let quality = ScreenshotSettings.shared.imageQuality
+        editSession = session
+        suspended = true
+        expiryTask?.cancel()
+        hide(animated: true)
+        AppLogger.capture.info("Opening capture editor - dimensions: \(image.width)x\(image.height)")
+        Task { @MainActor in
+            var updated: CaptureClipboardAsset?
+            if let edited = await session.runEditSession(image: image, on: screen) {
+                updated = await Task.detached(priority: .userInitiated) { asset.replacingImage(edited, quality: quality) }.value
+                if updated == nil {
+                    AppLogger.capture.error("Capture edit could not be written to \(asset.url.lastPathComponent)")
+                } else {
+                    AppLogger.capture.info("Capture edit saved - dimensions: \(edited.width)x\(edited.height)")
+                }
+            } else {
+                AppLogger.capture.info("Capture editor cancelled")
+            }
+            if let updated, let index = assets.firstIndex(where: { $0.id == id }) {
+                assets[index] = updated
+                copySelection(grouped: ScreenshotSettings.shared.groupedCopy, explicit: true)
+            }
+            guard editSession === session else { return }
+            editSession = nil
+            suspended = false
+            present()
+            scheduleExpiry()
+        }
     }
 
     func copy() {
@@ -260,7 +301,7 @@ final class CapturePreviewController: ObservableObject {
     }
 
     private func observePaste(_ event: NSEvent) {
-        guard event.keyCode == 9, event.modifierFlags.contains(.command),
+        guard editSession == nil, event.keyCode == 9, event.modifierFlags.contains(.command),
             batch.ownsClipboard(pasteboard.changeCount)
         else { return }
         batch.didPaste()

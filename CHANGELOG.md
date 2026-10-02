@@ -6,6 +6,14 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- Click a screenshot in the preview stack to edit it: drag the corners to crop, add arrows, text, highlights or pen strokes with the usual tools, then press Enter (or ⌘S) to save. The file is updated and the edited image is copied, ready to paste. While cropping, the image has its own frame on a dark backdrop, bracket corners, a thirds grid and the size the saved image will have.
+
+### Changed
+
+- Text annotations look the same while you type as they do in the capture (same outlined lettering, no dark box), with a placeholder until the first letter.
+
 ## [2.7.0] - 2026-09-28
 
 ### Changed

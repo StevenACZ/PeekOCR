@@ -72,17 +72,16 @@ All captures share `LiveAnnotationOverlayView` and its focused extensions,
 presented by `LiveAnnotationOverlayWindowController`.
 - `.annotate`: adjustable selection; the `toolbarLayout` bar (tools, cancel, capture) sits below, else above, else inside it; Enter captures.
 - `.quickSelect`: mouse-up captures the drag selection; Space selects the screen under the cursor.
+- Editing: clicking a still in the preview stack reopens it in `.annotate` through `runEditSession`. `ImageEditStage` lays the image out on screen; the selection is its crop, never leaves it, and annotations stay put when it changes. Saving overwrites the asset's file and recopies it.
 
-Still pixels come from `NativeScreenCaptureService.captureRegion` through
-`SCScreenshotManager`, excluding PeekOCR windows where possible. The
-`screencapture` command remains only as a screenshot fallback.
-`CaptureFlashEffect` plays after pixels are captured.
+Still pixels come from `NativeScreenCaptureService.captureRegion` through `SCScreenshotManager`, excluding PeekOCR windows where possible.
+The `screencapture` command remains only as a screenshot fallback. `CaptureFlashEffect` plays after pixels are captured.
 
 ### Annotations
 
 `LiveAnnotationRenderer.drawThumbnailText` renders text in two passes: a thick
-rounded contour and then fill. The floating editor uses AppKit text editing and
-only approximates that final rendered look with fill plus a strong shadow.
+rounded contour and then fill. The floating editor paints through the same function under an
+`NSTextView` with clear glyphs, so typing already looks like the final render; keep both on one layout.
 
 Text: double-click on empty space in the selection starts it with any tool; Enter
 commits, Shift-Enter inserts a newline, Escape cancels. Text anchors at its top-left `startPoint` and is measured with `LiveAnnotation.textSize`.
