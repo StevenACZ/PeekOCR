@@ -118,7 +118,7 @@ enum LiveAnnotationRenderer {
 
     /// Two-pass thumbnail lettering: thick rounded black outline first, color
     /// fill on top. Both the live overlay and the final render go through here.
-    private static func drawThumbnailText(_ text: String, in rect: CGRect, fontSize: CGFloat, color: NSColor) {
+    static func drawThumbnailText(_ text: String, in rect: CGRect, fontSize: CGFloat, color: NSColor) {
         guard let cgContext = NSGraphicsContext.current?.cgContext else { return }
         cgContext.saveGState()
         cgContext.setLineJoin(.round)

@@ -109,16 +109,18 @@ extension LiveAnnotationOverlayView {
             return
         }
 
-        let screen = overlayScreen
+        let origin = clamp(pointInScreen, to: selectionLimits)
         notifyActivationIfNeeded()
         selectedAnnotationID = nil
-        selectionRectInScreen = CGRect(origin: clamp(pointInScreen, to: screen.frame), size: .zero)
-        annotations = []
-        annotationHistory = []
-        annotationRedoStack = []
-        pendingUndoSnapshot = nil
+        selectionRectInScreen = CGRect(origin: origin, size: .zero)
+        if imageStage == nil {
+            annotations = []
+            annotationHistory = []
+            annotationRedoStack = []
+            pendingUndoSnapshot = nil
+        }
         selectedTool = .select
-        interaction = .creatingSelection(origin: clamp(pointInScreen, to: screen.frame))
+        interaction = .creatingSelection(origin: origin)
     }
 
     override func mouseDragged(with event: NSEvent) {
@@ -129,19 +131,22 @@ extension LiveAnnotationOverlayView {
         case .none:
             break
         case .creatingSelection(let origin):
-            let screen = overlayScreen
-            selectionRectInScreen = normalizedRect(from: origin, to: clamp(pointInScreen, to: screen.frame))
+            selectionRectInScreen = normalizedRect(from: origin, to: clamp(pointInScreen, to: selectionLimits))
         case .movingSelection(let origin, let initialRect, let initialAnnotations):
             let delta = CGPoint(x: pointInScreen.x - origin.x, y: pointInScreen.y - origin.y)
             let moved = initialRect.offsetBy(dx: delta.x, dy: delta.y)
-            let clampedRect = clamp(rect: moved, to: overlayScreen.frame)
+            let clampedRect = clamp(rect: moved, to: selectionLimits)
             selectionRectInScreen = clampedRect
-            annotations = translated(initialAnnotations, dx: clampedRect.minX - initialRect.minX, dy: clampedRect.minY - initialRect.minY)
+            if imageStage == nil {
+                annotations = translated(
+                    initialAnnotations, dx: clampedRect.minX - initialRect.minX, dy: clampedRect.minY - initialRect.minY)
+            }
         case .resizingSelection(let handle, let initialRect, let initialAnnotations):
-            let screen = overlayScreen
-            let resizedRect = resize(initialRect: initialRect, handle: handle, point: clamp(pointInScreen, to: screen.frame))
+            let resizedRect = resize(initialRect: initialRect, handle: handle, point: clamp(pointInScreen, to: selectionLimits))
             selectionRectInScreen = resizedRect
-            annotations = transformed(initialAnnotations, from: initialRect, to: resizedRect)
+            if imageStage == nil {
+                annotations = transformed(initialAnnotations, from: initialRect, to: resizedRect)
+            }
         case .movingAnnotation(let id, let origin, let initialAnnotation):
             let delta = CGPoint(x: pointInScreen.x - origin.x, y: pointInScreen.y - origin.y)
             let movedAnnotation = translated(annotation: initialAnnotation, dx: delta.x, dy: delta.y)
@@ -178,7 +183,7 @@ extension LiveAnnotationOverlayView {
             {
                 self.selectionRectInScreen = selectionRectInScreen
             } else {
-                self.selectionRectInScreen = nil
+                self.selectionRectInScreen = imageStage?.rectInScreen
             }
         case .drawingAnnotation(let annotation):
             if annotation.tool == .arrow {

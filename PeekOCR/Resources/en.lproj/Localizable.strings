@@ -48,6 +48,7 @@
 "capture.error_save_path" = "Couldn't save the capture to: %@";
 "capture.error_video_load" = "Couldn't load the video. Try recording again.";
 "capture.hint_quick_select" = "Drag to select • Space = full screen • Esc cancels";
+"capture.hint_crop" = "Drag the corners to crop";
 "capture.hint_select_area" = "Drag to select the area to capture • Esc cancels";
 "capture.hud_pause" = "Pause";
 "capture.hud_paused_badge" = "Paused";
@@ -332,6 +333,7 @@
 "preview.hide" = "Hide preview";
 "preview.remove" = "Remove from group";
 "preview.remove_number" = "Remove capture %d from group";
+"preview.edit" = "Edit or crop";
 "preview.copy" = "Copy";
 "preview.ready" = "Ready to copy";
 "preview.group_copied" = "Group copied · paste together";

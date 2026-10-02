@@ -48,6 +48,7 @@
 "capture.error_save_path" = "No se pudo guardar la captura en: %@";
 "capture.error_video_load" = "No se pudo cargar el video. Intenta grabar de nuevo.";
 "capture.hint_quick_select" = "Arrastra para seleccionar • Espacio = pantalla completa • Esc cancela";
+"capture.hint_crop" = "Arrastra las esquinas para recortar";
 "capture.hint_select_area" = "Arrastra para seleccionar la zona a capturar • Esc cancela";
 "capture.hud_pause" = "Pausar";
 "capture.hud_paused_badge" = "En pausa";
@@ -332,6 +333,7 @@
 "preview.hide" = "Ocultar vista previa";
 "preview.remove" = "Quitar del grupo";
 "preview.remove_number" = "Quitar captura %d del grupo";
+"preview.edit" = "Editar o recortar";
 "preview.copy" = "Copiar";
 "preview.ready" = "Lista para copiar";
 "preview.group_copied" = "Grupo copiado · pega todas";

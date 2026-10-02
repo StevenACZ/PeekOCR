@@ -6,11 +6,12 @@ struct CaptureClipboardAsset: @unchecked Sendable, Identifiable {
     let id: UUID
     let url: URL
     let thumbnail: CGImage
+    let savedURL: URL?
 
-    var isClip: Bool { Self.clipExtensions.contains(url.pathExtension.lowercased()) }
+    nonisolated var isClip: Bool { Self.clipExtensions.contains(url.pathExtension.lowercased()) }
     var formatLabel: String { url.pathExtension.uppercased() }
 
-    private static let clipExtensions: Set<String> = ["gif", "mp4", "mov"]
+    nonisolated private static let clipExtensions: Set<String> = ["gif", "mp4", "mov"]
 
     nonisolated static func prepare(_ image: CGImage, savedURL: URL?) -> CaptureClipboardAsset? {
         let id = UUID()
@@ -18,13 +19,11 @@ struct CaptureClipboardAsset: @unchecked Sendable, Identifiable {
         if let savedURL, savedURL.pathExtension.lowercased() == "png" {
             url = savedURL
         } else {
-            let directory = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
-                .appendingPathComponent("PeekOCR/CaptureClipboard", isDirectory: true)
             do {
                 try FileManager.default.createDirectory(
-                    at: directory, withIntermediateDirectories: true,
+                    at: cacheDirectory, withIntermediateDirectories: true,
                     attributes: [.posixPermissions: 0o700])
-                url = directory.appendingPathComponent("PeekOCR_\(id.uuidString).png")
+                url = cacheDirectory.appendingPathComponent("PeekOCR_\(id.uuidString).png")
                 guard let data = ImageEncodingService.encode(image, format: .png) else { return nil }
                 try data.write(to: url, options: .atomic)
                 try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: url.path)
@@ -33,14 +32,37 @@ struct CaptureClipboardAsset: @unchecked Sendable, Identifiable {
             }
         }
         guard let thumbnail = makeThumbnail(image) else { return nil }
-        return CaptureClipboardAsset(id: id, url: url, thumbnail: thumbnail)
+        return CaptureClipboardAsset(id: id, url: url, thumbnail: thumbnail, savedURL: savedURL == url ? nil : savedURL)
+    }
+
+    nonisolated func replacingImage(_ image: CGImage, quality: Double) -> CaptureClipboardAsset? {
+        guard !isClip, let png = ImageEncodingService.encode(image, format: .png), let thumbnail = Self.makeThumbnail(image)
+        else { return nil }
+        do {
+            try png.write(to: url, options: .atomic)
+            if url.deletingLastPathComponent().standardizedFileURL == Self.cacheDirectory.standardizedFileURL {
+                try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: url.path)
+            }
+            if let savedURL, let format = ImageFormat(rawValue: savedURL.pathExtension.lowercased()) {
+                guard let data = ImageEncodingService.encode(image, format: format, quality: quality) else { return nil }
+                try data.write(to: savedURL, options: .atomic)
+            }
+        } catch {
+            return nil
+        }
+        return CaptureClipboardAsset(id: id, url: url, thumbnail: thumbnail, savedURL: savedURL)
+    }
+
+    nonisolated private static var cacheDirectory: URL {
+        FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("PeekOCR/CaptureClipboard", isDirectory: true)
     }
 
     nonisolated static func prepare(clipURL: URL) async -> CaptureClipboardAsset? {
         guard FileManager.default.isReadableFile(atPath: clipURL.path), let frame = await firstFrame(of: clipURL),
             let thumbnail = makeThumbnail(frame)
         else { return nil }
-        return CaptureClipboardAsset(id: UUID(), url: clipURL, thumbnail: thumbnail)
+        return CaptureClipboardAsset(id: UUID(), url: clipURL, thumbnail: thumbnail, savedURL: nil)
     }
 
     nonisolated private static func firstFrame(of url: URL) async -> CGImage? {
@@ -69,11 +91,9 @@ struct CaptureClipboardAsset: @unchecked Sendable, Identifiable {
     }
 
     nonisolated static func removeExpiredFiles(excluding urls: Set<URL>, now: Date = Date()) {
-        let directory = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("PeekOCR/CaptureClipboard", isDirectory: true)
         guard
             let files = try? FileManager.default.contentsOfDirectory(
-                at: directory,
+                at: cacheDirectory,
                 includingPropertiesForKeys: [.contentModificationDateKey, .isRegularFileKey])
         else { return }
         for url in files where url.pathExtension == "png" && url.lastPathComponent.hasPrefix("PeekOCR_") && !urls.contains(url) {

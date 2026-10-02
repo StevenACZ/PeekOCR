@@ -38,8 +38,9 @@ extension LiveAnnotationOverlayView {
             let overlayPath = NSBezierPath(rect: bounds)
             overlayPath.appendRect(selectionRect)
             overlayPath.windingRule = .evenOdd
-            NSColor.black.withAlphaComponent(0.32).setFill()
+            NSColor.black.withAlphaComponent(imageStage == nil ? 0.32 : 0.5).setFill()
             overlayPath.fill()
+            drawImageStageFrame()
 
             let border = NSBezierPath(rect: selectionRect)
             NSColor.black.withAlphaComponent(0.32).setStroke()
@@ -52,13 +53,18 @@ extension LiveAnnotationOverlayView {
             if mode == .quickSelect {
                 drawSelectionSizeBadge(in: selectionRect)
             } else {
-                drawSelectionHandles(in: selectionRect)
+                if imageStage == nil {
+                    drawSelectionHandles(in: selectionRect)
+                } else {
+                    drawCropGuides(in: selectionRect)
+                }
                 LiveAnnotationRenderer.drawOverlayAnnotations(
                     annotationsForDrawing, in: self, window: window, selectionRectInScreen: selectionRectInScreen)
                 drawSelectedAnnotationIfNeeded(in: self, window: window)
                 let layout = toolbarLayout(in: selectionRect)
                 drawToolbar(layout)
                 drawToolbarCaption(for: layout)
+                drawImageStageHint()
             }
         } else {
             NSColor.black.withAlphaComponent(0.25).setFill()
@@ -72,6 +78,12 @@ extension LiveAnnotationOverlayView {
     }
 
     func drawFrozenBackgroundIfNeeded() {
+        if let imageStage, let preview = imageStagePreview {
+            NSColor.black.withAlphaComponent(0.8).setFill()
+            bounds.fill()
+            preview.draw(in: rectInView(from: imageStage.rectInScreen))
+            return
+        }
         guard let image = frozenBackgroundPreview else { return }
         image.draw(
             in: bounds,
@@ -81,6 +93,80 @@ extension LiveAnnotationOverlayView {
             respectFlipped: true,
             hints: [.interpolation: NSImageInterpolation.none]
         )
+    }
+
+    func drawImageStageFrame() {
+        guard let imageStage else { return }
+        let frame = NSBezierPath(rect: rectInView(from: imageStage.rectInScreen).insetBy(dx: -0.5, dy: -0.5))
+        NSColor.white.withAlphaComponent(0.4).setStroke()
+        frame.lineWidth = 1
+        frame.stroke()
+    }
+
+    func drawCropGuides(in rect: CGRect) {
+        switch interaction {
+        case .creatingSelection, .movingSelection, .resizingSelection:
+            let grid = NSBezierPath()
+            for step in 1...2 {
+                let x = rect.minX + rect.width * CGFloat(step) / 3
+                let y = rect.minY + rect.height * CGFloat(step) / 3
+                grid.move(to: CGPoint(x: x, y: rect.minY))
+                grid.line(to: CGPoint(x: x, y: rect.maxY))
+                grid.move(to: CGPoint(x: rect.minX, y: y))
+                grid.line(to: CGPoint(x: rect.maxX, y: y))
+            }
+            NSColor.white.withAlphaComponent(0.35).setStroke()
+            grid.lineWidth = 1
+            grid.stroke()
+        default:
+            break
+        }
+
+        let length = min(18, rect.width / 3, rect.height / 3)
+        let brackets = NSBezierPath()
+        for (x, dx) in [(rect.minX, length), (rect.maxX, -length)] {
+            for (y, dy) in [(rect.minY, length), (rect.maxY, -length)] {
+                brackets.move(to: CGPoint(x: x + dx, y: y))
+                brackets.line(to: CGPoint(x: x, y: y))
+                brackets.line(to: CGPoint(x: x, y: y + dy))
+            }
+        }
+        brackets.lineCapStyle = .round
+        brackets.lineJoinStyle = .round
+        NSColor.black.withAlphaComponent(0.4).setStroke()
+        brackets.lineWidth = 6
+        brackets.stroke()
+        NSColor.white.setStroke()
+        brackets.lineWidth = 3.5
+        brackets.stroke()
+    }
+
+    func drawImageStageHint() {
+        guard let imageStage, let selectionRectInScreen, let pixels = imageStage.pixelRect(for: selectionRectInScreen)
+        else { return }
+        let text = NSMutableAttributedString(
+            string: "capture.hint_crop".localized,
+            attributes: [
+                .font: NSFont.systemFont(ofSize: 11, weight: .medium),
+                .foregroundColor: NSColor.white,
+            ])
+        text.append(
+            NSAttributedString(
+                string: "  \(Int(pixels.width)) × \(Int(pixels.height)) px",
+                attributes: [
+                    .font: NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .semibold),
+                    .foregroundColor: NSColor.white.withAlphaComponent(0.5),
+                ]))
+
+        let textSize = text.size()
+        let size = CGSize(width: ceil(textSize.width) + 16, height: ceil(textSize.height) + 8)
+        let stage = rectInView(from: imageStage.rectInScreen)
+        let safe = controlSafeRect
+        let x = min(max(stage.midX - size.width / 2, safe.minX), safe.maxX - size.width)
+        let y = min(stage.maxY + 10, safe.maxY - size.height)
+        let rect = CGRect(origin: CGPoint(x: x.rounded(), y: y.rounded()), size: size)
+        drawControlSurface(in: rect, radius: 7)
+        text.draw(at: CGPoint(x: rect.minX + 8, y: rect.minY + 4))
     }
 
     /// Live "W × H" readout under the selection while picking a region.
@@ -101,12 +187,14 @@ extension LiveAnnotationOverlayView {
         (text as NSString).draw(at: CGPoint(x: rect.minX + 7, y: rect.minY + 3), withAttributes: attributes)
     }
 
+    /// The annotation being retyped is left out: the editor paints it in place.
     var annotationsForDrawing: [LiveAnnotation] {
+        let visible = annotations.filter { $0.id != editingAnnotationID }
         switch interaction {
         case .drawingAnnotation(let annotation):
-            return annotations + [annotation]
+            return visible + [annotation]
         default:
-            return annotations
+            return visible
         }
     }
 
@@ -191,7 +279,7 @@ extension LiveAnnotationOverlayView {
             case .cancel:
                 caption = ("common.cancel".localized, "esc", frame.midX)
             case .capture:
-                caption = ("capture.toolbar_capture".localized, "↩", frame.midX)
+                caption = ((imageStage == nil ? "capture.toolbar_capture" : "common.save").localized, "↩", frame.midX)
             }
         } else {
             return
@@ -262,7 +350,7 @@ extension LiveAnnotationOverlayView {
     }
 
     func drawSelectedAnnotationIfNeeded(in view: NSView, window: NSWindow) {
-        guard let selectedAnnotationID,
+        guard !isEditingText, let selectedAnnotationID,
             let annotation = annotations.first(where: { $0.id == selectedAnnotationID })
         else { return }
 

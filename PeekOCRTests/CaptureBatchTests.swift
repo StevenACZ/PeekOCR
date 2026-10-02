@@ -1,7 +1,6 @@
 import AppKit
-import XCTest
-
 @testable import PeekOCR
+import XCTest
 
 @MainActor
 final class CaptureBatchTests: XCTestCase {
@@ -62,7 +61,7 @@ final class CaptureBatchTests: XCTestCase {
         let assets = try (0..<3).map { index in
             let url = directory.appendingPathComponent("image-\(index).png")
             try data.write(to: url)
-            return CaptureClipboardAsset(id: UUID(), url: url, thumbnail: image)
+            return CaptureClipboardAsset(id: UUID(), url: url, thumbnail: image, savedURL: nil)
         }
         XCTAssertTrue(CaptureClipboardWriter.write(assets, to: pasteboard))
         let urls = pasteboard.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL]

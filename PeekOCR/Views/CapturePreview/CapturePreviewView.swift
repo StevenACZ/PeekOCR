@@ -85,6 +85,29 @@ struct CapturePreviewView: View {
                     .strokeBorder(.white.opacity(0.25), lineWidth: 0.75)
             }
             .shadow(color: .black.opacity(0.22), radius: 5, x: 0, y: 2)
+            .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .onTapGesture {
+                controller.edit(asset.id)
+            }
+            .overlay(alignment: .topLeading) {
+                if !asset.isClip {
+                    Button {
+                        controller.edit(asset.id)
+                    } label: {
+                        Image(systemName: "pencil")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .frame(width: 24, height: 24)
+                            .background(.black.opacity(0.5), in: Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .padding(9)
+                    .opacity(controller.isHovered ? 1 : 0)
+                    .animation(.easeOut(duration: 0.12), value: controller.isHovered)
+                    .help("preview.edit".localized)
+                    .accessibilityLabel("preview.edit".localized)
+                }
+            }
             .overlay(alignment: .bottomLeading) {
                 HStack(spacing: 6) {
                     if controller.assets.count > 1 {

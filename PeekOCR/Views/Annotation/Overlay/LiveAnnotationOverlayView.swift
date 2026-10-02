@@ -90,6 +90,17 @@ final class LiveAnnotationOverlayView: NSView {
 
     private(set) var frozenBackgroundPreview: NSImage?
 
+    var imageStage: ImageEditStage? {
+        didSet {
+            imageStagePreview = imageStage.map { NSImage(cgImage: $0.image, size: $0.rectInScreen.size) }
+            needsDisplay = true
+        }
+    }
+
+    private(set) var imageStagePreview: NSImage?
+
+    var selectionLimits: CGRect { imageStage?.rectInScreen ?? overlayScreen.frame }
+
     var onCancel: (() -> Void)?
     var onComplete: ((CGRect, NSScreen, [LiveAnnotation]) -> Void)?
 
@@ -248,6 +259,16 @@ final class LiveAnnotationOverlayView: NSView {
                 redoLastAnnotationChange()
             } else {
                 undoLastAnnotationChange()
+            }
+            return
+        }
+
+        if imageStage != nil, modifiers.contains(.command), event.charactersIgnoringModifiers?.lowercased() == "s" {
+            if isEditingText {
+                dismissTextEditor(commit: true)
+            }
+            if let selectionRectInScreen {
+                onComplete?(selectionRectInScreen, overlayScreen, annotations)
             }
             return
         }

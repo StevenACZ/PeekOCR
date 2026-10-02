@@ -45,6 +45,27 @@ final class LiveAnnotationOverlayWindowController: NSWindowController {
             overlay.window.alphaValue = 0
         }
 
+        return await present(mode: mode)
+    }
+
+    func runEditSession(image: CGImage, on screen: NSScreen) async -> CGImage? {
+        guard let displayID = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID
+        else { return nil }
+        let stage = ImageEditStage.fitted(image, on: screen)
+        let overlay = makeOverlay(for: screen, displayID: displayID, mode: .annotate, frozenImage: nil)
+        overlay.view.imageStage = stage
+        overlay.view.selectionRectInScreen = stage.rectInScreen
+        overlay.window.alphaValue = 0
+        overlays = [displayID: overlay]
+        activeDisplayID = nil
+
+        guard let session = await present(mode: .annotate) else { return nil }
+        return stage.render(selectionRectInScreen: session.selectionRect, annotations: session.annotations)
+    }
+
+    private func present(
+        mode: LiveAnnotationOverlayView.OverlayMode
+    ) async -> (selectionRect: CGRect, screen: NSScreen, annotations: [LiveAnnotation])? {
         if mode == .quickSelect {
             installQuickSelectKeyboardHotKeys()
         }
