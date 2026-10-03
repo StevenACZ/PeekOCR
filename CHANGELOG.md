@@ -6,6 +6,8 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2.8.1] - 2026-10-03
+
 ### Fixed
 
 - MP4 exports no longer hang for a minute or more while another app is recording or rendering video. PeekOCR notices that the hardware encoder is busy and finishes the export with the software H.264 encoder in a few seconds.
