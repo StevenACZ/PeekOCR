@@ -113,8 +113,7 @@ starts a segment and stop moves one segment or concatenates several with
 sits below the region, else above, else inside it (excluded from capture); it counts up for unlimited recordings and shows pause/stop state plus a quality
 readout based on the selected rect and backing scale.
 
-System audio uses `capturesAudio` and `excludesCurrentProcessAudio`; if audio
-prevents stream startup, retry once without it.
+System audio uses `capturesAudio` and `excludesCurrentProcessAudio`; if audio prevents stream startup, retry once without it.
 
 `GifClipSettings` stores recording and export defaults in `UserDefaults`,
 including duration-limit state, recording FPS, cursor visibility, audio
@@ -123,14 +122,16 @@ Shared option lists live in `Constants.Gif`.
 
 ### Clip Editor And Exports
 
-The editor flow receives the temporary `.mov` and supports trim, GIF/MP4
-export, frame capture, and re-record. `VideoExportService` carries recorded
-audio into MP4 exports with a composition audio track and AAC re-encode.
+The editor flow receives the temporary `.mov` and supports trim, GIF/MP4 export, frame capture, and re-record.
+`VideoExportService` carries recorded audio into MP4 exports with a composition audio track and AAC re-encode.
 
-ScreenCaptureKit recordings are variable frame rate. MP4 export always honors
-the requested FPS, never a source estimate. The composition reader never fills
-gaps, so the pump resamples: each slot shows the latest source frame at or
-before it, keeping real duration (`VideoExportFrameRateTests`).
+ScreenCaptureKit recordings are variable frame rate. MP4 export always honors the requested FPS, never a
+source estimate. The composition reader never fills gaps, so the pump resamples: each slot shows the latest
+source frame at or before it, keeping real duration (`VideoExportFrameRateTests`).
+
+The hardware encoder is shared system-wide and serves realtime sessions first, so another app's recording or
+render can starve an export. `ExportStallDetector` watches the append rate; a stalled export restarts with
+software H.264 on its own scratch file, and the old writer is cancelled in the background (`cancelWriting` blocks).
 
 The timeline draws a `GifClipFilmstrip` (progressive `.task(id:)` on the video
 URL) with the time label below the track, never over it. `onExport` fires as

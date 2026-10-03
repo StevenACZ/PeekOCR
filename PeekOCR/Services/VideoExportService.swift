@@ -8,6 +8,7 @@
 
 import AVFoundation
 import Foundation
+import VideoToolbox
 import os
 
 /// Errors that can occur during MP4 export.
@@ -46,6 +47,13 @@ final class VideoExportService {
 
     private init() {}
 
+    private struct HardwareEncoderStalled: Error {}
+
+    private enum VideoEncoder: String {
+        case hardware
+        case software
+    }
+
     /// Wraps non-Sendable values for use in @Sendable closures that stay on a controlled queue.
     private struct UncheckedSendableBox<Value>: @unchecked Sendable {
         let value: Value
@@ -63,11 +71,14 @@ final class VideoExportService {
         private let renderSize: CGSize
         private let exportStartedAt: Date
         private let outputURL: URL
+        private let encoder: VideoEncoder
 
         private var pendingInputs: Int
         private var didResume = false
         private var appendedFrames: Int64 = 0
         private var skippedFrames: Int64 = 0
+        private var stallDetector: ExportStallDetector?
+        private var stallTimer: DispatchSourceTimer?
 
         init(
             reader: AVAssetReader,
@@ -77,6 +88,7 @@ final class VideoExportService {
             renderSize: CGSize,
             exportStartedAt: Date,
             outputURL: URL,
+            encoder: VideoEncoder,
             continuation: CheckedContinuation<Void, Error>
         ) {
             self.reader = reader
@@ -86,7 +98,41 @@ final class VideoExportService {
             self.renderSize = renderSize
             self.exportStartedAt = exportStartedAt
             self.outputURL = outputURL
+            self.encoder = encoder
             self.continuation = continuation
+        }
+
+        func watchForStall(policy: ExportStallPolicy) {
+            queue.async {
+                guard !self.didResume else { return }
+                self.stallDetector = ExportStallDetector(policy: policy)
+                let timer = DispatchSource.makeTimerSource(queue: self.queue)
+                timer.schedule(deadline: .now() + policy.sampleInterval, repeating: policy.sampleInterval)
+                timer.setEventHandler { self.checkForStall() }
+                self.stallTimer = timer
+                timer.resume()
+            }
+        }
+
+        private func checkForStall() {
+            guard !didResume else { return }
+            let now = ProcessInfo.processInfo.systemUptime
+            guard stallDetector?.isStalled(at: now, appendedFrames: appendedFrames) == true else { return }
+            AppLogger.capture.warning(
+                "Video encoder stalled after \(self.appendedFrames) frames in \(String(format: "%.2f", Date().timeIntervalSince(self.exportStartedAt)))s"
+            )
+            resumeOnce(throwing: HardwareEncoderStalled())
+            // cancelWriting blocks until the starved encoder drains the frames
+            // it already queued, which can take more than a minute.
+            DispatchQueue.global(qos: .utility).async {
+                self.reader.cancelReading()
+                self.writer.cancelWriting()
+            }
+        }
+
+        /// On `queue`.
+        func videoFramesAppended(_ count: Int64) {
+            appendedFrames = count
         }
 
         /// On `queue`.
@@ -103,6 +149,7 @@ final class VideoExportService {
         func finishVideoInput(appendedFrames: Int64, skippedFrames: Int64) {
             self.appendedFrames = appendedFrames
             self.skippedFrames = skippedFrames
+            stallDetector?.markFinishing(at: ProcessInfo.processInfo.systemUptime)
             inputFinished()
         }
 
@@ -122,7 +169,7 @@ final class VideoExportService {
                 let elapsed = Date().timeIntervalSince(exportStartedAt)
                 let outputBytes = VideoExportService.fileSize(at: outputURL)
                 AppLogger.capture.info(
-                    "Video export completed - frames: \(self.appendedFrames), skipped: \(self.skippedFrames), fps: \(self.effectiveFps), renderSize: \(Int(self.renderSize.width))x\(Int(self.renderSize.height)), output: \(outputBytes) bytes, elapsed: \(String(format: "%.2f", elapsed))s"
+                    "Video export completed - encoder: \(self.encoder.rawValue), frames: \(self.appendedFrames), skipped: \(self.skippedFrames), fps: \(self.effectiveFps), renderSize: \(Int(self.renderSize.width))x\(Int(self.renderSize.height)), output: \(outputBytes) bytes, elapsed: \(String(format: "%.2f", elapsed))s"
                 )
                 resumeOnce(throwing: nil)
             } else {
@@ -133,6 +180,8 @@ final class VideoExportService {
         private func resumeOnce(throwing error: Error?) {
             guard !didResume else { return }
             didResume = true
+            stallTimer?.cancel()
+            stallTimer = nil
             if let error {
                 continuation.resume(throwing: error)
             } else {
@@ -145,7 +194,8 @@ final class VideoExportService {
         videoURL: URL,
         timeRange: CMTimeRange,
         outputDirectory: URL,
-        options: VideoExportOptions
+        options: VideoExportOptions,
+        stallPolicy: ExportStallPolicy = ExportStallPolicy()
     ) async throws -> URL {
         do {
             try FileManager.default.createDirectory(at: outputDirectory, withIntermediateDirectories: true)
@@ -156,28 +206,82 @@ final class VideoExportService {
         let outputURL = generateUniqueOutputURL(in: outputDirectory)
 
         return try await Task.detached(priority: .userInitiated) {
+            let renderedURL = try await Self.renderWithFallback(
+                videoURL: videoURL,
+                timeRange: timeRange,
+                options: options,
+                stallPolicy: stallPolicy
+            )
             do {
-                try await Self.renderVideo(
-                    videoURL: videoURL,
-                    timeRange: timeRange,
-                    outputURL: outputURL,
-                    options: options
-                )
-                return outputURL
+                try FileManager.default.moveItem(at: renderedURL, to: outputURL)
             } catch {
-                try? FileManager.default.removeItem(at: outputURL)
-                throw error
+                try? FileManager.default.removeItem(at: renderedURL)
+                throw VideoExportError.exportFailed(underlying: error)
             }
+            return outputURL
         }.value
     }
 
     // MARK: - Private
 
+    /// Renders with the hardware encoder and, when another app is starving
+    /// it, starts over with the software H.264 encoder, which keeps its speed.
+    private static func renderWithFallback(
+        videoURL: URL,
+        timeRange: CMTimeRange,
+        options: VideoExportOptions,
+        stallPolicy: ExportStallPolicy
+    ) async throws -> URL {
+        let hardwareURL = scratchURL()
+        do {
+            try await renderVideo(
+                videoURL: videoURL,
+                timeRange: timeRange,
+                outputURL: hardwareURL,
+                options: options,
+                encoder: .hardware,
+                stallPolicy: stallPolicy
+            )
+            return hardwareURL
+        } catch is HardwareEncoderStalled {
+            AppLogger.capture.warning("Re-exporting with the software H.264 encoder")
+        } catch {
+            try? FileManager.default.removeItem(at: hardwareURL)
+            throw error
+        }
+
+        // The stalled writer deletes its own file once its cancellation ends,
+        // so the retry needs a path of its own.
+        let softwareURL = scratchURL()
+        var softwareOptions = options
+        softwareOptions.codec = .h264
+        do {
+            try await renderVideo(
+                videoURL: videoURL,
+                timeRange: timeRange,
+                outputURL: softwareURL,
+                options: softwareOptions,
+                encoder: .software,
+                stallPolicy: nil
+            )
+            return softwareURL
+        } catch {
+            try? FileManager.default.removeItem(at: softwareURL)
+            throw error
+        }
+    }
+
+    private static func scratchURL() -> URL {
+        FileManager.default.temporaryDirectory.appendingPathComponent("PeekOCR-export-\(UUID().uuidString).mp4")
+    }
+
     private static func renderVideo(
         videoURL: URL,
         timeRange: CMTimeRange,
         outputURL: URL,
-        options: VideoExportOptions
+        options: VideoExportOptions,
+        encoder: VideoEncoder,
+        stallPolicy: ExportStallPolicy?
     ) async throws {
         let exportStartedAt = Date()
         let asset = AVURLAsset(url: videoURL)
@@ -284,16 +388,23 @@ final class VideoExportService {
             codec: options.codec
         )
 
-        let writerVideoSettings: [String: Any] = [
+        var compressionProperties: [String: Any] = [
+            AVVideoAverageBitRateKey: videoBitrate,
+            AVVideoExpectedSourceFrameRateKey: effectiveFps,
+            AVVideoMaxKeyFrameIntervalKey: max(1, effectiveFps * 2),
+        ]
+        var writerVideoSettings: [String: Any] = [
             AVVideoCodecKey: options.codec.avVideoCodecType.rawValue,
             AVVideoWidthKey: Int(renderSize.width),
             AVVideoHeightKey: Int(renderSize.height),
-            AVVideoCompressionPropertiesKey: [
-                AVVideoAverageBitRateKey: videoBitrate,
-                AVVideoExpectedSourceFrameRateKey: effectiveFps,
-                AVVideoMaxKeyFrameIntervalKey: max(1, effectiveFps * 2),
-            ],
         ]
+        if encoder == .software {
+            compressionProperties[kVTCompressionPropertyKey_RealTime as String] = true
+            writerVideoSettings[AVVideoEncoderSpecificationKey] = [
+                kVTVideoEncoderSpecification_EnableHardwareAcceleratedVideoEncoder as String: false
+            ]
+        }
+        writerVideoSettings[AVVideoCompressionPropertiesKey] = compressionProperties
 
         let writerInput = AVAssetWriterInput(mediaType: .video, outputSettings: writerVideoSettings)
         writerInput.expectsMediaDataInRealTime = false
@@ -362,8 +473,12 @@ final class VideoExportService {
                 renderSize: renderSize,
                 exportStartedAt: exportStartedAt,
                 outputURL: outputURL,
+                encoder: encoder,
                 continuation: continuation
             )
+            if let stallPolicy {
+                coordinator.watchForStall(policy: stallPolicy)
+            }
 
             // The composition output only carries the source frames, at their
             // real (variable) times. Resample to a constant rate: each output
@@ -442,6 +557,7 @@ final class VideoExportService {
 
                     currentWasAppended = true
                     frameIndex += 1
+                    coordinator.videoFramesAppended(frameIndex)
                 }
             }
 

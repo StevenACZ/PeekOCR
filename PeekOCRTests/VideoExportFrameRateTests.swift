@@ -33,17 +33,42 @@ final class VideoExportFrameRateTests: XCTestCase {
         }
     }
 
-    private func writeClip(to url: URL, times: [Double], duration: Double) async throws {
+    func testStalledEncodeIsRedoneWithSoftwareH264() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let source = directory.appendingPathComponent("source.mov")
+        try await writeClip(to: source, times: (0..<60).map { Double($0) / 30 }, duration: 2, side: 320)
+
+        let output = try await VideoExportService.shared.exportVideo(
+            videoURL: source,
+            timeRange: CMTimeRange(start: .zero, duration: CMTime(seconds: 2, preferredTimescale: 600)),
+            outputDirectory: directory,
+            options: VideoExportOptions(resolution: .p720, fps: 60, codec: .hevc),
+            stallPolicy: ExportStallPolicy(sampleInterval: 0.001, minimumFramesPerSecond: .infinity, finishAllowance: 0)
+        )
+
+        let tracks = try await AVURLAsset(url: output).loadTracks(withMediaType: .video)
+        let track = try XCTUnwrap(tracks.first)
+        let (nominalFps, timeRange, formats) = try await track.load(.nominalFrameRate, .timeRange, .formatDescriptions)
+        XCTAssertEqual(formats.first?.mediaSubType, .h264)
+        XCTAssertEqual(Double(nominalFps), 60, accuracy: 0.5)
+        XCTAssertEqual(timeRange.duration.seconds, 2, accuracy: 0.05)
+        XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: directory.path).count, 2)
+    }
+
+    private func writeClip(to url: URL, times: [Double], duration: Double, side: Int = 64) async throws {
         let writer = try AVAssetWriter(outputURL: url, fileType: .mov)
         let input = AVAssetWriterInput(
             mediaType: .video,
-            outputSettings: [AVVideoCodecKey: AVVideoCodecType.h264, AVVideoWidthKey: 64, AVVideoHeightKey: 64])
+            outputSettings: [AVVideoCodecKey: AVVideoCodecType.h264, AVVideoWidthKey: side, AVVideoHeightKey: side])
         let adaptor = AVAssetWriterInputPixelBufferAdaptor(
             assetWriterInput: input,
             sourcePixelBufferAttributes: [
                 kCVPixelBufferPixelFormatTypeKey as String: Int(kCVPixelFormatType_32BGRA),
-                kCVPixelBufferWidthKey as String: 64,
-                kCVPixelBufferHeightKey as String: 64,
+                kCVPixelBufferWidthKey as String: side,
+                kCVPixelBufferHeightKey as String: side,
             ])
         writer.add(input)
         XCTAssertTrue(writer.startWriting())
