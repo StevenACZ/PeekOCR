@@ -119,7 +119,7 @@ final class VideoExportService {
             let now = ProcessInfo.processInfo.systemUptime
             guard stallDetector?.isStalled(at: now, appendedFrames: appendedFrames) == true else { return }
             AppLogger.capture.warning(
-                "Video encoder stalled after \(self.appendedFrames) frames in \(String(format: "%.2f", Date().timeIntervalSince(self.exportStartedAt)))s"
+                "Video encoder stalled after \(self.appendedFrames) frames in \(String(format: "%.2f", Date().timeIntervalSince(self.exportStartedAt)), privacy: .public)s"
             )
             resumeOnce(throwing: HardwareEncoderStalled())
             // cancelWriting blocks until the starved encoder drains the frames
@@ -169,7 +169,7 @@ final class VideoExportService {
                 let elapsed = Date().timeIntervalSince(exportStartedAt)
                 let outputBytes = VideoExportService.fileSize(at: outputURL)
                 AppLogger.capture.info(
-                    "Video export completed - encoder: \(self.encoder.rawValue), frames: \(self.appendedFrames), skipped: \(self.skippedFrames), fps: \(self.effectiveFps), renderSize: \(Int(self.renderSize.width))x\(Int(self.renderSize.height)), output: \(outputBytes) bytes, elapsed: \(String(format: "%.2f", elapsed))s"
+                    "Video export completed - encoder: \(self.encoder.rawValue, privacy: .public), frames: \(self.appendedFrames), skipped: \(self.skippedFrames), fps: \(self.effectiveFps), renderSize: \(Int(self.renderSize.width))x\(Int(self.renderSize.height)), output: \(outputBytes) bytes, elapsed: \(String(format: "%.2f", elapsed), privacy: .public)s"
                 )
                 resumeOnce(throwing: nil)
             } else {
