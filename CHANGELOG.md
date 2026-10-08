@@ -6,6 +6,8 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2.9.0] - 2026-10-08
+
 ### Added
 
 - Pause and resume every PeekOCR shortcut from the menu bar panel. While paused, the shortcuts reach other apps, the panel says so and the menu bar eye is crossed out.
