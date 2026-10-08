@@ -154,10 +154,14 @@
 "menu.settings" = "Configuración";
 "menu.settings.subtitle" = "Atajos, capturas, clips e historial";
 "menu.settings_window.title" = "Configuración de PeekOCR";
+"menu.shortcuts.pause" = "Pausar atajos";
+"menu.shortcuts.resume" = "Reanudar atajos";
 "menu.status.history_count" = "%d capturas en el historial";
 "menu.status.history_one" = "1 captura en el historial";
+"menu.status.paused" = "Atajos en pausa";
 "menu.status.permissions_pending" = "Permisos pendientes";
 "menu.status.ready" = "Listo para capturar";
+"menu.status_item.paused" = "PeekOCR en pausa";
 
 /* permissions */
 "permissions.accessibility.summary" = "Necesario para atajos globales.";

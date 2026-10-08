@@ -154,10 +154,14 @@
 "menu.settings" = "Settings";
 "menu.settings.subtitle" = "Shortcuts, captures, clips, and history";
 "menu.settings_window.title" = "PeekOCR Settings";
+"menu.shortcuts.pause" = "Pause shortcuts";
+"menu.shortcuts.resume" = "Resume shortcuts";
 "menu.status.history_count" = "%d captures in history";
 "menu.status.history_one" = "1 capture in history";
+"menu.status.paused" = "Shortcuts paused";
 "menu.status.permissions_pending" = "Permissions pending";
 "menu.status.ready" = "Ready to capture";
+"menu.status_item.paused" = "PeekOCR paused";
 
 /* permissions */
 "permissions.accessibility.summary" = "Required for global shortcuts.";

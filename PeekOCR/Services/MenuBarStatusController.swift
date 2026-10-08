@@ -19,6 +19,7 @@ final class MenuBarStatusController: NSObject, NSPopoverDelegate, NSWindowDelega
     private var settingsWindow: NSWindow?
     private var aboutWindow: NSWindow?
     private var aboutPhaseObserver: AnyCancellable?
+    private var pauseObserver: AnyCancellable?
     private var isPopoverTransitioning = false
     private var escapeMonitor: Any?
 
@@ -49,6 +50,19 @@ final class MenuBarStatusController: NSObject, NSPopoverDelegate, NSWindowDelega
         button.target = self
         button.action = #selector(togglePopover)
         button.sendAction(on: [.leftMouseUp, .rightMouseUp])
+        pauseObserver = HotKeyManager.shared.$isPaused
+            .removeDuplicates()
+            .receive(on: RunLoop.main)
+            .sink { [weak self] paused in
+                MainActor.assumeIsolated { self?.applyPauseState(paused) }
+            }
+    }
+
+    private func applyPauseState(_ paused: Bool) {
+        guard let button = statusItem?.button else { return }
+        button.image = statusImage(paused: paused)
+        button.appearsDisabled = paused
+        button.toolTip = paused ? "menu.status_item.paused".localized : nil
     }
 
     var statusButtonScreenFrame: CGRect? {
@@ -56,9 +70,9 @@ final class MenuBarStatusController: NSObject, NSPopoverDelegate, NSWindowDelega
         return window.convertToScreen(button.convert(button.bounds, to: nil))
     }
 
-    private func statusImage() -> NSImage? {
+    private func statusImage(paused: Bool = false) -> NSImage? {
         let configuration = NSImage.SymbolConfiguration(pointSize: 16, weight: .medium)
-        let image = NSImage(systemSymbolName: "eye", accessibilityDescription: "PeekOCR")?
+        let image = NSImage(systemSymbolName: paused ? "eye.slash" : "eye", accessibilityDescription: "PeekOCR")?
             .withSymbolConfiguration(configuration)
         image?.isTemplate = true
         return image
