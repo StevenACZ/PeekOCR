@@ -33,6 +33,7 @@ struct MenuBarPopoverView: View {
     @ObservedObject private var historyManager = HistoryManager.shared
     @ObservedObject private var settings = AppSettings.shared
     @ObservedObject private var updateManager = UpdateManager.shared
+    @ObservedObject private var hotKeys = HotKeyManager.shared
     @State private var missingPermissions: [AppPermission] = []
 
     var body: some View {
@@ -41,6 +42,14 @@ struct MenuBarPopoverView: View {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 14)
                 .background(Color(nsColor: .controlBackgroundColor).opacity(0.5))
+
+            Divider()
+
+            PauseShortcutsButton(isPaused: hotKeys.isPaused) {
+                hotKeys.isPaused.toggle()
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
 
             Divider()
 
@@ -124,11 +133,15 @@ struct MenuBarPopoverView: View {
             Spacer()
 
             HotkeyBadge(text: settings.captureHotKeyDisplayString())
+                .opacity(hotKeys.isPaused ? 0.4 : 1)
                 .help("menu.hotkey.help".localized)
         }
     }
 
     private var statusLine: String {
+        if hotKeys.isPaused {
+            return "menu.status.paused".localized
+        }
         if !missingPermissions.isEmpty {
             return "menu.status.permissions_pending".localized
         }

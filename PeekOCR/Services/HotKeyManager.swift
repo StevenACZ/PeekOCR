@@ -7,13 +7,22 @@
 
 import AppKit
 import Carbon
+import Combine
 import os
 
 /// Manages global keyboard shortcuts for the app
-final class HotKeyManager {
+final class HotKeyManager: ObservableObject {
     static let shared = HotKeyManager()
 
     // MARK: - Properties
+
+    /// Paused shortcuts are unregistered so their key combos reach other apps.
+    @Published var isPaused = false {
+        didSet {
+            guard isPaused != oldValue else { return }
+            reregisterHotKeys()
+        }
+    }
 
     private var hotKeyRefs: [HotKeyID: EventHotKeyRef] = [:]
     private var eventHandler: EventHandlerRef?
@@ -101,6 +110,7 @@ final class HotKeyManager {
     }
 
     private func registerAllHotKeys() {
+        guard !isPaused else { return }
         let settings = AppSettings.shared
 
         registerHotKey(

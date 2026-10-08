@@ -55,6 +55,35 @@ struct ActionRow: View {
     }
 }
 
+/// Full-width toggle that pauses or resumes every global capture shortcut.
+struct PauseShortcutsButton: View {
+    let isPaused: Bool
+    let action: () -> Void
+
+    @State private var isHovering = false
+
+    var body: some View {
+        Button(action: action) {
+            Label(
+                isPaused ? "menu.shortcuts.resume".localized : "menu.shortcuts.pause".localized,
+                systemImage: isPaused ? "play.fill" : "pause.fill"
+            )
+            .font(.system(size: 14, weight: .semibold))
+            .foregroundStyle(.white)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 11)
+            .background(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(Theme.accent.gradient)
+                    .brightness(isHovering ? 0.06 : 0)
+            )
+            .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .onHover { isHovering = $0 }
+    }
+}
+
 /// Update card shown under the popover header while an update is pending.
 struct UpdateCard: View {
     @ObservedObject var manager: UpdateManager
