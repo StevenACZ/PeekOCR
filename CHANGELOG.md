@@ -6,6 +6,10 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- Short clips of half a second or more can now be exported. The editor used to require at least 3 seconds.
+
 ## [2.9.0] - 2026-10-08
 
 ### Added

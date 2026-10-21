@@ -311,7 +311,7 @@ private struct GifClipTimelinePreviewWrapper: View {
             isPlaying: false,
             frames: Array(repeating: nil, count: GifClipFilmstrip.frameCount),
             stepSeconds: 0.1,
-            minimumSelectionSeconds: 3,
+            minimumSelectionSeconds: 0.5,
             onScrub: { current = $0 },
             onBeginEditing: {}
         )
