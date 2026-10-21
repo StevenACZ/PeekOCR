@@ -9,6 +9,11 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Changed
 
 - Short clips of half a second or more can now be exported. The editor used to require at least 3 seconds.
+- Screenshots stay in one group until you paste them or copy something else, so a capture taken minutes later is pasted together with the earlier ones. The group used to end 15 seconds after the last capture.
+
+### Fixed
+
+- Escape closes the capture overlay on the first press, even while another app (such as a dictation app that is recording) uses Escape as a global shortcut. The other app no longer receives that Escape.
 
 ## [2.9.0] - 2026-10-08
 

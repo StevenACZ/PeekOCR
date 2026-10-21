@@ -302,11 +302,7 @@ final class LiveAnnotationOverlayView: NSView {
         case 51, 117:  // delete / forward delete
             deleteSelectedAnnotation()
         case 53:  // esc
-            if isEditingText {
-                dismissTextEditor(commit: false)
-            } else {
-                onCancel?()
-            }
+            handleEscape()
         case 36, 76:  // return / enter
             if isEditingText {
                 dismissTextEditor(commit: true)

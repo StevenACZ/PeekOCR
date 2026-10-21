@@ -5,6 +5,14 @@ import AppKit
 extension LiveAnnotationOverlayView {
     var isEditingText: Bool { textEditor != nil }
 
+    func handleEscape() {
+        if isEditingText {
+            dismissTextEditor(commit: false)
+        } else {
+            onCancel?()
+        }
+    }
+
     func beginTextInput(at pointInScreen: CGPoint) {
         guard let selectionRectInScreen, selectionRectInScreen.contains(pointInScreen) else { return }
         dismissTextEditor(commit: true)

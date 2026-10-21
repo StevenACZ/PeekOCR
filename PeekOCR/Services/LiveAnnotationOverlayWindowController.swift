@@ -13,6 +13,7 @@ final class LiveAnnotationOverlayWindowController: NSWindowController {
     private var activeDisplayID: CGDirectDisplayID?
     private var quickSelectHotKeyRefs: [EventHotKeyRef] = []
     private var quickSelectHotKeyEventHandler: EventHandlerRef?
+    private lazy var escapeInterceptor = EscapeKeyInterceptor { [weak self] in self?.handleEscape() }
     private var continuation: CheckedContinuation<(selectionRect: CGRect, screen: NSScreen, annotations: [LiveAnnotation])?, Never>?
 
     override init(window: NSWindow?) {
@@ -66,6 +67,7 @@ final class LiveAnnotationOverlayWindowController: NSWindowController {
     private func present(
         mode: LiveAnnotationOverlayView.OverlayMode
     ) async -> (selectionRect: CGRect, screen: NSScreen, annotations: [LiveAnnotation])? {
+        escapeInterceptor.start()
         if mode == .quickSelect {
             installQuickSelectKeyboardHotKeys()
         }
@@ -181,6 +183,7 @@ final class LiveAnnotationOverlayWindowController: NSWindowController {
     }
 
     private func finish(with result: (CGRect, NSScreen, [LiveAnnotation])?) {
+        escapeInterceptor.stop()
         uninstallQuickSelectKeyboardHotKeys()
         for overlay in overlays.values {
             overlay.window.orderOut(nil)
@@ -190,6 +193,16 @@ final class LiveAnnotationOverlayWindowController: NSWindowController {
         window = nil
         continuation?.resume(returning: result)
         continuation = nil
+    }
+
+    private func handleEscape() {
+        guard continuation != nil else { return }
+        let overlay = activeDisplayID.flatMap { overlays[$0] } ?? overlays.values.first { $0.window === window }
+        if let overlay {
+            overlay.view.handleEscape()
+        } else {
+            finish(with: nil)
+        }
     }
 
     private func completeQuickSelectFullScreen() {
