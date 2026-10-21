@@ -331,7 +331,7 @@
 "settings.captures.preview" = "Vista previa";
 "settings.captures.show_preview" = "Mostrar vista previa a la izquierda";
 "settings.captures.grouped_copy" = "Copiar capturas consecutivas juntas";
-"settings.captures.grouped_copy_caption" = "Las capturas tomadas en 15 segundos forman un grupo. Pega todas con ⌘V o desactívalo para pegar solo la última. Pasa el mouse por la vista previa para pausarla y quitar imágenes.";
+"settings.captures.grouped_copy_caption" = "Las capturas siguen en un grupo hasta que las pegas con ⌘V o copias otra cosa. Desactívalo para pegar solo la última. Pasa el mouse por la vista previa para pausarla y quitar imágenes.";
 "preview.capture" = "Captura";
 "preview.captures" = "%d capturas";
 "preview.hide" = "Ocultar vista previa";

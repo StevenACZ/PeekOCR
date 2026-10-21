@@ -88,7 +88,6 @@ final class CaptureCoordinator: ObservableObject {
         // or annotation overlay handles the region pick.
         Task { @MainActor in
             CapturePreviewController.shared.beginCapture()
-            defer { CapturePreviewController.shared.endCapture() }
             switch mode {
             case .gifClip:
                 await captureClipWithScreenRecorder()

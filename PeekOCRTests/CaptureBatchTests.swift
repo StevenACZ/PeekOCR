@@ -4,13 +4,11 @@ import XCTest
 
 @MainActor
 final class CaptureBatchTests: XCTestCase {
-    private let start = Date(timeIntervalSince1970: 1_000)
-
     func testRapidCapturesRemainOrderedAndRemovalChangesBothCopyModes() {
         var batch = CaptureBatch()
         let ids = (0..<4).map { _ in UUID() }
-        for (index, id) in ids.enumerated() {
-            _ = batch.append(id, at: start.addingTimeInterval(Double(index)), clipboardChangeCount: 10)
+        for id in ids {
+            _ = batch.append(id, clipboardChangeCount: 10)
             batch.didCopy(changeCount: 10)
         }
         batch.remove(ids[1])
@@ -19,31 +17,26 @@ final class CaptureBatchTests: XCTestCase {
         XCTAssertEqual(batch.copiedIDs(grouped: false), [ids[2]])
     }
 
-    func testTimeoutExternalCopyAndPasteEachBeginANewGroup() {
-        for reason in 0..<3 {
-            var batch = CaptureBatch()
-            _ = batch.append(UUID(), at: start, clipboardChangeCount: 10)
-            batch.didCopy(changeCount: 10)
-            if reason == 2 { batch.didPaste() }
-            let next = UUID()
-            let continues = batch.append(
-                next, at: start.addingTimeInterval(reason == 0 ? 16 : 1), clipboardChangeCount: reason == 1 ? 11 : 10)
-            XCTAssertFalse(continues)
-            XCTAssertEqual(batch.ids, [next])
-        }
-    }
-
-    func testLongSelectionKeepsTheGroupButCancelDoesNotExtendIt() {
+    func testLateCaptureJoinsTheGroupWhileItOwnsTheClipboard() {
         var batch = CaptureBatch()
         let first = UUID()
-        _ = batch.append(first, at: start, clipboardChangeCount: 10)
+        _ = batch.append(first, clipboardChangeCount: 10)
         batch.didCopy(changeCount: 10)
-        batch.beginCapture(at: start.addingTimeInterval(2), clipboardChangeCount: 10)
-        let second = UUID()
-        XCTAssertTrue(batch.append(second, at: start.addingTimeInterval(30), clipboardChangeCount: 10))
-        batch.beginCapture(at: start.addingTimeInterval(31), clipboardChangeCount: 10)
-        batch.endCapture()
-        XCTAssertFalse(batch.append(UUID(), at: start.addingTimeInterval(50), clipboardChangeCount: 10))
+        let late = UUID()
+        XCTAssertTrue(batch.append(late, clipboardChangeCount: 10))
+        XCTAssertEqual(batch.copiedIDs(grouped: true), [first, late])
+    }
+
+    func testExternalCopyAndPasteEachBeginANewGroup() {
+        for pasted in [false, true] {
+            var batch = CaptureBatch()
+            _ = batch.append(UUID(), clipboardChangeCount: 10)
+            batch.didCopy(changeCount: 10)
+            if pasted { batch.didPaste() }
+            let next = UUID()
+            XCTAssertFalse(batch.append(next, clipboardChangeCount: pasted ? 10 : 11))
+            XCTAssertEqual(batch.ids, [next])
+        }
     }
 
     func testClipboardHoldsSeparateFilesAndSingleImageFallback() throws {

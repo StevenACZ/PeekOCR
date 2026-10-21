@@ -16,12 +16,10 @@ final class CapturePreviewController: ObservableObject {
     private var panel: NSPanel?
     private var content: CapturePreviewHostingView?
     private var dismissalTask: Task<Void, Never>?
-    private var expiryTask: Task<Void, Never>?
     private var deadline: Date?
     private var remaining: TimeInterval = 2
     @Published private(set) var isHovered = false
     @Published private(set) var previewScreenHeight: CGFloat = 1000
-    private var suspended = false
     private var presentationID = UUID()
     private var globalMonitor: Any?
     private var localMonitor: Any?
@@ -40,27 +38,17 @@ final class CapturePreviewController: ObservableObject {
     func beginCapture() {
         editSession?.cancelSession()
         editSession = nil
-        batch.beginCapture(at: Date(), clipboardChangeCount: pasteboard.changeCount)
-        suspended = true
-        expiryTask?.cancel()
         hide(animated: false)
     }
 
-    func endCapture() {
-        suspended = false
-        batch.endCapture()
-        scheduleExpiry()
-    }
-
     func receive(_ asset: CaptureClipboardAsset, copyToClipboard: Bool, showPreview: Bool) {
-        let continued = batch.append(asset.id, at: Date(), clipboardChangeCount: pasteboard.changeCount)
+        let continued = batch.append(asset.id, clipboardChangeCount: pasteboard.changeCount)
         if !continued { assets.removeAll() }
         assets.append(asset)
         copied = false
         if copyToClipboard { copySelection(grouped: ScreenshotSettings.shared.groupedCopy, explicit: true) }
         installPasteObservers()
         if showPreview { present() }
-        scheduleExpiry()
     }
 
     func remove(_ id: UUID) {
@@ -87,8 +75,6 @@ final class CapturePreviewController: ObservableObject {
         let session = LiveAnnotationOverlayWindowController()
         let quality = ScreenshotSettings.shared.imageQuality
         editSession = session
-        suspended = true
-        expiryTask?.cancel()
         hide(animated: true)
         AppLogger.capture.info("Opening capture editor - dimensions: \(image.width)x\(image.height)")
         Task { @MainActor in
@@ -109,9 +95,7 @@ final class CapturePreviewController: ObservableObject {
             }
             guard editSession === session else { return }
             editSession = nil
-            suspended = false
             present()
-            scheduleExpiry()
         }
     }
 
@@ -127,10 +111,8 @@ final class CapturePreviewController: ObservableObject {
             dismissalTask?.cancel()
             countdownDuration = 0
             countdown = min(1, remaining / 2)
-            expiryTask?.cancel()
         } else {
             startCountdown(seconds: max(1, remaining))
-            scheduleExpiry()
         }
     }
 
@@ -246,7 +228,6 @@ final class CapturePreviewController: ObservableObject {
         dismissalTask = nil
         isHovered = false
         deadline = nil
-        scheduleExpiry()
         guard let panel else { return }
         let token = UUID()
         presentationID = token
@@ -277,18 +258,6 @@ final class CapturePreviewController: ObservableObject {
             })
     }
 
-    private func scheduleExpiry() {
-        expiryTask?.cancel()
-        guard !suspended, !isHovered else { return }
-        expiryTask = Task { @MainActor [weak self] in
-            try? await Task.sleep(for: .seconds(CaptureBatch.groupingInterval))
-            guard let self, !Task.isCancelled else { return }
-            self.assets.removeAll()
-            self.batch = CaptureBatch()
-            self.removePasteObservers()
-        }
-    }
-
     private func installPasteObservers() {
         guard globalMonitor == nil, localMonitor == nil else { return }
         globalMonitor = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { [weak self] event in
@@ -305,6 +274,7 @@ final class CapturePreviewController: ObservableObject {
             batch.ownsClipboard(pasteboard.changeCount)
         else { return }
         batch.didPaste()
+        removePasteObservers()
         hide(animated: true)
     }
 

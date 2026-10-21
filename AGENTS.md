@@ -68,11 +68,11 @@ must not convey identity or status. Verify these mappings in permission UI chang
 
 ### Region Picking
 
-All captures share `LiveAnnotationOverlayView` and its focused extensions,
-presented by `LiveAnnotationOverlayWindowController`.
+All captures share `LiveAnnotationOverlayView` and its focused extensions, presented by `LiveAnnotationOverlayWindowController`.
 - `.annotate`: adjustable selection; the `toolbarLayout` bar (tools, cancel, capture) sits below, else above, else inside it; Enter captures.
 - `.quickSelect`: mouse-up captures the drag selection; Space selects the screen under the cursor.
 - Editing: clicking a still in the preview stack reopens it in `.annotate` through `runEditSession`. `ImageEditStage` lays the image out on screen; the selection is its crop, never leaves it, and annotations stay put when it changes. Saving overwrites the asset's file and recopies it.
+- Escape: during any session `EscapeKeyInterceptor` claims plain Escape through a HID event tap (Accessibility), ahead of other apps' Carbon Escape hotkeys, and swallows the whole press.
 
 Still pixels come from `NativeScreenCaptureService.captureRegion` through `SCScreenshotManager`, excluding PeekOCR windows where possible.
 The `screencapture` command remains only as a screenshot fallback. `CaptureFlashEffect` plays after pixels are captured.
