@@ -75,8 +75,8 @@
 "clip_editor.export_failed_title" = "Export failed";
 "clip_editor.export_gif" = "Export GIF";
 "clip_editor.export_invalid_selection" = "The current selection can't be exported.";
-"clip_editor.export_min_clip_duration" = "The recorded clip is %@ long. The minimum for export is %ds. Record again.";
-"clip_editor.export_min_selection" = "Select at least %ds on the timeline to export.";
+"clip_editor.export_min_clip_duration" = "The recorded clip is %@ long. The minimum for export is %@. Record again.";
+"clip_editor.export_min_selection" = "Select at least %@ on the timeline to export.";
 "clip_editor.export_mp4" = "Export MP4";
 "clip_editor.export_ready_message" = "File ready in %@.";
 "clip_editor.export_saving_message" = "Saving to %@. This may take a few seconds.";

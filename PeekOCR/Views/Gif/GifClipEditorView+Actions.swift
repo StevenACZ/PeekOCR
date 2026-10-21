@@ -19,7 +19,7 @@ extension GifClipEditorView {
         guard state.isReady, state.durationSeconds > 0 else { return nil }
         guard !isBlockingUI else { return nil }
 
-        let minSeconds = Int(Constants.Gif.minimumClipDurationSeconds.rounded())
+        let minSeconds = formatSeconds(Constants.Gif.minimumClipDurationSeconds)
 
         if state.durationSeconds < Constants.Gif.minimumClipDurationSeconds {
             return "clip_editor.export_min_clip_duration".localized(formatSeconds(state.durationSeconds), minSeconds)

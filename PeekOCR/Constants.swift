@@ -49,7 +49,7 @@ enum Constants {
         static let defaultMaxDurationSeconds = 10
         static let maxDurationRange = 3...60
         static let trimStepSeconds: Double = 0.1
-        static let minimumClipDurationSeconds: Double = 3.0
+        static let minimumClipDurationSeconds: Double = 0.5
 
         static let recordingFpsOptions = [15, 30, 60]
         static let videoFpsOptions = [24, 30, 60]
